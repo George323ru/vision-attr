@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vision Attractor — BI Predictive Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+</head>
+<body>
+
+<div id="header">
+  <h1>Vision <span>Attractor</span></h1>
+  <div class="header-right">
+    <button id="situations-btn" class="header-btn">Ситуации</button>
+    <span class="version">BI Dashboard v1.0</span>
+    <span id="theme-label">dark</span>
+    <div id="theme-toggle" title="Переключить тему"></div>
+  </div>
+</div>
+
+<div id="main-grid">
+  <!-- GRAPH ZONE -->
+  <div id="graph-zone">
+    <div id="network"></div>
+
+    <div id="focus-panel">
+      Аттрактор: <span class="fname" id="focus-name"></span>
+      &nbsp;&mdash;&nbsp; корреляций: <span id="focus-count"></span>
+    </div>
+
+    <div id="legend">
+      <div class="leg-title">Легенда</div>
+      <div class="leg-row"><div class="leg-dot" style="width:16px;height:16px;background:#c0392b;border:2px solid #922b21;"></div><span>Домен (L1)</span></div>
+      <div class="leg-row"><div class="leg-dot" style="width:12px;height:12px;background:#e74c3c;border:2px solid #c0392b;border-radius:3px;"></div><span>Категория (L2)</span></div>
+      <div class="leg-row"><div class="leg-dot" style="width:8px;height:8px;background:#f1948a;border:1px solid #e74c3c;"></div><span>Аттрактор (L3)</span></div>
+      <div class="leg-row" style="margin-top:8px;"><div class="leg-line" style="width:22px;background:#3a3a5a;" id="leg-hier-line"></div><span>Иерархия</span></div>
+      <div class="leg-row"><div class="leg-line" style="width:22px;background:#34d399;"></div><span>Усиление</span></div>
+      <div class="leg-row"><div class="leg-line" style="width:22px;background:#f87171;"></div><span>Конфликт</span></div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="right-panel">
+    <div id="right-panel-header">
+      <h2>Предиктивный анализ</h2>
+      <div class="rp-desc">Выберите категорию на графе</div>
+    </div>
+    <div id="right-panel-content">
+      <div class="rp-empty">Кликните на узел категории (L2)<br>на графе для анализа<br>поведенческих стратегий</div>
+    </div>
+  </div>
+</div>
+
+<!-- AGE SLIDER ZONE -->
+<div id="age-slider-zone">
+  <span id="age-label">Возраст: <b id="age-value">30</b></span>
+  <div class="slider-wrap">
+    <input type="range" id="age-slider" min="18" max="75" value="30">
+    <div id="age-ticks">
+      <span>18</span><span>25</span><span>35</span><span>45</span><span>55</span><span>65</span><span>75</span>
+    </div>
+  </div>
+</div>
+
+<!-- scripts in dependency order -->
+<script src="js/data.js"></script>
+<script src="js/situations.js"></script>
+<script src="js/network.js"></script>
+<script src="js/ui.js"></script>
+
+<script>
+  loadAttractionData()
+    .then(() => {
+      initNetwork();
+      initUI();
+    })
+    .catch(err => {
+      console.error('[init] Ошибка загрузки данных:', err);
+      document.getElementById('network').innerHTML =
+        '<div style="color:#f87171;padding:2rem;font-size:14px">' +
+        'Ошибка загрузки данных. Убедитесь что сервер запущен:<br><br>' +
+        '<code>python3 -m http.server 8080</code></div>';
+    });
+</script>
+
+</body>
+</html>

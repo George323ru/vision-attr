@@ -1,0 +1,107 @@
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ── THEME VARIABLES ── */
+/* Light/warm theme as default */
+:root {
+  --bg:           #fafafa;
+  --bg-surface:   rgba(0,0,0,0.03);
+  --bg-surface2:  rgba(0,0,0,0.015);
+  --border:       rgba(0,0,0,0.08);
+  --border2:      rgba(0,0,0,0.05);
+  --text:         #1a1a2e;
+  --text-muted:   rgba(0,0,0,0.35);
+  --text-dim:     rgba(0,0,0,0.2);
+  --accent:       #c08a3e;
+  --panel-bg:     rgba(255,255,255,0.94);
+  --panel-border: rgba(192,138,62,0.30);
+  --panel-text:   #c08a3e;
+  --legend-bg:    rgba(255,255,255,0.92);
+  --legend-border:rgba(0,0,0,0.1);
+  --legend-text:  rgba(0,0,0,0.55);
+  --legend-title: rgba(0,0,0,0.3);
+  --fname-color:  #1a1a2e;
+  --hint-strong:  rgba(0,0,0,0.6);
+  --card-bg:      rgba(0,0,0,0.03);
+  --card-hover:   rgba(0,0,0,0.06);
+  --card-border:  rgba(0,0,0,0.08);
+  --bar-positive: #059669;
+  --bar-negative: #dc2626;
+  --bar-neutral:  #2563eb;
+  --bar-bg:       rgba(0,0,0,0.06);
+  --slider-track: rgba(0,0,0,0.1);
+  --slider-thumb: #c08a3e;
+  --right-bg:     rgba(255,255,255,0.7);
+  --right-border: rgba(0,0,0,0.08);
+  --breadcrumb:   rgba(0,0,0,0.4);
+}
+
+/* ── Dark theme — commented out, not used ──
+:root.dark {
+  --bg:           #0d0d1a;
+  --bg-surface:   rgba(255,255,255,0.04);
+  --bg-surface2:  rgba(255,255,255,0.015);
+  --border:       rgba(255,255,255,0.08);
+  --border2:      rgba(255,255,255,0.05);
+  --text:         #e0e0f0;
+  --text-muted:   rgba(255,255,255,0.3);
+  --text-dim:     rgba(255,255,255,0.2);
+  --accent:       #a78bfa;
+  --panel-bg:     rgba(13,13,26,0.92);
+  --panel-border: rgba(167,139,250,0.4);
+  --panel-text:   #a78bfa;
+  --legend-bg:    rgba(13,13,26,0.88);
+  --legend-border:rgba(255,255,255,0.1);
+  --legend-text:  rgba(255,255,255,0.55);
+  --legend-title: rgba(255,255,255,0.3);
+  --fname-color:  #fff;
+  --hint-strong:  rgba(255,255,255,0.5);
+  --card-bg:      rgba(255,255,255,0.04);
+  --card-hover:   rgba(255,255,255,0.08);
+  --card-border:  rgba(255,255,255,0.06);
+  --bar-positive: #34d399;
+  --bar-negative: #f87171;
+  --bar-neutral:  #60a5fa;
+  --bar-bg:       rgba(255,255,255,0.06);
+  --slider-track: rgba(255,255,255,0.1);
+  --slider-thumb: #a78bfa;
+  --right-bg:     rgba(13,13,26,0.6);
+  --right-border: rgba(255,255,255,0.06);
+  --breadcrumb:   rgba(255,255,255,0.35);
+}
+*/
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: background 0.3s, color 0.3s;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── VIS-NETWORK TOOLTIP ── */
+div.vis-tooltip {
+  width: 260px !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  overflow: hidden !important;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 8px 10px;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, rgba(0,0,0,0.08));
+  color: var(--text, #111);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
