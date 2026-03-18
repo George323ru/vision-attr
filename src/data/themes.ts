@@ -23,7 +23,7 @@ export const THEMES: Record<ThemeName, ThemeColors> = {
   */
   light: {
     canvasBg: '#fafafa',
-    hierEdge: { color: '#b0b0c0', opacity: 0.85 },
+    hierEdge: { color: '#b0b0c0', opacity: 0.95 },
     hierEdgeDim: { color: '#d8d8e0', opacity: 0.15 },
     fontStroke: '#fafafa',
     fontStrokeL1: '#fafafa',

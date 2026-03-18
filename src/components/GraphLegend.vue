@@ -14,16 +14,12 @@
       <span>L3 — аттрактор 3 уровня</span>
     </div>
     <div class="leg-row">
-      <span class="leg-line" :style="{ width: '20px', background: legHier }"></span>
-      <span>иерархия</span>
-    </div>
-    <div class="leg-row">
       <span class="leg-line" style="width:20px;background:#059669"></span>
-      <span>усиление</span>
+      <span>положительная корреляция</span>
     </div>
     <div class="leg-row">
       <span class="leg-line" style="width:20px;background:#dc2626"></span>
-      <span>конфликт</span>
+      <span>отрицательная корреляция</span>
     </div>
     <div class="leg-row">
       <span class="leg-line" style="width:20px;background:#7070a0"></span>
@@ -33,11 +29,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useTheme } from '@/composables/useTheme'
-
-const { T } = useTheme()
-const legHier = computed(() => T.value.legHier)
 </script>
 
 <style scoped>

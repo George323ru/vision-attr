@@ -2,7 +2,7 @@ import type { ThemeColors } from '@/types/theme'
 import type { Correlation } from '@/types/correlation'
 
 export const L1_L2_LENGTH = 900
-export const L2_L3_LENGTH = 1080
+export const L2_L3_LENGTH = 720
 
 export function hierarchyEdge(theme: ThemeColors, childId: string, parentId: string, level: number) {
   const len = level === 2 ? L1_L2_LENGTH : L2_L3_LENGTH

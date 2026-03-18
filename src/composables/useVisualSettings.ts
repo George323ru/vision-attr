@@ -10,12 +10,12 @@ const DEFAULTS = {
   fontSizeL3: 49,
   corrReinforcingColor: '#059669',
   corrConflictingColor: '#dc2626',
-  corrDefaultColor: '#7070a0',
+  corrDefaultColor: '#d4d4d4',
   corrDefaultOpacity: 0.55,
   corrDefaultWidth: 7,
   hierEdgeColor: '#b0b0c0',
   hierEdgeOpacity: 0.85,
-  hierWidthL12: 21.0,
+  hierWidthL12: 17.5,
   hierWidthL23: 6.0,
 } as const
 

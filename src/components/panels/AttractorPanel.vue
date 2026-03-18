@@ -18,14 +18,14 @@
       />
     </template>
 
-    <!-- Если нет ситуаций — описание + L3 список -->
+    <!-- Если нет ситуаций — описание + список детей -->
     <template v-else>
       <div v-if="attr.description" class="rp-description">{{ attr.description }}</div>
       <div v-else class="rp-empty">Нет ситуаций для данной категории</div>
 
-      <div v-if="l3List.length" class="l3-section">
-        <div class="l3-title">Аттракторы (L3):</div>
-        <div v-for="l3 in l3List" :key="l3.id" class="l3-item clickable" @click="selectL3(l3.id)">{{ l3.label }}</div>
+      <div v-if="childList.length" class="l3-section">
+        <div class="l3-title">{{ attr.level === 1 ? 'Категории (L2):' : 'Аттракторы (L3):' }}</div>
+        <div v-for="child in childList" :key="child.id" class="l3-item clickable" @click="selectChild(child)">{{ child.label }}</div>
       </div>
     </template>
   </div>
@@ -44,19 +44,26 @@ const props = defineProps<{ nodeId: string }>()
 defineEmits<{ 'select-situation': [attrId: string, sitId: string] }>()
 
 const { attractors } = useAttractorStore()
-const { l3NodeId } = useAppState()
+const { l3NodeId, currentFocus } = useAppState()
 const { attr, domainColor } = useAttractorDisplay(toRef(props, 'nodeId'))
 
-function selectL3(id: string) {
-  l3NodeId.value = id
+function selectChild(child: { id: string; level: number }) {
+  if (child.level === 3) {
+    l3NodeId.value = child.id
+  } else {
+    // L2-ребёнок (клик из L1-панели) — переключаем фокус
+    currentFocus.value = child.id
+  }
 }
 
 const situations = computed(() =>
   SITUATIONS.filter(s => s.attractorL2 === props.nodeId)
 )
 
-const l3List = computed(() =>
-  attractors.value.filter(a => a.parent === props.nodeId)
+const childList = computed(() =>
+  attractors.value
+    .filter(a => a.parent === props.nodeId)
+    .map(a => ({ id: a.id, label: a.label, level: a.level }))
 )
 </script>
 

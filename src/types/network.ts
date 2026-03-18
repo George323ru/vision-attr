@@ -45,6 +45,8 @@ export interface VisEdgeData {
   arrows: { to: boolean }
   hidden: boolean
   physics?: boolean
+  label?: string
+  font?: { size: number; color: string; strokeWidth: number; strokeColor: string }
 }
 
 export interface OrigNodeSnapshot {

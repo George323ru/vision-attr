@@ -7,7 +7,7 @@ import { useAttractorStore } from './useAttractorStore'
 import { useTheme } from './useTheme'
 import { useAppState } from './useAppState'
 import { getCorrelatedL2Ids, getCorrEdgesForNode } from './useCorrelations'
-import { nc, nodeFont, nodeMass } from '@/utils/nodeStyles'
+import { nc, nodeFont, nodeMass, wrapLabel } from '@/utils/nodeStyles'
 import { hierarchyEdge, correlationEdge } from '@/utils/edgeStyles'
 import { useVisualSettings } from './useVisualSettings'
 
@@ -15,8 +15,9 @@ const expandedL1 = new Set<string>()
 const expandedL2 = new Set<string>()
 let isDragging = false
 let dragStartPointer: { x: number; y: number } | null = null
+let lastDragNodePos: { x: number; y: number } | null = null
+let draggedNodeId: string | null = null
 const DRAG_THRESHOLD = 10 // px — если сдвиг указателя мыши меньше, считаем кликом
-let graphFocus: string | null = null // визуальный фокус на графе (отдельно от panelState)
 const graphFocusSet = new Set<string>() // мульти-фокус: набор всех выделенных L2-нод
 
 let network: Network | null = null
@@ -24,6 +25,16 @@ let nodes: DataSet<VisNodeData> | null = null
 let edges: DataSet<VisEdgeData> | null = null
 let ORIG: Record<string, OrigNodeSnapshot> = {}
 let ORIG_EDGE: Record<string, OrigEdgeSnapshot> = {}
+
+interface DropdownCorrLine {
+  from: string
+  to: string
+  color: string
+  width: number
+  label: string
+  labelStroke: string
+}
+let dropdownCorrLines: DropdownCorrLine[] = []
 
 function buildNodesData() {
   const { domains, attractors } = useAttractorStore()
@@ -35,13 +46,13 @@ function buildNodesData() {
     const fs = a.level === 1 ? fontSizeL1.value : a.level === 2 ? fontSizeL2.value : fontSizeL3.value
     return {
       id: a.id,
-      label: a.label,
+      label: a.level === 2 ? wrapLabel(a.label, 2) : a.level === 3 ? wrapLabel(a.label) : a.label,
       level: a.level,
       domain: a.domain,
       parent: a.parent,
       description: a.description || '',
       insights: a.insights || '',
-      title: a.description || a.label,
+      // title убрано — hover отключён
       shape: 'dot',
       size: sz,
       mass: nodeMass(a.level),
@@ -251,33 +262,55 @@ function restoreExpansionState(snapshot: ExpansionSnapshot) {
   snapshot.l2.forEach(expandL2)
 }
 
-// ── FOCUS / DIM ─────────────────────────────────────────────
+// ── DRAG: СДВИГ ДЕТЕЙ ПО ДЕЛЬТЕ ─────────────────────────────
 
-function DIM_NODE() {
-  const { T } = useTheme()
-  const d = T.value.dim
-  return {
-    color: { background: d.node.bg, border: d.node.border, highlight: { background: d.node.bg, border: d.node.border } },
-    font: { color: d.font, strokeWidth: 0 },
-    borderWidth: 1,
+function moveChildrenByDelta(nodeId: string, dx: number, dy: number) {
+  if (!nodes || !network) return
+  const { getChildren } = useAttractorStore()
+  const node = nodes.get(nodeId) as unknown as VisNodeData | null
+  if (!node) return
+
+  const childIds: string[] = []
+  if (node.level === 1) {
+    const l2s = getChildren(nodeId)
+    for (const l2Id of l2s) {
+      childIds.push(l2Id)
+      childIds.push(...getChildren(l2Id))
+    }
+  } else if (node.level === 2) {
+    childIds.push(...getChildren(nodeId))
   }
+
+  if (!childIds.length) return
+  const positions = network.getPositions(childIds)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updates: any[] = []
+  for (const id of childIds) {
+    if (positions[id]) {
+      updates.push({ id, x: positions[id].x + dx, y: positions[id].y + dy, fixed: { x: true, y: true } })
+    }
+  }
+  if (updates.length) nodes.update(updates)
 }
 
-function FOCUS_NODE(origSize: number) {
+// ── FOCUS / DIM ─────────────────────────────────────────────
+
+function FOCUS_NODE(origSize: number, origFont: OrigNodeSnapshot['font'], origColor?: OrigNodeSnapshot['color']) {
   const { T } = useTheme()
+  const bg = origColor?.background ?? '#ffffff'
+  const bgHighlight = origColor?.highlight?.background ?? bg
   return {
-    color: { background: '#ffffff', border: '#fbbf24', highlight: { background: '#fffde7', border: '#f59e0b' } },
-    font: { color: T.value.focusFont.color, strokeWidth: 3, strokeColor: T.value.focusFont.stroke, size: 14 },
+    color: { background: bg, border: '#fbbf24', highlight: { background: bgHighlight, border: '#f59e0b' } },
+    font: { ...origFont, color: T.value.focusFont.color, strokeWidth: 3, strokeColor: T.value.focusFont.stroke },
     borderWidth: 5,
     size: Math.max(origSize, 28),
   }
 }
 
 function CORR_NODE() {
-  const { T } = useTheme()
   return {
-    color: { background: '#fffde7', border: '#fbbf24', highlight: { background: '#fff9c4', border: '#f59e0b' } },
-    font: { color: T.value.corrFont.color, strokeWidth: 2, strokeColor: T.value.corrFont.stroke },
+    color: { background: '#eff6ff', border: '#60a5fa', highlight: { background: '#dbeafe', border: '#3b82f6' } },
+    font: { color: '#1e40af', strokeWidth: 2, strokeColor: '#ffffff' },
     borderWidth: 3,
   }
 }
@@ -288,6 +321,9 @@ function applyMultiFocusVisuals() {
   if (!nodes || !edges) return
   const { midAge } = useAppState()
   const { corrReinforcingColor, corrConflictingColor } = useVisualSettings()
+
+  // Очищаем dropdown overlay — клик-фокус и dropdown-подсветка взаимоисключающие
+  dropdownCorrLines = []
 
   // Собираем все связанные ноды и рёбра со всех узлов в фокусе
   const allCorrelated = new Set<string>()
@@ -307,13 +343,14 @@ function applyMultiFocusVisuals() {
   nodes.forEach((n) => {
     if (n.hidden) return
     const nid = n.id as string
+    const orig = ORIG[nid]
+    if (!orig) return
     if (graphFocusSet.has(nid)) {
-      nu.push({ id: nid, ...FOCUS_NODE(ORIG[nid].size) })
+      nu.push({ id: nid, ...FOCUS_NODE(orig.size, orig.font, orig.color) })
     } else if (allCorrelated.has(nid)) {
       nu.push({ id: nid, ...CORR_NODE() })
     } else {
-      // Без димминга — возвращаем оригинальный цвет
-      nu.push({ id: nid, color: ORIG[nid].color, font: ORIG[nid].font, borderWidth: ORIG[nid].borderWidth, size: ORIG[nid].size })
+      nu.push({ id: nid, color: orig.color, font: orig.font, borderWidth: orig.borderWidth, size: orig.size })
     }
   })
   nodes.update(nu)
@@ -321,22 +358,25 @@ function applyMultiFocusVisuals() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const eu: any[] = []
   edges.forEach((e) => {
+    const origE = ORIG_EDGE[e.id]
+    if (!origE) return
     if (e.type === 'hierarchy') {
-      eu.push({ id: e.id, color: ORIG_EDGE[e.id].color, width: ORIG_EDGE[e.id].width })
+      eu.push({ id: e.id, color: origE.color, width: origE.width })
     } else if (e.type === 'correlation') {
       const corrInfo = allCorrEdgeMap.get(e.id as string)
       if (corrInfo) {
         const corrColor = corrInfo.type === 'reinforcing'
           ? { color: corrReinforcingColor.value, opacity: 0.9 }
           : { color: corrConflictingColor.value, opacity: 0.9 }
-        eu.push({ id: e.id, hidden: false, color: corrColor, width: 1 + corrInfo.strength * 4 })
+        eu.push({ id: e.id, hidden: false, color: corrColor, width: 5 + corrInfo.strength * 16 })
       } else {
-        eu.push({ id: e.id, color: ORIG_EDGE[e.id].color, width: ORIG_EDGE[e.id].width })
+        eu.push({ id: e.id, color: origE.color, width: origE.width })
       }
     }
   })
   edges.update(eu)
 
+  network?.redraw()
   return { correlated: allCorrelated.size }
 }
 
@@ -344,7 +384,6 @@ function applyFocus(nodeId: string) {
   if (!nodes || !edges) return
   const { currentFocus } = useAppState()
 
-  graphFocus = nodeId
   currentFocus.value = nodeId
   graphFocusSet.clear()
   graphFocusSet.add(nodeId)
@@ -354,7 +393,6 @@ function applyFocus(nodeId: string) {
 
 function addFocusNode(nodeId: string) {
   if (!nodes || !edges) return
-  graphFocus = nodeId
 
   // Toggle: повторный клик снимает выделение
   if (graphFocusSet.has(nodeId)) {
@@ -377,25 +415,20 @@ function resetGraphVisuals() {
   currentFocus.value = null
   currentSituation.value = null
   currentStrategy.value = null
-  graphFocus = null
   graphFocusSet.clear()
   resetExpansionState()
 
-  nodes.update(nodes.map((n) => ({
-    id: n.id,
-    color: ORIG[n.id].color,
-    font: ORIG[n.id].font,
-    borderWidth: ORIG[n.id].borderWidth,
-    size: ORIG[n.id].size,
-    hidden: ORIG[n.id].hidden,
-  })))
+  nodes.update(nodes.map((n) => {
+    const orig = ORIG[n.id]
+    if (!orig) return { id: n.id }
+    return { id: n.id, color: orig.color, font: orig.font, borderWidth: orig.borderWidth, size: orig.size, hidden: orig.hidden }
+  }))
 
-  edges.update(edges.map((e) => ({
-    id: e.id,
-    hidden: ORIG_EDGE[e.id].hidden,
-    color: ORIG_EDGE[e.id].color,
-    width: ORIG_EDGE[e.id].width,
-  })))
+  edges.update(edges.map((e) => {
+    const origE = ORIG_EDGE[e.id]
+    if (!origE) return { id: e.id }
+    return { id: e.id, hidden: origE.hidden, color: origE.color, width: origE.width }
+  }))
 }
 
 function clearFocusVisualsPreserveVisibility() {
@@ -404,25 +437,20 @@ function clearFocusVisualsPreserveVisibility() {
   currentFocus.value = null
   currentSituation.value = null
   currentStrategy.value = null
-  graphFocus = null
   graphFocusSet.clear()
 
-  nodes.update(nodes.map((n) => ({
-    id: n.id,
-    color: ORIG[n.id].color,
-    font: ORIG[n.id].font,
-    borderWidth: ORIG[n.id].borderWidth,
-    size: ORIG[n.id].size,
-  })))
+  nodes.update(nodes.map((n) => {
+    const orig = ORIG[n.id]
+    if (!orig) return { id: n.id }
+    return { id: n.id, color: orig.color, font: orig.font, borderWidth: orig.borderWidth, size: orig.size }
+  }))
 
-  // Восстановить стили edges (не трогая hidden для hierarchy)
-  edges.update(edges.map((e) => ({
-    id: e.id,
-    color: ORIG_EDGE[e.id].color,
-    width: ORIG_EDGE[e.id].width,
-  })))
+  edges.update(edges.map((e) => {
+    const origE = ORIG_EDGE[e.id]
+    if (!origE) return { id: e.id }
+    return { id: e.id, color: origE.color, width: origE.width }
+  }))
 
-  // Привести корреляции в правильное состояние
   if (correlationsVisible.value) {
     updateVisibleCorrelations()
   } else {
@@ -434,22 +462,19 @@ function clearFocusVisualsPreserveVisibility() {
 function clearGraphFocus() {
   if (!nodes || !edges) return
   const { correlationsVisible } = useAppState()
-  graphFocus = null
   graphFocusSet.clear()
 
-  nodes.update(nodes.map((n) => ({
-    id: n.id,
-    color: ORIG[n.id].color,
-    font: ORIG[n.id].font,
-    borderWidth: ORIG[n.id].borderWidth,
-    size: ORIG[n.id].size,
-  })))
+  nodes.update(nodes.map((n) => {
+    const orig = ORIG[n.id]
+    if (!orig) return { id: n.id }
+    return { id: n.id, color: orig.color, font: orig.font, borderWidth: orig.borderWidth, size: orig.size }
+  }))
 
-  edges.update(edges.map((e) => ({
-    id: e.id,
-    color: ORIG_EDGE[e.id].color,
-    width: ORIG_EDGE[e.id].width,
-  })))
+  edges.update(edges.map((e) => {
+    const origE = ORIG_EDGE[e.id]
+    if (!origE) return { id: e.id }
+    return { id: e.id, color: origE.color, width: origE.width }
+  }))
 
   if (correlationsVisible.value) {
     updateVisibleCorrelations()
@@ -460,7 +485,7 @@ function clearGraphFocus() {
 
 function updateCorrelationsForAge(age: number) {
   if (!nodes || !edges) return
-  if (graphFocusSet.size === 0) return
+  if (graphFocusSet.size === 0) return 0
 
   const allCorrelated = new Set<string>()
   const allCorrEdgeMap = new Map<string, { type: string; strength: number }>()
@@ -498,7 +523,7 @@ function updateCorrelationsForAge(age: number) {
       const corrColor = corrInfo.type === 'reinforcing'
         ? { color: rColor.value, opacity: 0.9 }
         : { color: cColor.value, opacity: 0.9 }
-      eu.push({ id: e.id, hidden: false, color: corrColor, width: 1 + corrInfo.strength * 4 })
+      eu.push({ id: e.id, hidden: false, color: corrColor, width: 5 + corrInfo.strength * 16 })
     } else {
       eu.push({ id: e.id, color: ORIG_EDGE[e.id].color, width: ORIG_EDGE[e.id].width })
     }
@@ -513,55 +538,73 @@ function rebuildForTheme() {
 
   const snap = snapshotExpansionState()
   resetExpansionState()
-  const nodesData = buildNodesData()
-  const edgesData = buildEdgesData()
 
-  // Update ORIG from new data
-  ORIG = {}
-  nodesData.forEach((n) => {
-    ORIG[n.id] = {
-      color: JSON.parse(JSON.stringify(n.color)),
-      font: JSON.parse(JSON.stringify(n.font)),
-      borderWidth: n.borderWidth,
-      size: n.size,
-      hidden: n.hidden,
+  // Сохраняем старые ORIG на случай ошибки
+  const prevORIG = ORIG
+  const prevORIG_EDGE = ORIG_EDGE
+
+  try {
+    const nodesData = buildNodesData()
+    const edgesData = buildEdgesData()
+
+    // Атомарное обновление ORIG
+    const newORIG: Record<string, OrigNodeSnapshot> = {}
+    nodesData.forEach((n) => {
+      newORIG[n.id] = {
+        color: JSON.parse(JSON.stringify(n.color)),
+        font: JSON.parse(JSON.stringify(n.font)),
+        borderWidth: n.borderWidth,
+        size: n.size,
+        hidden: n.hidden,
+      }
+    })
+    const newORIG_EDGE: Record<string, OrigEdgeSnapshot> = {}
+    edgesData.forEach((e) => {
+      newORIG_EDGE[e.id] = {
+        hidden: e.hidden,
+        color: JSON.parse(JSON.stringify(e.color)),
+        width: e.width,
+      }
+    })
+
+    // Присваиваем только после успешного построения
+    ORIG = newORIG
+    ORIG_EDGE = newORIG_EDGE
+
+    const { activeSelectedIds } = useAppState()
+
+    if (graphFocusSet.size > 0) {
+      const savedSet = new Set(graphFocusSet)
+      nodes.update(nodes.map((n) => {
+        const orig = ORIG[n.id]
+        if (!orig) return { id: n.id }
+        return { id: n.id, color: orig.color, font: orig.font, borderWidth: orig.borderWidth, size: orig.size, hidden: orig.hidden }
+      }))
+      edges.update(edges.map((e) => {
+        const origE = ORIG_EDGE[e.id]
+        if (!origE) return { id: e.id }
+        return { id: e.id, hidden: origE.hidden, color: origE.color, width: origE.width }
+      }))
+      graphFocusSet.clear()
+      savedSet.forEach(id => graphFocusSet.add(id))
+      applyMultiFocusVisuals()
+    } else {
+      nodes.update(nodesData.map((n) => ({ ...n })))
+      edges.update(edgesData.map((e) => ({ ...e })))
     }
-  })
-  ORIG_EDGE = {}
-  edgesData.forEach((e) => {
-    ORIG_EDGE[e.id] = {
-      hidden: e.hidden,
-      color: JSON.parse(JSON.stringify(e.color)),
-      width: e.width,
+
+    if (snap.l1.length || snap.l2.length) {
+      restoreExpansionState(snap)
     }
-  })
 
-  if (graphFocusSet.size > 0) {
-    const savedSet = new Set(graphFocusSet)
-    nodes.update(nodes.map((n) => ({
-      id: n.id,
-      color: ORIG[n.id].color,
-      font: ORIG[n.id].font,
-      borderWidth: ORIG[n.id].borderWidth,
-      size: ORIG[n.id].size,
-      hidden: ORIG[n.id].hidden,
-    })))
-    edges.update(edges.map((e) => ({
-      id: e.id,
-      hidden: ORIG_EDGE[e.id].hidden,
-      color: ORIG_EDGE[e.id].color,
-      width: ORIG_EDGE[e.id].width,
-    })))
-    graphFocusSet.clear()
-    savedSet.forEach(id => graphFocusSet.add(id))
-    applyMultiFocusVisuals()
-  } else {
-    nodes.update(nodesData.map((n) => ({ ...n })))
-    edges.update(edgesData.map((e) => ({ ...e })))
-  }
-
-  if (snap.l1.length || snap.l2.length) {
-    restoreExpansionState(snap)
+    if (activeSelectedIds.value.size > 0) {
+      applyDropdownHighlight(activeSelectedIds.value)
+    }
+  } catch (err) {
+    // Откатываем ORIG к предыдущему состоянию
+    ORIG = prevORIG
+    ORIG_EDGE = prevORIG_EDGE
+    console.error('[useNetwork] rebuildForTheme failed:', err)
   }
 }
 
@@ -571,6 +614,139 @@ function getNodeData(nodeId: string) {
 
 function unselectAll() {
   network?.unselectAll()
+}
+
+// ── DROPDOWN HIGHLIGHT ────────────────────────────────────────
+
+function applyDropdownHighlight(selectedIds: Set<string>, corrSourceId: string | null = null) {
+  if (!nodes || !edges) return
+  const { midAge } = useAppState()
+  const { corrReinforcingColor, corrConflictingColor } = useVisualSettings()
+
+  // Очищаем предыдущий overlay
+  dropdownCorrLines = []
+
+  // Авто-раскрытие L1 для скрытых выбранных L2
+  for (const nodeId of selectedIds) {
+    const node = nodes.get(nodeId)
+    if (node && node.hidden && node.parent) {
+      expandL1(node.parent)
+    }
+  }
+
+  // Источник корреляций: только активный аттрактор (corrSourceId) или никто
+  const sourcesToDraw = corrSourceId ? new Set([corrSourceId]) : new Set<string>()
+
+  // Собираем корреляции от sourcesToDraw
+  const allCorrEdgeIds = new Set<string>()
+  const allCorrEdges = new Map<string, { type: string; strength: number; from: string; to: string }>()
+  for (const nodeId of sourcesToDraw) {
+    getCorrEdgesForNode(nodeId, midAge.value).forEach(ce => {
+      if (allCorrEdges.has(ce.corrId)) return
+      const corr = CORRELATIONS.find(c => c.id === ce.corrId)
+      if (!corr) return
+      allCorrEdges.set(ce.corrId, { type: ce.type, strength: ce.strength, from: corr.from, to: corr.to })
+      allCorrEdgeIds.add(ce.corrId)
+    })
+  }
+
+  // Авто-раскрытие L1 для скоррелированных L2, которые скрыты
+  allCorrEdges.forEach((info) => {
+    for (const nid of [info.from, info.to]) {
+      if (selectedIds.has(nid)) continue
+      const node = nodes!.get(nid)
+      if (node && node.hidden && node.parent) {
+        expandL1(node.parent)
+      }
+    }
+  })
+
+  // Подсветка нод
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const nu: any[] = []
+  nodes.forEach((n) => {
+    if (n.hidden) return
+    const nid = n.id as string
+    const orig = ORIG[nid]
+    if (!orig) return
+    if (selectedIds.has(nid)) {
+      nu.push({ id: nid, ...FOCUS_NODE(orig.size, orig.font, orig.color) })
+    } else {
+      nu.push({ id: nid, color: orig.color, font: orig.font, borderWidth: orig.borderWidth, size: orig.size })
+    }
+  })
+  nodes.update(nu)
+
+  // Рёбра: парные корреляции скрываем в DataSet (рисуем через afterDrawing поверх нод)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const eu: any[] = []
+  edges.forEach((e) => {
+    const origE = ORIG_EDGE[e.id]
+    if (!origE) return
+    if (e.type !== 'correlation') {
+      eu.push({ id: e.id, color: origE.color, width: origE.width })
+      return
+    }
+    const eid = e.id as string
+    if (allCorrEdgeIds.has(eid)) {
+      eu.push({ id: e.id, hidden: true, label: undefined, font: undefined })
+    } else {
+      eu.push({ id: e.id, color: origE.color, width: origE.width, label: undefined, font: undefined })
+    }
+  })
+  edges.update(eu)
+
+  // Заполняем overlay для afterDrawing (все корреляции от выбранных нод)
+  allCorrEdges.forEach((corrInfo, corrId) => {
+    const corr = CORRELATIONS.find(c => c.id === corrId)
+    if (!corr) return
+    const isReinforcing = corrInfo.type === 'reinforcing'
+    dropdownCorrLines.push({
+      from: corr.from,
+      to: corr.to,
+      color: isReinforcing ? corrReinforcingColor.value : corrConflictingColor.value,
+      width: 5 + corrInfo.strength * 16,
+      label: (corrInfo.strength * 100).toFixed(0) + '%',
+      labelStroke: isReinforcing ? '#166534' : '#991b1b',
+    })
+  })
+
+  network?.redraw()
+}
+
+function clearDropdownHighlight() {
+  if (!nodes || !edges) return
+  const { correlationsVisible } = useAppState()
+
+  dropdownCorrLines = []
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const nu: any[] = []
+  nodes.forEach((n) => {
+    if (n.hidden) return
+    const nid = n.id as string
+    const orig = ORIG[nid]
+    if (!orig) return
+    nu.push({ id: nid, color: orig.color, font: orig.font, borderWidth: orig.borderWidth, size: orig.size })
+  })
+  nodes.update(nu)
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const eu: any[] = []
+  edges.forEach((e) => {
+    const origE = ORIG_EDGE[e.id]
+    if (!origE) return
+    eu.push({ id: e.id, hidden: origE.hidden, color: origE.color, width: origE.width, label: undefined, font: undefined })
+  })
+  edges.update(eu)
+
+  network?.redraw()
+
+  if (correlationsVisible.value) {
+    updateVisibleCorrelations()
+  } else {
+    hideAllCorrelations()
+  }
 }
 
 // ── INIT ────────────────────────────────────────────────────
@@ -603,14 +779,13 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
           damping: 0.09,
           avoidOverlap: 0.3,
         },
-        stabilization: { enabled: true, iterations: 1500, fit: true },
+        stabilization: { enabled: true, iterations: 500, fit: true },
         maxVelocity: 30,
         minVelocity: 0.75,
         timestep: 0.5,
       },
       interaction: {
-        hover: true,
-        tooltipDelay: 300,
+        hover: false,
         zoomView: true,
         dragView: true,
         dragNodes: true,
@@ -622,8 +797,54 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
 
     network = new Network(containerRef.value, { nodes: nodes as any, edges: edges as any }, options)
 
+    // Рисуем dropdown-корреляции поверх всего (nodes + edges)
+    network.on('afterDrawing', (ctx: CanvasRenderingContext2D) => {
+      if (!dropdownCorrLines.length || !network) return
+      ctx.save()
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      for (const line of dropdownCorrLines) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const fromPos = (network as any).getPosition(line.from)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const toPos = (network as any).getPosition(line.to)
+          // Квадратичный безье — воспроизводим curvedCW roundness:0.15 из vis-network
+          const x1 = fromPos.x, y1 = fromPos.y
+          const x2 = toPos.x,   y2 = toPos.y
+          const dx = x2 - x1, dy = y2 - y1
+          const ROUNDNESS = 0.15
+          // Контрольная точка: середина + перпендикуляр по часовой стрелке
+          const cpx = (x1 + x2) / 2 + dy * ROUNDNESS
+          const cpy = (y1 + y2) / 2 - dx * ROUNDNESS
+          ctx.beginPath()
+          ctx.moveTo(x1, y1)
+          ctx.quadraticCurveTo(cpx, cpy, x2, y2)
+          ctx.globalAlpha = 0.95
+          ctx.strokeStyle = line.color
+          ctx.lineWidth = line.width
+          ctx.stroke()
+          if (line.label) {
+            // Середина квадратичного безье при t=0.5: (p1 + 2*cp + p2) / 4
+            const lx = (x1 + 2 * cpx + x2) / 4
+            const ly = (y1 + 2 * cpy + y2) / 4
+            ctx.font = 'bold 14px Arial'
+            ctx.textAlign = 'center'
+            ctx.textBaseline = 'middle'
+            ctx.globalAlpha = 1
+            ctx.lineWidth = 5
+            ctx.strokeStyle = line.labelStroke
+            ctx.strokeText(line.label, lx, ly)
+            ctx.fillStyle = '#ffffff'
+            ctx.fillText(line.label, lx, ly)
+          }
+        } catch (_) { /* нода может быть скрыта */ }
+      }
+      ctx.restore()
+    })
+
     network.once('stabilized', () => {
-      network?.fit({ animation: { duration: 800, easingFunction: 'easeInOutQuad' } })
+      network?.fit({ animation: { duration: 200, easingFunction: 'easeInOutQuad' } })
       // Фиксируем все ноды после первоначальной стабилизации
       if (nodes) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -637,10 +858,42 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
       }
     })
 
-    // Фиксируем ноду в точке отпускания, чтобы она не продолжала двигаться
+    // ── DRAG: start → непрерывный drag → end ──────────────────
+    // Паттерн: unfix только перетаскиваемую ноду, дети сдвигаются
+    // непрерывно на каждом тике drag (без телепортации в dragEnd)
+
+    network.on('dragStart', (params: any) => {
+      const pointer = params.pointer?.DOM
+      dragStartPointer = pointer ? { x: pointer.x, y: pointer.y } : null
+      isDragging = false
+      if (!params.nodes.length || !nodes || !network) return
+      const nodeId = params.nodes[0]
+      draggedNodeId = nodeId
+      const pos = network.getPositions([nodeId])
+      lastDragNodePos = pos[nodeId] ? { x: pos[nodeId].x, y: pos[nodeId].y } : null
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      nodes.update([{ id: nodeId, fixed: { x: false, y: false } } as any])
+    })
+
+    // Непрерывный сдвиг детей во время перетаскивания (плавное движение)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(network as any).on('drag', (params: any) => {
+      if (!params.nodes.length || !nodes || !network || !lastDragNodePos || !draggedNodeId) return
+      const nodeId = draggedNodeId
+      const currentPos = network.getPositions([nodeId])
+      if (!currentPos[nodeId]) return
+
+      const dx = currentPos[nodeId].x - lastDragNodePos.x
+      const dy = currentPos[nodeId].y - lastDragNodePos.y
+      lastDragNodePos = { x: currentPos[nodeId].x, y: currentPos[nodeId].y }
+
+      if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+        moveChildrenByDelta(nodeId, dx, dy)
+      }
+    })
+
     network.on('dragEnd', (params: any) => {
       if (!params.nodes.length || !nodes || !network) return
-      const positions = network.getPositions(params.nodes)
 
       // Определяем по координатам МЫШИ (не нода!), был ли реальный drag
       const endPointer = params.pointer?.DOM
@@ -652,27 +905,19 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
       }
       dragStartPointer = null
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const updates: any[] = params.nodes.map((id: string) => ({
-        id,
-        x: positions[id].x,
-        y: positions[id].y,
-        fixed: { x: true, y: true },
-      }))
-      nodes.update(updates)
+      // Фиксируем перетаскиваемую ноду в текущей позиции
+      const nodeId = params.nodes[0]
+      const endPos = network.getPositions([nodeId])
+      if (endPos[nodeId]) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        nodes.update([{ id: nodeId, x: endPos[nodeId].x, y: endPos[nodeId].y, fixed: { x: true, y: true } } as any])
+      }
+
+      lastDragNodePos = null
+      draggedNodeId = null
+
       // Сброс isDragging с задержкой — selectNode приходит после dragEnd
       setTimeout(() => { isDragging = false }, 50)
-    })
-
-    // Снимаем фиксацию перед перетаскиванием и запоминаем позицию указателя мыши
-    network.on('dragStart', (params: any) => {
-      const pointer = params.pointer?.DOM
-      dragStartPointer = pointer ? { x: pointer.x, y: pointer.y } : null
-      isDragging = false
-      if (!params.nodes.length || !nodes) return
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const updates: any[] = params.nodes.map((id: string) => ({ id, fixed: { x: false, y: false } }))
-      nodes.update(updates)
     })
   }
 
@@ -683,6 +928,8 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
       const nodeId = params.nodes[0]
       const node = nodes.get(nodeId) as unknown as VisNodeData | null
       if (node) callback(nodeId, node.level)
+      // Сбрасываем selection vis-network чтобы повторный клик на ту же ноду снова файрил selectNode
+      setTimeout(() => network?.unselectAll(), 0)
     })
   }
 
@@ -702,10 +949,12 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
     edges = null
     ORIG = {}
     ORIG_EDGE = {}
+    dropdownCorrLines = []
     expandedL1.clear()
     expandedL2.clear()
-    graphFocus = null
     graphFocusSet.clear()
+    lastDragNodePos = null
+    draggedNodeId = null
   })
 
   const { settingsVersion } = useVisualSettings()
@@ -732,6 +981,8 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
     unselectAll,
     updateVisibleCorrelations,
     hideAllCorrelations,
+    applyDropdownHighlight,
+    clearDropdownHighlight,
     onSelectNode,
     onClickEmpty,
   }

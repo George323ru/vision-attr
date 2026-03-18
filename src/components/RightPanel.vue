@@ -1,6 +1,7 @@
 <template>
   <div class="right-panel">
     <DemographicsPanel @age-change="$emit('age-change')" />
+    <AttractorDropdowns />
     <div class="right-panel-header">
       <div class="rp-header-row">
         <h2>{{ headerTitle }}</h2>
@@ -46,6 +47,7 @@ import { SITUATIONS } from '@/data/situations'
 import { useAppState } from '@/composables/useAppState'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 import DemographicsPanel from './DemographicsPanel.vue'
+import AttractorDropdowns from './AttractorDropdowns.vue'
 import EmptyPanel from './panels/EmptyPanel.vue'
 import AllSituationsPanel from './panels/AllSituationsPanel.vue'
 import AttractorPanel from './panels/AttractorPanel.vue'

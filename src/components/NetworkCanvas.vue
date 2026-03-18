@@ -11,6 +11,7 @@ const networkApi = useNetwork(containerRef)
 
 defineExpose({
   applyFocus: networkApi.applyFocus,
+  addFocusNode: networkApi.addFocusNode,
   resetGraphVisuals: networkApi.resetGraphVisuals,
   clearFocusVisualsPreserveVisibility: networkApi.clearFocusVisualsPreserveVisibility,
   clearGraphFocus: networkApi.clearGraphFocus,
@@ -28,6 +29,8 @@ defineExpose({
   unselectAll: networkApi.unselectAll,
   updateVisibleCorrelations: networkApi.updateVisibleCorrelations,
   hideAllCorrelations: networkApi.hideAllCorrelations,
+  applyDropdownHighlight: networkApi.applyDropdownHighlight,
+  clearDropdownHighlight: networkApi.clearDropdownHighlight,
   onSelectNode: networkApi.onSelectNode,
   onClickEmpty: networkApi.onClickEmpty,
 })

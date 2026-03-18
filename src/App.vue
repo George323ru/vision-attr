@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, watch, onMounted, nextTick } from 'vue'
 import AppHeader from '@/components/AppHeader.vue'
 import GraphZone from '@/components/GraphZone.vue'
 import RightPanel from '@/components/RightPanel.vue'
@@ -41,6 +41,9 @@ const {
   currentStrategy,
   expansionMode,
   l3NodeId,
+  selectedAttractors,
+  activeSelectedIds,
+  highlightedAttractorIdx,
 } = useAppState()
 
 const loading = ref(true)
@@ -51,6 +54,19 @@ const situationsSnapshot = ref<{ l1: string[]; l2: string[] } | null>(null)
 
 function getNetwork() {
   return graphZoneRef.value?.networkRef
+}
+
+function applyHighlightFromState() {
+  const net = getNetwork()
+  if (!net) return
+  const ids = activeSelectedIds.value
+  if (ids.size === 0) {
+    net.clearDropdownHighlight()
+    return
+  }
+  const idx = highlightedAttractorIdx.value
+  const corrSourceId = (idx !== null ? selectedAttractors.value[idx] : null) ?? null
+  net.applyDropdownHighlight(ids, corrSourceId)
 }
 
 onMounted(async () => {
@@ -85,6 +101,8 @@ onMounted(async () => {
         currentFocus.value = nodeId
       }
     } else if (level === 3) {
+      currentSituation.value = null
+      currentStrategy.value = null
       l3NodeId.value = nodeId
       setTimeout(() => net.unselectAll(), 0)
     }
@@ -98,10 +116,18 @@ onMounted(async () => {
         net.restoreExpansionState(backSnapshot.value)
         backSnapshot.value = null
       }
+      applyHighlightFromState()
     } else {
       onResetDefault()
     }
   })
+
+  // Дефолтный визуал при загрузке
+  expansionMode.value = 'allL3'
+  net.expandAllL3()
+  net.updateVisibleCorrelations()
+  applyHighlightFromState()
+  currentSituation.value = { attrId: 'l2_byt_03', sitId: 's07' }
 })
 
 function showAttractorPanel(nodeId: string) {
@@ -124,6 +150,7 @@ function onResetDefault() {
   net?.collapseAllL2()
   net?.resetGraphVisuals()
   resetRightPanel()
+  applyHighlightFromState()
 }
 
 function onToggleSituations() {
@@ -152,6 +179,7 @@ function onShowAllSituations() {
   currentStrategy.value = null
   l3NodeId.value = null
   net?.resetGraphVisuals()
+  applyHighlightFromState()
 }
 
 function onSelectSituation(attrId: string, sitId: string) {
@@ -168,6 +196,7 @@ function onBackToAttractor(attrId: string) {
   } else {
     const net = getNetwork()
     net?.clearGraphFocus()
+    applyHighlightFromState()
     currentSituation.value = null
     currentStrategy.value = null
     currentFocus.value = attrId
@@ -204,6 +233,8 @@ function onChangeExpansionMode(mode: 'click' | 'allL2' | 'allL3') {
 
   if (mode === 'allL2') net.expandAllL2()
   else if (mode === 'allL3') net.expandAllL3()
+
+  applyHighlightFromState()
 }
 
 function onClosePanel() {
@@ -214,15 +245,41 @@ function onClosePanel() {
       net.restoreExpansionState(backSnapshot.value)
       backSnapshot.value = null
     }
+    applyHighlightFromState()
   }
   resetRightPanel()
 }
 
 function onAgeChange() {
   const net = getNetwork()
-  const count = net?.updateCorrelationsForAge(midAge.value)
-  if (count !== undefined) graphZoneRef.value?.setFocusCount(count)
+  if (activeSelectedIds.value.size > 0) {
+    applyHighlightFromState()
+  } else {
+    const count = net?.updateCorrelationsForAge(midAge.value)
+    if (count !== undefined) graphZoneRef.value?.setFocusCount(count)
+  }
 }
+
+// Единый watcher: dropdown-выбор + переключение кнопки корреляций
+// Объединены чтобы избежать race condition при одновременном срабатывании
+watch(
+  [selectedAttractors, highlightedAttractorIdx],
+  () => {
+    if (loading.value) return
+    const net = getNetwork()
+    if (!net) return
+    if (activeSelectedIds.value.size > 0) {
+      net.clearGraphFocus()
+      currentFocus.value = null
+      currentSituation.value = null
+      l3NodeId.value = null
+      applyHighlightFromState()
+    } else {
+      net.clearDropdownHighlight()
+    }
+  },
+  { deep: true },
+)
 </script>
 
 <style scoped>
@@ -237,7 +294,7 @@ function onAgeChange() {
 .main-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 1fr 456px;
   overflow: hidden;
 }
 </style>
