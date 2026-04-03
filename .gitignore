@@ -6,6 +6,5 @@ dist/
 
 # Data files
 .data/
-data/
-public/data/
+/data/
 *.zip
