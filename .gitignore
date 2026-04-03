@@ -3,3 +3,9 @@ dist/
 *.local
 .DS_Store
 *.tsbuildinfo
+
+# Data files
+.data/
+data/
+public/data/
+*.zip
