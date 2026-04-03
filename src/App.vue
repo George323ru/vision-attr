@@ -30,8 +30,10 @@ import RightPanel from '@/components/RightPanel.vue'
 import VisualSettingsPanel from '@/components/VisualSettingsPanel.vue'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 import { useAppState } from '@/composables/useAppState'
+import { useMarkupStore } from '@/composables/useMarkupStore'
 
 const { loadData } = useAttractorStore()
+const { loadMarkupData } = useMarkupStore()
 const {
   midAge,
   correlationsVisible,
@@ -70,7 +72,7 @@ function applyHighlightFromState() {
 }
 
 onMounted(async () => {
-  await loadData()
+  await Promise.all([loadData(), loadMarkupData()])
   loading.value = false
 
   await nextTick()

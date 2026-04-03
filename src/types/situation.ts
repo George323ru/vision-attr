@@ -17,3 +17,19 @@ export interface Prediction {
   name: string
   probability: number
 }
+
+export interface MarkupStrategy {
+  name: string
+  frequency: number
+  respondents: number
+  count: number
+}
+
+export interface MarkupSituation {
+  id: string
+  title: string
+  attractorL2: string
+  strategies: MarkupStrategy[]
+  totalRespondents: number
+  linkedSituationId?: string
+}

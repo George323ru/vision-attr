@@ -27,6 +27,27 @@
       />
     </div>
 
+    <div v-if="markup" class="markup-section">
+      <div class="markup-header">
+        <span class="markup-title">Данные разметки</span>
+        <span class="markup-meta">{{ markup.totalRespondents }} респондентов</span>
+      </div>
+      <div class="markup-strategies">
+        <div v-for="s in markup.strategies" :key="s.name" class="markup-bar-item">
+          <div class="markup-bar-label">
+            <span>{{ s.name }}</span>
+            <span class="markup-pct">{{ Math.round(s.frequency * 100) }}%</span>
+          </div>
+          <div class="markup-bar-track">
+            <div
+              class="markup-bar-fill"
+              :style="{ width: (s.frequency * 100) + '%' }"
+            ></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <button class="btn-back" @click="onBack">
       {{ fromAllSituations ? '← Все ситуации' : '← Назад к ситуациям' }}
     </button>
@@ -39,6 +60,7 @@ import { SITUATIONS } from '@/data/situations'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 import { useAppState } from '@/composables/useAppState'
 import { predictBehavior } from '@/composables/usePrediction'
+import { useMarkupStore } from '@/composables/useMarkupStore'
 import StrategyBar from '@/components/StrategyBar.vue'
 
 const props = defineProps<{
@@ -55,10 +77,13 @@ const emit = defineEmits<{
 const { getAttractor } = useAttractorStore()
 const { midAge, currentStrategy } = useAppState()
 
+const { getMarkupForSituation } = useMarkupStore()
+
 const barColors = ['var(--bar-positive)', 'var(--bar-neutral)', 'var(--bar-negative)', 'var(--text-muted)']
 
 const attr = computed(() => getAttractor(props.attrId))
 const sit = computed(() => SITUATIONS.find(s => s.id === props.sitId))
+const markup = computed(() => getMarkupForSituation(props.sitId))
 
 const predictions = computed(() =>
   predictBehavior(props.sitId, midAge.value)
@@ -122,4 +147,54 @@ function onBack() {
   transition: background 0.2s;
 }
 .btn-back:hover { background: var(--card-hover); }
+
+.markup-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--card-border);
+}
+.markup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.markup-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.markup-meta {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.markup-bar-item {
+  margin-bottom: 8px;
+}
+.markup-bar-label {
+  font-size: 11px;
+  color: var(--text);
+  margin-bottom: 3px;
+  display: flex;
+  justify-content: space-between;
+}
+.markup-pct {
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 11px;
+}
+.markup-bar-track {
+  height: 18px;
+  background: var(--bar-bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.markup-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+  opacity: 0.7;
+  transition: width 0.4s ease;
+  min-width: 2px;
+}
 </style>
