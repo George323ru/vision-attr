@@ -11,7 +11,8 @@
 и средними оценками аттракторов по каждой стратегии.
 
 ⚠️  Исходные CSV содержат индивидуальные данные. Выходной JSON содержит
-    только агрегаты (средние, проценты) — индивидуальные данные не раскрываются.
+    только агрегаты и анонимизированные записи — точный возраст заменяется
+    на возрастную группу, ID обезличены (P001, P002, …).
 """
 
 import csv
@@ -439,11 +440,16 @@ def build_respondents(
         if not strats:
             continue
 
+        # Анонимизация: возраст → возрастная группа
+        age_group = ''
+        if demo.age is not None:
+            age_group = calc_age_group(demo.age) or ''
+
         seq += 1
         result.append({
             'id': f'P{seq:03d}',
             'gender': gender,
-            'age': demo.age,
+            'ageGroup': age_group,
             'maritalStatus': marital,
             'childrenCount': demo.children_count,
             'attractors': attractors,

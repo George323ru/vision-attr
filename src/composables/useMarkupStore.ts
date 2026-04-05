@@ -7,11 +7,19 @@ const loaded = ref(false)
 
 async function loadMarkupData(): Promise<void> {
   if (loaded.value) return
-  const resp = await fetch('./data/markup.json')
-  const data: MarkupData = await resp.json()
-  markupSituations.value = data.situations
-  respondents.value = data.respondents
-  loaded.value = true
+  try {
+    const resp = await fetch('./data/markup.json')
+    if (!resp.ok) {
+      console.error(`Ошибка загрузки markup.json: ${resp.status} ${resp.statusText}`)
+      return
+    }
+    const data: MarkupData = await resp.json()
+    markupSituations.value = data.situations
+    respondents.value = data.respondents ?? []
+    loaded.value = true
+  } catch (err) {
+    console.error('Не удалось загрузить markup.json:', err)
+  }
 }
 
 function getMarkupForSituation(situationId: string): MarkupSituation | null {

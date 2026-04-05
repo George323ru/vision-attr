@@ -9,8 +9,22 @@ interface DemoFilter {
   childrenCount: string
 }
 
+const AGE_GROUP_RANGES: Record<string, [number, number]> = {
+  '18-25': [18, 25],
+  '26-35': [26, 35],
+  '36-45': [36, 45],
+  '46-55': [46, 55],
+  '56+': [56, 200],
+}
+
+function ageGroupOverlaps(group: string, min: number, max: number): boolean {
+  const range = AGE_GROUP_RANGES[group]
+  if (!range) return true
+  return range[0] <= max && range[1] >= min
+}
+
 function matchesFilter(r: RespondentRecord, f: DemoFilter): boolean {
-  if (r.age !== null && (r.age < f.ageMin || r.age > f.ageMax)) return false
+  if (r.ageGroup && !ageGroupOverlaps(r.ageGroup, f.ageMin, f.ageMax)) return false
   if (f.gender !== 'any' && r.gender !== f.gender) return false
   if (f.maritalStatus !== 'any' && r.maritalStatus !== f.maritalStatus) return false
   if (f.childrenCount !== 'any') {

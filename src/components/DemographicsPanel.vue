@@ -21,7 +21,12 @@
     <!-- Gender -->
     <div class="demo-section">
       <div class="demo-label">Пол</div>
-      <select v-model="gender" class="demo-select" aria-label="Выберите пол">
+      <select
+        :value="gender"
+        class="demo-select"
+        aria-label="Выберите пол"
+        @change="gender = ($event.target as HTMLSelectElement).value as typeof gender"
+      >
         <option value="any">Любой</option>
         <option value="male">Мужской</option>
         <option value="female">Женский</option>
@@ -31,7 +36,12 @@
     <!-- Marital status -->
     <div class="demo-section">
       <div class="demo-label">Семейное положение</div>
-      <select v-model="maritalStatus" class="demo-select" aria-label="Семейное положение">
+      <select
+        :value="maritalStatus"
+        class="demo-select"
+        aria-label="Семейное положение"
+        @change="maritalStatus = ($event.target as HTMLSelectElement).value as typeof maritalStatus"
+      >
         <option value="any">Любое</option>
         <option value="married">В браке</option>
         <option value="not_married">Не в браке</option>
@@ -44,7 +54,12 @@
     <!-- Children -->
     <div class="demo-section">
       <div class="demo-label">Дети</div>
-      <select v-model="childrenCount" class="demo-select" aria-label="Количество детей">
+      <select
+        :value="childrenCount"
+        class="demo-select"
+        aria-label="Количество детей"
+        @change="childrenCount = ($event.target as HTMLSelectElement).value"
+      >
         <option value="any">Не важно</option>
         <option value="0">Нет детей</option>
         <option value="1">1 ребёнок</option>

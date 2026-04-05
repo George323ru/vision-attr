@@ -53,7 +53,7 @@ export interface MarkupSituation {
 export interface RespondentRecord {
   id: string
   gender: 'male' | 'female'
-  age: number | null
+  ageGroup: string
   maritalStatus: string
   childrenCount: number
   attractors: Record<string, number>

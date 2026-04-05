@@ -31,7 +31,7 @@
           v-for="c in relatedCorrelations"
           :key="c.id"
           class="corr-item clickable"
-          @click="currentFocus = c.otherId"
+          @click="pushNavState(); currentFocus = c.otherId"
         >
           <span class="corr-dot" :class="c.type"></span>
           <span class="corr-name">{{ c.otherLabel }}</span>
@@ -69,7 +69,7 @@ const props = defineProps<{ nodeId: string }>()
 defineEmits<{ 'select-situation': [attrId: string, sitId: string] }>()
 
 const { attractors, domains, getAttractor } = useAttractorStore()
-const { l3NodeId, currentFocus, midAge } = useAppState()
+const { l3NodeId, currentFocus, midAge, pushNavState } = useAppState()
 const { getMarkupForSituation } = useMarkupStore()
 
 function hasMarkup(sitId: string): boolean {

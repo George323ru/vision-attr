@@ -10,6 +10,11 @@ import { getCorrelatedL2Ids, getCorrEdgesForNode } from './useCorrelations'
 import { nc, nodeFont, nodeMass, wrapLabel } from '@/utils/nodeStyles'
 import { hierarchyEdge, correlationEdge } from '@/utils/edgeStyles'
 import { useVisualSettings } from './useVisualSettings'
+import { computeInitialPositions } from './useNetworkLayout'
+import {
+  startBreatheAnimation, stopBreatheAnimation, updateBreatheBase,
+  setBreatheBasePositions, getBreatheBasePositions, resetBreatheState,
+} from './useNetworkBreathe'
 
 const expandedL1 = new Set<string>()
 const expandedL2 = new Set<string>()
@@ -35,109 +40,6 @@ interface DropdownCorrLine {
   labelStroke: string
 }
 let dropdownCorrLines: DropdownCorrLine[] = []
-
-// «Дыхание» — плавные микро-колебания нод
-let breatheAnimId: number | null = null
-let breatheBasePositions: Record<string, { x: number; y: number }> = {}
-const BREATHE_AMPLITUDE = 1.8  // px макс. смещение
-const BREATHE_SPEED = 0.0006   // скорость колебания
-
-function startBreatheAnimation() {
-  stopBreatheAnimation()
-  // Каждая нода получает уникальную фазу для естественного вида
-  const phases: Record<string, { px: number; py: number }> = {}
-  for (const id of Object.keys(breatheBasePositions)) {
-    phases[id] = { px: Math.random() * Math.PI * 2, py: Math.random() * Math.PI * 2 }
-  }
-
-  function animate(time: number) {
-    if (!nodes || !network) return
-    for (const [id, base] of Object.entries(breatheBasePositions)) {
-      const ph = phases[id]
-      if (!ph) continue
-      const dx = Math.sin(time * BREATHE_SPEED + ph.px) * BREATHE_AMPLITUDE
-      const dy = Math.cos(time * BREATHE_SPEED * 0.7 + ph.py) * BREATHE_AMPLITUDE
-      try {
-        network!.moveNode(id, base.x + dx, base.y + dy)
-      } catch (_) { /* нода может быть скрыта */ }
-    }
-    breatheAnimId = requestAnimationFrame(animate)
-  }
-
-  breatheAnimId = requestAnimationFrame(animate)
-}
-
-function stopBreatheAnimation() {
-  if (breatheAnimId !== null) {
-    cancelAnimationFrame(breatheAnimId)
-    breatheAnimId = null
-  }
-}
-
-function updateBreatheBase(nodeId: string, x: number, y: number) {
-  breatheBasePositions[nodeId] = { x, y }
-}
-
-function computeInitialPositions(attractors: Attractor[]): Record<string, { x: number; y: number }> {
-  const positions: Record<string, { x: number; y: number }> = {}
-
-  // L1 — равномерно по кругу
-  const l1Nodes = attractors.filter(a => a.level === 1)
-  const L1_RADIUS = 4000
-  l1Nodes.forEach((a, i) => {
-    const angle = (2 * Math.PI * i) / l1Nodes.length - Math.PI / 2
-    positions[a.id] = { x: Math.cos(angle) * L1_RADIUS, y: Math.sin(angle) * L1_RADIUS }
-  })
-
-  // L2 — веером наружу от центра (в секторе домена, не по кругу вокруг L1)
-  const L2_RADIUS = 700
-  const SECTOR_SPAN = (2 * Math.PI / l1Nodes.length) * 0.6 // 60% сектора домена
-  const childrenOfL1: Record<string, Attractor[]> = {}
-  attractors.filter(a => a.level === 2 && a.parent).forEach(a => {
-    if (!childrenOfL1[a.parent!]) childrenOfL1[a.parent!] = []
-    childrenOfL1[a.parent!].push(a)
-  })
-  for (const [parentId, children] of Object.entries(childrenOfL1)) {
-    const parentPos = positions[parentId]
-    if (!parentPos) continue
-    // Угол домена (от центра к L1)
-    const domainAngle = Math.atan2(parentPos.y, parentPos.x)
-    children.forEach((a, i) => {
-      // Распределяем L2 веером в секторе домена
-      const t = children.length === 1 ? 0 : (i / (children.length - 1) - 0.5)
-      const angle = domainAngle + t * SECTOR_SPAN
-      positions[a.id] = {
-        x: parentPos.x + Math.cos(angle) * L2_RADIUS,
-        y: parentPos.y + Math.sin(angle) * L2_RADIUS,
-      }
-    })
-  }
-
-  // L3 — веером наружу от L2 (в направлении от центра)
-  const L3_RADIUS = 200
-  const L3_SPAN = SECTOR_SPAN * 0.4
-  const childrenOfL2: Record<string, Attractor[]> = {}
-  attractors.filter(a => a.level === 3 && a.parent).forEach(a => {
-    if (!childrenOfL2[a.parent!]) childrenOfL2[a.parent!] = []
-    childrenOfL2[a.parent!].push(a)
-  })
-  for (const [parentId, children] of Object.entries(childrenOfL2)) {
-    const parentPos = positions[parentId]
-    if (!parentPos) continue
-    children.forEach((a, i) => {
-      // L3 веером наружу от L2 (в направлении от центра)
-      const l2Angle = Math.atan2(parentPos.y, parentPos.x)
-      const t = children.length === 1 ? 0 : (i / (children.length - 1) - 0.5)
-      const angle = l2Angle + t * L3_SPAN
-      positions[a.id] = {
-        x: parentPos.x + Math.cos(angle) * L3_RADIUS,
-        y: parentPos.y + Math.sin(angle) * L3_RADIUS,
-      }
-    })
-  }
-
-  return positions
-}
 
 function buildNodesData() {
   const { domains, attractors } = useAttractorStore()
@@ -969,16 +871,17 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const positions = network!.getPositions()
         const updates: any[] = []
-        breatheBasePositions = {}
+        const basePositions: Record<string, { x: number; y: number }> = {}
         nodes.forEach((n) => {
           const pos = positions[n.id as string]
           if (pos) {
             updates.push({ id: n.id, x: pos.x, y: pos.y, fixed: { x: true, y: true } })
-            breatheBasePositions[n.id as string] = { x: pos.x, y: pos.y }
+            basePositions[n.id as string] = { x: pos.x, y: pos.y }
           }
         })
         nodes.update(updates)
-        startBreatheAnimation()
+        setBreatheBasePositions(basePositions)
+        startBreatheAnimation(network, nodes)
       }
     })
 
@@ -1068,7 +971,7 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
 
   onMounted(() => init())
   onBeforeUnmount(() => {
-    stopBreatheAnimation()
+    resetBreatheState()
     network?.destroy()
     network = null
     nodes = null
@@ -1076,7 +979,6 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
     ORIG = {}
     ORIG_EDGE = {}
     dropdownCorrLines = []
-    breatheBasePositions = {}
     expandedL1.clear()
     expandedL2.clear()
     graphFocusSet.clear()

@@ -144,20 +144,6 @@ function isUsedElsewhere(id: string, currentIdx: number): boolean {
   return selectedAttractors.value.some((sel, i) => i !== currentIdx && sel === id)
 }
 
-function onSelect(idx: number, event: Event) {
-  const value = (event.target as HTMLSelectElement).value
-  const copy = [...selectedAttractors.value]
-  copy[idx] = value === 'null' || value === '' ? null : value
-
-  // Если очищен слот, на который указывает highlightedAttractorIdx — переключить
-  if (copy[idx] === null && highlightedAttractorIdx.value === idx) {
-    const nextFilled = copy.findIndex(v => v !== null)
-    highlightedAttractorIdx.value = nextFilled >= 0 ? nextFilled : null
-  }
-
-  selectedAttractors.value = copy
-}
-
 // ── Корреляции ───────────────────────────────────────────────
 
 interface CorrItem {
@@ -236,48 +222,9 @@ const externalCorr = computed<CorrItem[]>(() => {
   flex-direction: column;
   gap: 6px;
 }
-.demo-label {
-  font-size: 11px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 2px;
-}
 .dd-row {
   display: flex;
   gap: 6px;
-}
-.demo-select {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  padding: 5px 28px 5px 10px;
-  font-size: 12px;
-  font-family: inherit;
-  color: var(--text);
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  cursor: pointer;
-  outline: none;
-  transition: border-color 0.2s, background 0.2s;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-}
-.demo-select:hover {
-  border-color: var(--accent);
-}
-.demo-select:focus {
-  border-color: var(--accent);
-  background-color: var(--card-hover);
-}
-.demo-select option {
-  background: var(--bg);
-  color: var(--text);
-}
-.demo-select option:disabled {
-  color: var(--text-dim);
 }
 .corr-btn {
   flex-shrink: 0;
@@ -307,20 +254,6 @@ const externalCorr = computed<CorrItem[]>(() => {
   color: white;
   border-color: var(--accent);
 }
-.dd-add-btn {
-  align-self: flex-start;
-  background: none;
-  border: 1px dashed var(--border);
-  border-radius: 4px;
-  color: var(--text-muted);
-  font-size: 11px;
-  font-family: inherit;
-  padding: 4px 10px;
-  cursor: not-allowed;
-  opacity: 0.6;
-  margin-top: 2px;
-}
-
 /* Панель корреляций */
 .corr-panel {
   margin-top: 4px;
