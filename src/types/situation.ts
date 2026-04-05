@@ -5,17 +5,11 @@ export interface Situation {
   description: string
 }
 
-export interface Strategy {
-  name: string
-  baseProb: number
-  ageModifier: (age: number) => number
-}
-
-export type StrategiesMap = Record<string, Strategy[]>
-
 export interface Prediction {
   name: string
   probability: number
+  count: number
+  totalFiltered: number
 }
 
 export interface AgeGroupStats {
@@ -48,9 +42,25 @@ export interface MarkupSituation {
   id: string
   title: string
   attractorL2: string
+  strategyNames: string[]
   strategies: MarkupStrategy[]
   totalRespondents: number
   linkedSituationId?: string
   demographics?: SituationDemographics
   attractorProfile?: Record<string, number>
+}
+
+export interface RespondentRecord {
+  id: string
+  gender: 'male' | 'female'
+  age: number | null
+  maritalStatus: string
+  childrenCount: number
+  attractors: Record<string, number>
+  strategies: Record<string, number[]>
+}
+
+export interface MarkupData {
+  situations: MarkupSituation[]
+  respondents: RespondentRecord[]
 }

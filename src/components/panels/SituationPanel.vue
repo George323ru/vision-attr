@@ -4,37 +4,32 @@
 
     <div class="sit-description">{{ sit.description }}</div>
 
-    <div class="strategies-container">
-      <StrategyBar
-        v-for="(p, i) in predictions"
-        :key="p.name"
-        :name="p.name"
-        :probability="p.probability"
-        :bar-color="barColor(p.probability, predictions[0]?.probability ?? 1)"
-        :selected="currentStrategy === i"
-        @select="toggleStrategy(i)"
-      />
+    <div class="section-header">
+      <div class="section-header-left">
+        <span class="section-title">Прогноз</span>
+        <span class="help-icon" data-tooltip="Прогноз на основе данных интервью с учётом выбранных демографических фильтров и аттракторов. Респондент мог выбрать несколько стратегий, поэтому сумма может превышать 100%.">?</span>
+      </div>
+      <span v-if="predictions.length > 0" class="section-meta">{{ predictions[0].totalFiltered }} респондентов</span>
     </div>
 
-    <div v-if="markup" class="markup-section">
-      <div class="markup-header">
-        <span class="markup-title">Данные разметки</span>
-        <span class="markup-meta">{{ markup.totalRespondents }} респондентов</span>
+    <template v-if="predictions.length > 0">
+      <div v-if="predictions[0].totalFiltered < 5" class="small-sample-warn">
+        Малая выборка — результаты могут быть нестабильны
       </div>
-      <div class="markup-strategies">
-        <div v-for="s in markup.strategies" :key="s.name" class="markup-bar-item">
-          <div class="markup-bar-label">
-            <span>{{ s.name }}</span>
-            <span class="markup-pct">{{ Math.round(s.frequency * 100) }}%</span>
-          </div>
-          <div class="markup-bar-track">
-            <div
-              class="markup-bar-fill"
-              :style="{ width: (s.frequency * 100) + '%' }"
-            ></div>
-          </div>
-        </div>
+      <div class="strategies-container">
+        <StrategyBar
+          v-for="(p, i) in predictions"
+          :key="p.name"
+          :name="p.name"
+          :probability="p.probability"
+          :bar-color="barColor(p.probability, predictions[0]?.probability ?? 1)"
+          :selected="currentStrategy === i"
+          @select="toggleStrategy(i)"
+        />
       </div>
+    </template>
+    <div v-else class="no-data">
+      Нет данных для выбранных фильтров
     </div>
 
     <button class="btn-back" @click="onBack">
@@ -49,7 +44,6 @@ import { SITUATIONS } from '@/data/situations'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 import { useAppState } from '@/composables/useAppState'
 import { predictBehavior } from '@/composables/usePrediction'
-import { useMarkupStore } from '@/composables/useMarkupStore'
 import StrategyBar from '@/components/StrategyBar.vue'
 import PanelBreadcrumb from '@/components/PanelBreadcrumb.vue'
 import type { BreadcrumbItem } from '@/components/PanelBreadcrumb.vue'
@@ -66,12 +60,20 @@ const emit = defineEmits<{
 }>()
 
 const { getAttractor } = useAttractorStore()
-const { midAge, currentStrategy } = useAppState()
-const { getMarkupForSituation } = useMarkupStore()
+const { ageMin, ageMax, gender, maritalStatus, childrenCount, currentStrategy, selectedAttractors } = useAppState()
 
 const attr = computed(() => getAttractor(props.attrId))
 const sit = computed(() => SITUATIONS.find(s => s.id === props.sitId))
-const markup = computed(() => getMarkupForSituation(props.sitId))
+
+const predictions = computed(() =>
+  predictBehavior(props.sitId, {
+    ageMin: ageMin.value,
+    ageMax: ageMax.value,
+    gender: gender.value,
+    maritalStatus: maritalStatus.value,
+    childrenCount: childrenCount.value,
+  }, selectedAttractors.value)
+)
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => {
   const crumbs: BreadcrumbItem[] = []
@@ -92,10 +94,6 @@ function barColor(probability: number, maxProb: number): string {
   const opacity = 0.35 + 0.65 * ratio
   return `rgba(192,138,62,${opacity.toFixed(2)})`
 }
-
-const predictions = computed(() =>
-  predictBehavior(props.sitId, midAge.value)
-)
 
 function toggleStrategy(idx: number) {
   if (currentStrategy.value === idx) {
@@ -125,6 +123,83 @@ function onBack() {
   border-radius: 6px;
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.section-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.section-meta {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-dim);
+  border: 1px solid var(--text-dim);
+  border-radius: 50%;
+  cursor: help;
+  position: relative;
+  flex-shrink: 0;
+}
+.help-icon:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.help-icon:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 230px;
+  padding: 8px 10px;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--text);
+  background: var(--right-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  z-index: 100;
+  white-space: normal;
+  pointer-events: none;
+}
+
+.small-sample-warn {
+  font-size: 11px;
+  color: #b45309;
+  background: rgba(180,83,9,0.08);
+  padding: 6px 10px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.no-data {
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+  padding: 32px 16px;
+  font-style: italic;
+}
+
 .btn-back {
   display: inline-flex;
   align-items: center;
@@ -140,54 +215,4 @@ function onBack() {
   transition: background 0.2s;
 }
 .btn-back:hover { background: var(--card-hover); }
-
-.markup-section {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--card-border);
-}
-.markup-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-.markup-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text);
-}
-.markup-meta {
-  font-size: 10px;
-  color: var(--text-muted);
-}
-.markup-bar-item {
-  margin-bottom: 8px;
-}
-.markup-bar-label {
-  font-size: 11px;
-  color: var(--text);
-  margin-bottom: 3px;
-  display: flex;
-  justify-content: space-between;
-}
-.markup-pct {
-  font-weight: 600;
-  color: var(--accent);
-  font-size: 11px;
-}
-.markup-bar-track {
-  height: 18px;
-  background: var(--bar-bg);
-  border-radius: 4px;
-  overflow: hidden;
-}
-.markup-bar-fill {
-  height: 100%;
-  border-radius: 4px;
-  background: var(--accent);
-  opacity: 0.7;
-  transition: width 0.4s ease;
-  min-width: 2px;
-}
 </style>

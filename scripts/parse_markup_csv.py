@@ -360,13 +360,106 @@ def build_situation_demographics(
     }
 
 
+GENDER_MAP: dict[str, str] = {
+    'муж': 'male',
+    'жен': 'female',
+}
+
+MARITAL_MAP: dict[str, str] = {
+    'в браке': 'married',
+    'в отношениях': 'civil_union',
+    'сингл': 'not_married',
+    'в разводе': 'divorced',
+    'вдовствует': 'widowed',
+}
+
+
+def build_respondents(
+    situations: list[SituationData],
+    demo_map: dict[str, Demographics],
+    attr_map: dict[str, dict[str, int]] | None,
+) -> list[dict]:
+    """Строит массив респондентов с демографией, аттракторами и стратегиями."""
+    # Собираем маппинг ситуация → markup_id + порядок стратегий
+    sit_meta: dict[str, tuple[str, list[str]]] = {}  # sit.name → (markup_id, [strat_names])
+    counter = 0
+    for sit in situations:
+        mapping = SITUATION_MAP.get(sit.name, {})
+        if not mapping.get('linked_id'):
+            continue
+        counter += 1
+        markup_id = f'mk{counter:02d}'
+        strat_names = [s.name for s in sit.strategies]
+        sit_meta[sit.name] = (markup_id, strat_names)
+
+    # Собираем все уникальные ID респондентов
+    all_resp_ids: set[str] = set()
+    for sit in situations:
+        if sit.name in sit_meta:
+            all_resp_ids.update(sit.respondent_ids)
+
+    # Для каждого респондента — собираем его ответы по всем ситуациям
+    resp_strategies: dict[str, dict[str, list[int]]] = {}
+    for sit in situations:
+        if sit.name not in sit_meta:
+            continue
+        markup_id, _ = sit_meta[sit.name]
+        for resp_id in sit.respondent_ids:
+            if resp_id not in resp_strategies:
+                resp_strategies[resp_id] = {}
+            answers: list[int] = []
+            for s in sit.strategies:
+                answers.append(1 if resp_id in s.respondent_ids else 0)
+            resp_strategies[resp_id][markup_id] = answers
+
+    result: list[dict] = []
+    seq = 0
+    for resp_id in sorted(all_resp_ids):
+        resolved = resolve_id(resp_id)
+        demo = demo_map.get(resolved)
+        if not demo:
+            continue
+
+        gender = GENDER_MAP.get(demo.gender, '')
+        if not gender:
+            continue
+
+        marital = MARITAL_MAP.get(demo.marital_status, '')
+
+        # Аттракторы (sparse, только ненулевые)
+        attractors: dict[str, int] = {}
+        if attr_map:
+            scores = attr_map.get(resolved, {})
+            attractors = {
+                k: v for k, v in scores.items()
+                if v > 0 and not k.startswith('extra_')
+            }
+
+        strats = resp_strategies.get(resp_id, {})
+        if not strats:
+            continue
+
+        seq += 1
+        result.append({
+            'id': f'P{seq:03d}',
+            'gender': gender,
+            'age': demo.age,
+            'maritalStatus': marital,
+            'childrenCount': demo.children_count,
+            'attractors': attractors,
+            'strategies': strats,
+        })
+
+    return result
+
+
 def build_json(
     situations: list[SituationData],
     demo_map: dict[str, Demographics],
     attr_map: dict[str, dict[str, int]] | None = None,
-) -> list[dict]:
-    """Конвертирует данные в JSON-формат с демографией и аттракторами."""
-    result: list[dict] = []
+) -> dict:
+    """Конвертирует данные в JSON-формат с ситуациями и респондентами."""
+    sit_list: list[dict] = []
 
     counter = 0
     for sit in situations:
@@ -375,6 +468,9 @@ def build_json(
             continue
         counter += 1
         markup_id = f'mk{counter:02d}'
+
+        # Список имён стратегий (порядок = индексы в respondent.strategies)
+        strategy_names = [s.name for s in sit.strategies]
 
         strategies_json = []
         for s in sit.strategies:
@@ -405,6 +501,7 @@ def build_json(
             'id': markup_id,
             'title': sit.name,
             'attractorL2': mapping.get('attractor_l2', ''),
+            'strategyNames': strategy_names,
             'strategies': strategies_json,
             'totalRespondents': max(
                 (s.total for s in sit.strategies), default=0
@@ -424,9 +521,14 @@ def build_json(
             if sit_attr:
                 entry['attractorProfile'] = sit_attr
 
-        result.append(entry)
+        sit_list.append(entry)
 
-    return result
+    respondents = build_respondents(situations, demo_map, attr_map)
+
+    return {
+        'situations': sit_list,
+        'respondents': respondents,
+    }
 
 
 def main() -> None:
@@ -476,9 +578,11 @@ def main() -> None:
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(json_data, f, ensure_ascii=False, indent=2)
 
+    resp_count = len(json_data.get('respondents', []))
+    sit_list = json_data.get('situations', [])
     print(f'\n✓ Записано в {output_path}')
-    print(f'  Ситуаций: {len(json_data)}')
-    for entry in json_data:
+    print(f'  Ситуаций: {len(sit_list)}, Респондентов: {resp_count}')
+    for entry in sit_list:
         linked = entry.get('linkedSituationId', '—')
         demo = entry.get('demographics', {})
         avg_age = demo.get('avgAge', '—')
