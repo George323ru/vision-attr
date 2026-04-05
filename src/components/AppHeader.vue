@@ -12,12 +12,12 @@
           class="header-btn-sm"
           :class="{ active: expansionMode === 'allL2' }"
           @click="$emit('change-expansion-mode', 'allL2')"
-        >Все L2</button>
+        >Все 2 уровня</button>
         <button
           class="header-btn-sm"
           :class="{ active: expansionMode === 'allL3' }"
           @click="$emit('change-expansion-mode', 'allL3')"
-        >Все L3</button>
+        >Все 3 уровня</button>
       </div>
       <button
         class="header-btn"
@@ -60,9 +60,10 @@ const { currentMode, correlationsVisible, expansionMode } = useAppState()
   transition: background 0.3s;
 }
 .app-header h1 {
-  font-size: 17px;
+  font-family: var(--font-display);
+  font-size: var(--fs-brand);
   font-weight: 700;
-  letter-spacing: 3px;
+  letter-spacing: 5px;
   text-transform: uppercase;
   color: #111;
   opacity: 1;

@@ -21,7 +21,7 @@
         :key="p.name"
         :name="p.name"
         :probability="p.probability"
-        :bar-color="barColors[Math.min(i, barColors.length - 1)]"
+        :bar-color="barColor(p.probability, predictions[0]?.probability ?? 1)"
         :selected="currentStrategy === i"
         @select="toggleStrategy(i)"
       />
@@ -79,7 +79,11 @@ const { midAge, currentStrategy } = useAppState()
 
 const { getMarkupForSituation } = useMarkupStore()
 
-const barColors = ['var(--bar-positive)', 'var(--bar-neutral)', 'var(--bar-negative)', 'var(--text-muted)']
+function barColor(probability: number, maxProb: number): string {
+  const ratio = maxProb > 0 ? probability / maxProb : 0
+  const opacity = 0.35 + 0.65 * ratio
+  return `rgba(192,138,62,${opacity.toFixed(2)})`
+}
 
 const attr = computed(() => getAttractor(props.attrId))
 const sit = computed(() => SITUATIONS.find(s => s.id === props.sitId))

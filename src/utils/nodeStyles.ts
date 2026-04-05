@@ -19,7 +19,7 @@ export function nodeFont(domains: DomainMap, theme: ThemeColors, themeName: stri
   }
   // L3 заметно серее L1/L2: светлоту поднимаем до ~40%, насыщенность снижена
   const fontLightness = themeName === 'dark' ? 60 : 60
-  const fontSat = d ? Math.max(4, Math.min(16, Math.round(d.sat * 0.15))) : 8
+  const fontSat = d ? Math.max(8, Math.min(25, Math.round(d.sat * 0.30))) : 10
   const hue = d ? d.hue : 0
   return { size: 49, color: `hsl(${hue}, ${fontSat}%, ${fontLightness}%)`, strokeWidth: 3, strokeColor: theme.fontStroke }
 }

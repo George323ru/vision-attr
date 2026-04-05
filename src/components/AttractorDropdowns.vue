@@ -1,28 +1,12 @@
 <template>
   <div class="attractor-dropdowns">
-    <div class="demo-label">Аттракторы человека</div>
     <div v-for="(_, idx) in selectedAttractors" :key="idx" class="dd-row">
-      <select
-        class="demo-select"
-        :value="selectedAttractors[idx]"
-        @change="onSelect(idx, $event)"
-      >
-        <option :value="null">— Выберите аттрактор —</option>
-        <optgroup
-          v-for="group in groupedL2"
-          :key="group.domainId"
-          :label="group.domainName"
-        >
-          <option
-            v-for="item in group.items"
-            :key="item.id"
-            :value="item.id"
-            :disabled="isUsedElsewhere(item.id, idx)"
-          >
-            {{ item.label }}
-          </option>
-        </optgroup>
-      </select>
+      <SearchableCombobox
+        :model-value="selectedAttractors[idx]"
+        :groups="comboboxGroups(idx)"
+        placeholder="— Выберите аттрактор —"
+        @update:model-value="onComboSelect(idx, $event)"
+      />
       <button
         class="corr-btn"
         :class="{ active: highlightedAttractorIdx === idx && selectedAttractors[idx] !== null }"
@@ -39,8 +23,6 @@
         </svg>
       </button>
     </div>
-    <button class="dd-add-btn" disabled>+ Добавить аттрактор</button>
-
     <!-- Панель корреляций -->
     <div v-if="activeSelectedIds.size > 0" class="corr-panel">
       <button class="corr-toggle" @click="showCorr = !showCorr">
@@ -83,6 +65,8 @@
 import { computed, ref } from 'vue'
 import { useAppState } from '@/composables/useAppState'
 import { useAttractorStore } from '@/composables/useAttractorStore'
+import SearchableCombobox from './SearchableCombobox.vue'
+import type { ComboboxGroup } from './SearchableCombobox.vue'
 import { CORRELATIONS } from '@/data/correlations'
 import { getCorrelationAtAge } from '@/composables/useCorrelations'
 
@@ -125,6 +109,30 @@ const groupedL2 = computed<L2Group[]>(() => {
     items: map.get(domainId)!,
   }))
 })
+
+function comboboxGroups(idx: number): ComboboxGroup[] {
+  return groupedL2.value.map(g => ({
+    id: g.domainId,
+    name: g.domainName,
+    items: g.items.map(item => ({
+      id: item.id,
+      label: item.label,
+      disabled: isUsedElsewhere(item.id, idx),
+    })),
+  }))
+}
+
+function onComboSelect(idx: number, value: string | null) {
+  const copy = [...selectedAttractors.value]
+  copy[idx] = value
+
+  if (copy[idx] === null && highlightedAttractorIdx.value === idx) {
+    const nextFilled = copy.findIndex(v => v !== null)
+    highlightedAttractorIdx.value = nextFilled >= 0 ? nextFilled : null
+  }
+
+  selectedAttractors.value = copy
+}
 
 function getLabel(id: string): string {
   return attractors.value.find(a => a.id === id)?.label ?? id
@@ -222,8 +230,6 @@ const externalCorr = computed<CorrItem[]>(() => {
 
 <style scoped>
 .attractor-dropdowns {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   gap: 6px;

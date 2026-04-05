@@ -3,15 +3,15 @@
     <div class="leg-title">ОБОЗНАЧЕНИЯ</div>
     <div class="leg-row">
       <span class="leg-dot-wrap"><span class="leg-dot" style="width:18px;height:18px;background:hsl(0,14%,74%)"></span></span>
-      <span class="leg-l1">L1 — аттрактор 1 уровня</span>
+      <span class="leg-l1">Аттрактор 1 уровня</span>
     </div>
     <div class="leg-row">
       <span class="leg-dot-wrap"><span class="leg-dot" style="width:11px;height:11px;background:hsl(0,14%,80%)"></span></span>
-      <span>L2 — аттрактор 2 уровня</span>
+      <span>Аттрактор 2 уровня</span>
     </div>
     <div class="leg-row">
       <span class="leg-dot-wrap"><span class="leg-dot" style="width:6px;height:6px;background:hsl(0,14%,86%)"></span></span>
-      <span>L3 — аттрактор 3 уровня</span>
+      <span>Аттрактор 3 уровня</span>
     </div>
     <div class="leg-row">
       <span class="leg-line" style="width:20px;background:#059669"></span>

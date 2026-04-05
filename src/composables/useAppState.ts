@@ -17,6 +17,7 @@ const currentMode = ref<'graph' | 'situations'>('graph')
 const currentStrategy = ref<number | null>(null)
 const l3NodeId = ref<string | null>(null)
 
+const rightPanelCollapsed = ref(false)
 const selectedAttractors = ref<(string | null)[]>(['l2_rabota_01', 'l2_semya_04', 'l2_nezav_02'])
 const highlightedAttractorIdx = ref<number | null>(0)
 const activeSelectedIds = computed(() => {
@@ -65,6 +66,7 @@ export function useAppState() {
     selectedAttractors,
     activeSelectedIds,
     highlightedAttractorIdx,
+    rightPanelCollapsed,
     clearSelectedAttractors,
     panelState,
     resetState,

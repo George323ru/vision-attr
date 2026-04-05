@@ -24,15 +24,26 @@
   --card-bg:      rgba(0,0,0,0.03);
   --card-hover:   rgba(0,0,0,0.06);
   --card-border:  rgba(0,0,0,0.08);
-  --bar-positive: #059669;
-  --bar-negative: #dc2626;
-  --bar-neutral:  #2563eb;
+  --bar-high:     #c08a3e;
+  --bar-mid:      rgba(192,138,62,0.6);
+  --bar-low:      rgba(192,138,62,0.35);
   --bar-bg:       rgba(0,0,0,0.06);
   --slider-track: rgba(0,0,0,0.1);
   --slider-thumb: #c08a3e;
   --right-bg:     rgba(255,255,255,0.7);
   --right-border: rgba(0,0,0,0.08);
   --breadcrumb:   rgba(0,0,0,0.4);
+
+  /* Typography */
+  --font-display: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  --font-body:    'Inter', 'Segoe UI', system-ui, sans-serif;
+  --fs-xs:   11px;
+  --fs-sm:   12px;
+  --fs-base: 13px;
+  --fs-md:   14px;
+  --fs-lg:   16px;
+  --fs-xl:   20px;
+  --fs-brand: 22px;
 }
 
 /* ── Dark theme — commented out, not used ──
@@ -71,7 +82,7 @@
 */
 
 body {
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--font-body);
   background: var(--bg);
   color: var(--text);
   height: 100vh;

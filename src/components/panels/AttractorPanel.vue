@@ -24,7 +24,7 @@
       <div v-else class="rp-empty">Нет ситуаций для данной категории</div>
 
       <div v-if="childList.length" class="l3-section">
-        <div class="l3-title">{{ attr.level === 1 ? 'Категории (L2):' : 'Аттракторы (L3):' }}</div>
+        <div class="l3-title">{{ attr.level === 1 ? 'Аттракторы 2 уровня:' : 'Аттракторы 3 уровня:' }}</div>
         <div v-for="child in childList" :key="child.id" class="l3-item clickable" @click="selectChild(child)">{{ child.label }}</div>
       </div>
     </template>

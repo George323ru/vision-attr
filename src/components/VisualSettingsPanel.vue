@@ -13,15 +13,15 @@
         <section class="vsp-section">
           <h3 class="vsp-section-title">Размеры нод</h3>
           <div class="vsp-row">
-            <label class="vsp-label">L1 <span class="vsp-val">{{ nodeSizeL1 }}</span></label>
+            <label class="vsp-label">Ур. 1 <span class="vsp-val">{{ nodeSizeL1 }}</span></label>
             <input type="range" v-model.number="nodeSizeL1" min="50" max="400" step="5" class="vsp-slider" @change="apply" />
           </div>
           <div class="vsp-row">
-            <label class="vsp-label">L2 <span class="vsp-val">{{ nodeSizeL2 }}</span></label>
+            <label class="vsp-label">Ур. 2 <span class="vsp-val">{{ nodeSizeL2 }}</span></label>
             <input type="range" v-model.number="nodeSizeL2" min="20" max="200" step="5" class="vsp-slider" @change="apply" />
           </div>
           <div class="vsp-row">
-            <label class="vsp-label">L3 <span class="vsp-val">{{ nodeSizeL3 }}</span></label>
+            <label class="vsp-label">Ур. 3 <span class="vsp-val">{{ nodeSizeL3 }}</span></label>
             <input type="range" v-model.number="nodeSizeL3" min="10" max="100" step="2" class="vsp-slider" @change="apply" />
           </div>
         </section>
@@ -30,15 +30,15 @@
         <section class="vsp-section">
           <h3 class="vsp-section-title">Шрифты</h3>
           <div class="vsp-row">
-            <label class="vsp-label">L1 <span class="vsp-val">{{ fontSizeL1 }}</span></label>
+            <label class="vsp-label">Ур. 1 <span class="vsp-val">{{ fontSizeL1 }}</span></label>
             <input type="range" v-model.number="fontSizeL1" min="30" max="120" step="2" class="vsp-slider" @change="apply" />
           </div>
           <div class="vsp-row">
-            <label class="vsp-label">L2 <span class="vsp-val">{{ fontSizeL2 }}</span></label>
+            <label class="vsp-label">Ур. 2 <span class="vsp-val">{{ fontSizeL2 }}</span></label>
             <input type="range" v-model.number="fontSizeL2" min="20" max="90" step="2" class="vsp-slider" @change="apply" />
           </div>
           <div class="vsp-row">
-            <label class="vsp-label">L3 <span class="vsp-val">{{ fontSizeL3 }}</span></label>
+            <label class="vsp-label">Ур. 3 <span class="vsp-val">{{ fontSizeL3 }}</span></label>
             <input type="range" v-model.number="fontSizeL3" min="15" max="70" step="2" class="vsp-slider" @change="apply" />
           </div>
         </section>
@@ -80,11 +80,11 @@
             <input type="range" v-model.number="hierEdgeOpacity" min="0.05" max="1" step="0.05" class="vsp-slider" @change="apply" />
           </div>
           <div class="vsp-row">
-            <label class="vsp-label">Толщина L1-L2 <span class="vsp-val">{{ hierWidthL12 }}</span></label>
+            <label class="vsp-label">Толщина 1–2 <span class="vsp-val">{{ hierWidthL12 }}</span></label>
             <input type="range" v-model.number="hierWidthL12" min="1" max="20" step="0.5" class="vsp-slider" @change="apply" />
           </div>
           <div class="vsp-row">
-            <label class="vsp-label">Толщина L2-L3 <span class="vsp-val">{{ hierWidthL23 }}</span></label>
+            <label class="vsp-label">Толщина 2–3 <span class="vsp-val">{{ hierWidthL23 }}</span></label>
             <input type="range" v-model.number="hierWidthL23" min="1" max="15" step="0.5" class="vsp-slider" @change="apply" />
           </div>
         </section>

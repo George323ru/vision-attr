@@ -8,7 +8,7 @@
       @toggle-settings="settingsPanelVisible = !settingsPanelVisible"
     />
     <VisualSettingsPanel :visible="settingsPanelVisible" @close="settingsPanelVisible = false" />
-    <div class="main-grid">
+    <div class="main-grid" :class="{ 'panel-collapsed': rightPanelCollapsed }">
       <GraphZone ref="graphZoneRef" />
       <RightPanel
         @select-situation="onSelectSituation"
@@ -46,6 +46,7 @@ const {
   selectedAttractors,
   activeSelectedIds,
   highlightedAttractorIdx,
+  rightPanelCollapsed,
 } = useAppState()
 
 const loading = ref(true)
@@ -282,6 +283,13 @@ watch(
   },
   { deep: true },
 )
+
+// Перерисовка графа при сворачивании/разворачивании панели
+watch(rightPanelCollapsed, () => {
+  setTimeout(() => {
+    window.dispatchEvent(new Event('resize'))
+  }, 370)
+})
 </script>
 
 <style scoped>
@@ -298,5 +306,9 @@ watch(
   display: grid;
   grid-template-columns: 1fr 456px;
   overflow: hidden;
+  transition: grid-template-columns 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.main-grid.panel-collapsed {
+  grid-template-columns: 1fr 0px;
 }
 </style>
