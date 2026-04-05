@@ -184,7 +184,7 @@ function onBack() {
   font-weight: 400;
   line-height: 1.4;
   color: var(--text);
-  background: var(--right-bg);
+  background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.12);
