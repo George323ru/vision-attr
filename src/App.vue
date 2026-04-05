@@ -208,8 +208,7 @@ function onSelectSituation(attrId: string, sitId: string) {
     // Подсветить связанный L2 на графе
     const l2 = getAttractor(attrId)
     if (l2?.parent) {
-      net.toggleL1(l2.parent)
-      net.toggleL2(attrId)
+      net.expandL1(l2.parent)
     }
     addToSelectedAttractors(attrId)
   }

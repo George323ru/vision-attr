@@ -133,9 +133,13 @@ function onBackToAttractor(attrId: string) {
   border-left: 1px solid var(--right-border);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   transition: background 0.3s, border-color 0.3s;
 }
+.right-panel::-webkit-scrollbar { width: 4px; }
+.right-panel::-webkit-scrollbar-track { background: transparent; }
+.right-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .right-panel-header {
   padding: 16px 20px 12px;
   border-bottom: 1px solid var(--border);
@@ -171,12 +175,8 @@ function onBackToAttractor(attrId: string) {
 }
 .right-panel-content {
   flex: 1;
-  overflow-y: auto;
   padding: 12px 16px;
 }
-.right-panel-content::-webkit-scrollbar { width: 4px; }
-.right-panel-content::-webkit-scrollbar-track { background: transparent; }
-.right-panel-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
 /* Panel content transitions */
 .panel-fade-enter-active,
