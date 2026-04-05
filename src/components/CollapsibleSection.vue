@@ -14,22 +14,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import CoachMark from './CoachMark.vue'
 
 const props = withDefaults(defineProps<{
   title: string
   initialCollapsed?: boolean
+  forceExpanded?: boolean
   coachMarkId?: string
   coachMarkText?: string
 }>(), {
   initialCollapsed: false,
+  forceExpanded: false,
   coachMarkId: '',
   coachMarkText: '',
 })
 
 const isCollapsed = ref(props.initialCollapsed)
 const showCoachOnExpand = ref(false)
+
+watch(() => props.forceExpanded, (val) => {
+  if (val && isCollapsed.value) {
+    isCollapsed.value = false
+    if (props.coachMarkId) {
+      showCoachOnExpand.value = true
+    }
+  }
+})
 
 function onToggle() {
   isCollapsed.value = !isCollapsed.value

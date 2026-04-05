@@ -129,6 +129,8 @@ function onComboSelect(idx: number, value: string | null) {
   if (copy[idx] === null && highlightedAttractorIdx.value === idx) {
     const nextFilled = copy.findIndex(v => v !== null)
     highlightedAttractorIdx.value = nextFilled >= 0 ? nextFilled : null
+  } else if (value !== null) {
+    highlightedAttractorIdx.value = idx
   }
 
   selectedAttractors.value = copy

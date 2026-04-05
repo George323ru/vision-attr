@@ -252,7 +252,7 @@ watch(() => query.value, () => {
 <style>
 /* Dropdown teleported to body — unscoped */
 .sc-dropdown {
-  background: var(--card-bg, #fff);
+  background: var(--bg, #fafafa);
   border: 1px solid var(--border, rgba(0,0,0,0.08));
   border-radius: 6px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.12);

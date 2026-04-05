@@ -307,7 +307,11 @@ watch(
     if (!net) return
     if (activeSelectedIds.value.size > 0) {
       net.clearGraphFocus()
-      currentFocus.value = null
+      // Не сбрасываем currentFocus если он указывает на один из выбранных аттракторов
+      // (клик по L2-ноде одновременно добавляет в dropdown и устанавливает фокус)
+      if (!currentFocus.value || !activeSelectedIds.value.has(currentFocus.value)) {
+        currentFocus.value = null
+      }
       currentSituation.value = null
       l3NodeId.value = null
       applyHighlightFromState()

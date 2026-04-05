@@ -126,7 +126,7 @@ NetworkCanvas → defineExpose({...}) → GraphZone → defineExpose({networkRef
 RightPanel
   ├── CollapsibleSection "Демография" (collapsed by default, CoachMark)
   │     └── DemographicsPanel (DualRangeSlider + selects)
-  ├── CollapsibleSection "Аттракторы человека" (collapsed by default, CoachMark)
+  ├── CollapsibleSection "Аттракторы человека" (collapsed by default, auto-expand on L2 click, CoachMark)
   │     └── AttractorDropdowns (SearchableCombobox × 3)
   ├── ActiveNodeIndicator | header (Transition)
   └── panelState → (Transition mode="out-in")
@@ -136,6 +136,12 @@ RightPanel
 Все панели используют `PanelBreadcrumb` для единообразной навигации.
 
 Правая панель сворачивается кнопкой на границе графа (`rightPanelCollapsed` в `useAppState`).
+
+### Auto-expand при клике на L2
+
+`CollapsibleSection` принимает проп `forceExpanded`. При клике на L2-ноду `currentFocus` устанавливается → `hasActiveAttractor` computed в RightPanel становится `true` → секция "Аттракторы человека" раскрывается.
+
+**Важно:** watcher на `[selectedAttractors, highlightedAttractorIdx]` в App.vue не сбрасывает `currentFocus`, если он указывает на один из `activeSelectedIds` — иначе `addToSelectedAttractors` и `showAttractorPanel` конфликтуют через этот watcher.
 
 ## Корреляции
 

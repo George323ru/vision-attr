@@ -12,6 +12,7 @@
       <CollapsibleSection
         title="Аттракторы человека"
         :initial-collapsed="true"
+        :force-expanded="hasActiveAttractor"
         coach-mark-id="cm-attractors"
         coach-mark-text="Выберите до 3 аттракторов — их корреляции отобразятся на графе"
       >
@@ -96,6 +97,8 @@ const emit = defineEmits<{
 }>()
 
 const { panelState, currentFocus, currentSituation, currentMode, l3NodeId, rightPanelCollapsed, canGoBack } = useAppState()
+
+const hasActiveAttractor = computed(() => !!currentFocus.value)
 
 const activeNodeId = computed<string | null>(() => {
   if (panelState.value === 'attractor' && currentFocus.value) return currentFocus.value
