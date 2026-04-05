@@ -23,6 +23,7 @@
         @focus-node="onFocusNode"
         @age-change="onAgeChange"
         @close-panel="onClosePanel"
+        @go-back="onGoBack"
       />
     </div>
   </template>
@@ -38,7 +39,7 @@ import { useAttractorStore } from '@/composables/useAttractorStore'
 import { useAppState } from '@/composables/useAppState'
 import { useMarkupStore } from '@/composables/useMarkupStore'
 
-const { loadData } = useAttractorStore()
+const { loadData, getAttractor } = useAttractorStore()
 const { loadMarkupData } = useMarkupStore()
 const {
   midAge,
@@ -53,6 +54,11 @@ const {
   activeSelectedIds,
   highlightedAttractorIdx,
   rightPanelCollapsed,
+  addToSelectedAttractors,
+  pushNavState,
+  popNavState,
+  applyNavEntry,
+  canGoBack,
 } = useAppState()
 
 const loading = ref(true)
@@ -88,6 +94,7 @@ onMounted(async () => {
   if (!net) return
 
   net.onSelectNode((nodeId: string, level: number) => {
+    pushNavState()
     l3NodeId.value = null
 
     if (level === 1) {
@@ -102,8 +109,7 @@ onMounted(async () => {
       currentStrategy.value = null
       net.toggleL2(nodeId)
       backSnapshot.value = net.snapshotExpansionState()
-      const result = net.addFocusNode(nodeId)
-      if (result) graphZoneRef.value?.setFocusCount(result.correlated)
+      addToSelectedAttractors(nodeId)
       if (!currentSituation.value) {
         showAttractorPanel(nodeId)
       } else {
@@ -118,16 +124,19 @@ onMounted(async () => {
   })
 
   net.onClickEmpty(() => {
-    l3NodeId.value = null
-    if (currentFocus.value || currentSituation.value) {
+    const prev = popNavState()
+    if (prev) {
+      net.clearFocusVisualsPreserveVisibility()
+      applyNavEntry(prev)
+      applyHighlightFromState()
+    } else {
       net.clearFocusVisualsPreserveVisibility()
       if (backSnapshot.value) {
         net.restoreExpansionState(backSnapshot.value)
         backSnapshot.value = null
       }
+      resetRightPanel()
       applyHighlightFromState()
-    } else {
-      onResetDefault()
     }
   })
 
@@ -136,7 +145,6 @@ onMounted(async () => {
   net.expandAllL3()
   net.updateVisibleCorrelations()
   applyHighlightFromState()
-  currentSituation.value = { attrId: 'l2_byt_03', sitId: 's07' }
 })
 
 function showAttractorPanel(nodeId: string) {
@@ -181,6 +189,7 @@ function onToggleSituations() {
 }
 
 function onShowAllSituations() {
+  pushNavState()
   const net = getNetwork()
   if (net) situationsSnapshot.value = net.snapshotExpansionState()
   currentMode.value = 'situations'
@@ -192,9 +201,18 @@ function onShowAllSituations() {
 }
 
 function onSelectSituation(attrId: string, sitId: string) {
+  pushNavState()
   const net = getNetwork()
-  if (net) backSnapshot.value = net.snapshotExpansionState()
-  // Граф не затемняется при выборе ситуации — пользователь продолжает кликать аттракторы
+  if (net) {
+    backSnapshot.value = net.snapshotExpansionState()
+    // Подсветить связанный L2 на графе
+    const l2 = getAttractor(attrId)
+    if (l2?.parent) {
+      net.toggleL1(l2.parent)
+      net.toggleL2(attrId)
+    }
+    addToSelectedAttractors(attrId)
+  }
   currentSituation.value = { attrId, sitId }
   currentStrategy.value = null
 }
@@ -244,6 +262,16 @@ function onChangeExpansionMode(mode: 'click' | 'allL2' | 'allL3') {
   else if (mode === 'allL3') net.expandAllL3()
 
   applyHighlightFromState()
+}
+
+function onGoBack() {
+  const prev = popNavState()
+  if (prev) {
+    const net = getNetwork()
+    net?.clearFocusVisualsPreserveVisibility()
+    applyNavEntry(prev)
+    applyHighlightFromState()
+  }
 }
 
 function onClosePanel() {

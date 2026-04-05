@@ -16,18 +16,36 @@
         :title="s.title"
         :description="s.description"
         :domain-color="domainColor"
+        :has-data="hasMarkup(s.id)"
         @select="$emit('select-situation', nodeId, s.id)"
       />
     </template>
 
-    <!-- Если нет ситуаций — описание + список детей -->
+    <!-- Если нет ситуаций — описание + корреляции + список детей -->
     <template v-else>
       <div v-if="attr.description" class="rp-description">{{ attr.description }}</div>
-      <div v-else class="rp-empty">Нет ситуаций для данной категории</div>
+
+      <div v-if="relatedCorrelations.length > 0" class="corr-section">
+        <div class="corr-section-title">Корреляции</div>
+        <div
+          v-for="c in relatedCorrelations"
+          :key="c.id"
+          class="corr-item clickable"
+          @click="currentFocus = c.otherId"
+        >
+          <span class="corr-dot" :class="c.type"></span>
+          <span class="corr-name">{{ c.otherLabel }}</span>
+          <span class="corr-strength" :class="c.type">{{ (c.strength * 100).toFixed(0) }}%</span>
+        </div>
+      </div>
 
       <div v-if="childList.length" class="l3-section">
         <div class="l3-title">{{ attr.level === 1 ? 'Аттракторы 2 уровня:' : 'Аттракторы 3 уровня:' }}</div>
         <div v-for="child in childList" :key="child.id" class="l3-item clickable" @click="selectChild(child)">{{ child.label }}</div>
+      </div>
+
+      <div v-if="!attr.description && relatedCorrelations.length === 0 && childList.length === 0" class="rp-empty">
+        Нет данных для этой категории
       </div>
     </template>
   </div>
@@ -36,9 +54,12 @@
 <script setup lang="ts">
 import { computed, toRef } from 'vue'
 import { SITUATIONS } from '@/data/situations'
+import { CORRELATIONS } from '@/data/correlations'
+import { getCorrelationAtAge } from '@/composables/useCorrelations'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 import { useAttractorDisplay } from '@/composables/useAttractorDisplay'
 import { useAppState } from '@/composables/useAppState'
+import { useMarkupStore } from '@/composables/useMarkupStore'
 import SituationCard from '@/components/SituationCard.vue'
 import PanelBreadcrumb from '@/components/PanelBreadcrumb.vue'
 import type { BreadcrumbItem } from '@/components/PanelBreadcrumb.vue'
@@ -48,7 +69,12 @@ const props = defineProps<{ nodeId: string }>()
 defineEmits<{ 'select-situation': [attrId: string, sitId: string] }>()
 
 const { attractors, domains, getAttractor } = useAttractorStore()
-const { l3NodeId, currentFocus } = useAppState()
+const { l3NodeId, currentFocus, midAge } = useAppState()
+const { getMarkupForSituation } = useMarkupStore()
+
+function hasMarkup(sitId: string): boolean {
+  return getMarkupForSituation(sitId) !== null
+}
 const { attr, domainColor } = useAttractorDisplay(toRef(props, 'nodeId'))
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => {
@@ -83,6 +109,27 @@ const childList = computed(() =>
     .filter(a => a.parent === props.nodeId)
     .map(a => ({ id: a.id, label: a.label, level: a.level }))
 )
+
+const relatedCorrelations = computed(() => {
+  if (attr.value?.level !== 2) return []
+  const id = props.nodeId
+  const result: { id: string; otherId: string; otherLabel: string; type: string; strength: number }[] = []
+  for (const corr of CORRELATIONS) {
+    if (corr.from !== id && corr.to !== id) continue
+    const atAge = getCorrelationAtAge(corr, midAge.value)
+    if (!atAge || atAge.strength <= 0) continue
+    const otherId = corr.from === id ? corr.to : corr.from
+    const other = getAttractor(otherId)
+    result.push({
+      id: corr.id,
+      otherId,
+      otherLabel: other?.label ?? otherId,
+      type: atAge.type,
+      strength: atAge.strength,
+    })
+  }
+  return result.sort((a, b) => b.strength - a.strength).slice(0, 8)
+})
 </script>
 
 <style scoped>
@@ -125,6 +172,59 @@ const childList = computed(() =>
 .l3-item.clickable:hover {
   opacity: 1;
   border-color: var(--accent);
+}
+.corr-section {
+  margin-bottom: 12px;
+}
+.corr-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.corr-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.corr-item.clickable {
+  cursor: pointer;
+}
+.corr-item.clickable:hover {
+  background: var(--card-hover);
+}
+.corr-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.corr-dot.reinforcing {
+  background: #0891b2;
+}
+.corr-dot.conflicting {
+  background: #dc2626;
+}
+.corr-name {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text);
+}
+.corr-strength {
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.corr-strength.reinforcing {
+  color: #0891b2;
+}
+.corr-strength.conflicting {
+  color: #dc2626;
 }
 .insights-section {
   background: var(--card-bg);

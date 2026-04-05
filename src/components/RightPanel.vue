@@ -29,6 +29,9 @@
           <div class="rp-desc">{{ headerDesc }}</div>
         </div>
       </Transition>
+      <button v-if="canGoBack && panelState !== 'empty'" class="back-btn" @click="$emit('go-back')">
+        ← Назад
+      </button>
       <div class="right-panel-content">
         <Transition name="panel-fade" mode="out-in">
           <EmptyPanel v-if="panelState === 'empty'" key="empty" />
@@ -61,6 +64,7 @@
             :key="'l3-' + l3NodeId"
             :node-id="l3NodeId"
             @focus-parent="$emit('focus-node', $event)"
+            @select-situation="onSelectSituation"
           />
         </Transition>
       </div>
@@ -88,9 +92,10 @@ const emit = defineEmits<{
   'focus-node': [nodeId: string]
   'age-change': []
   'close-panel': []
+  'go-back': []
 }>()
 
-const { panelState, currentFocus, currentSituation, currentMode, l3NodeId, rightPanelCollapsed } = useAppState()
+const { panelState, currentFocus, currentSituation, currentMode, l3NodeId, rightPanelCollapsed, canGoBack } = useAppState()
 
 const activeNodeId = computed<string | null>(() => {
   if (panelState.value === 'attractor' && currentFocus.value) return currentFocus.value
@@ -145,6 +150,21 @@ function onBackToAttractor(attrId: string) {
 .rp-desc {
   font-size: var(--fs-sm);
   color: var(--text-muted);
+}
+.back-btn {
+  display: block;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 6px 16px;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+.back-btn:hover {
+  color: var(--accent);
 }
 .right-panel-content {
   flex: 1;
