@@ -29,7 +29,13 @@
       </div>
     </template>
     <div v-else class="no-data">
-      Нет данных для выбранных фильтров
+      <template v-if="hasMarkupData">
+        Нет респондентов для выбранных фильтров.
+        <span class="no-data-hint">Попробуйте более широкие настройки демографии.</span>
+      </template>
+      <template v-else>
+        Данные по этой ситуации ещё не размечены и находятся в работе.
+      </template>
     </div>
 
     <button class="btn-back" @click="onBack">
@@ -44,6 +50,7 @@ import { SITUATIONS } from '@/data/situations'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 import { useAppState } from '@/composables/useAppState'
 import { predictBehavior } from '@/composables/usePrediction'
+import { useMarkupStore } from '@/composables/useMarkupStore'
 import StrategyBar from '@/components/StrategyBar.vue'
 import PanelBreadcrumb from '@/components/PanelBreadcrumb.vue'
 import type { BreadcrumbItem } from '@/components/PanelBreadcrumb.vue'
@@ -62,8 +69,11 @@ const emit = defineEmits<{
 const { getAttractor } = useAttractorStore()
 const { ageMin, ageMax, gender, maritalStatus, childrenCount, currentStrategy, selectedAttractors } = useAppState()
 
+const { getMarkupForSituation } = useMarkupStore()
+
 const attr = computed(() => getAttractor(props.attrId))
 const sit = computed(() => SITUATIONS.find(s => s.id === props.sitId))
+const hasMarkupData = computed(() => getMarkupForSituation(props.sitId) !== null)
 
 const predictions = computed(() =>
   predictBehavior(props.sitId, {
@@ -197,7 +207,13 @@ function onBack() {
   font-size: 12px;
   text-align: center;
   padding: 32px 16px;
-  font-style: italic;
+  line-height: 1.6;
+}
+.no-data-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-dim);
 }
 
 .btn-back {
