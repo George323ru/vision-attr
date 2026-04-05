@@ -8,7 +8,7 @@ const DEFAULTS = {
   fontSizeL1: 120,
   fontSizeL2: 78,
   fontSizeL3: 49,
-  corrReinforcingColor: '#059669',
+  corrReinforcingColor: '#0891b2',
   corrConflictingColor: '#dc2626',
   corrDefaultColor: '#d4d4d4',
   corrDefaultOpacity: 0.55,

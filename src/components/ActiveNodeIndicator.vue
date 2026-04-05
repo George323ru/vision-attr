@@ -2,7 +2,7 @@
   <div v-if="attr" class="active-node" :style="{ borderLeftColor: domainColor }">
     <div class="an-main">
       <span class="an-label">{{ attr.label }}</span>
-      <button class="an-close" @click="$emit('close')">&times;</button>
+      <button class="an-close" aria-label="Закрыть панель аттрактора" @click="$emit('close')">&times;</button>
     </div>
     <div class="an-meta">
       <span class="an-domain">{{ domainName }}</span>

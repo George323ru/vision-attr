@@ -7,6 +7,12 @@
       :name="focusName"
       :count="focusCount"
     />
+    <CoachMark
+      id="cm-graph"
+      text="Кликните на любой узел для анализа"
+      position="bottom"
+      class="graph-coach"
+    />
   </div>
 </template>
 
@@ -15,6 +21,7 @@ import { ref, computed } from 'vue'
 import NetworkCanvas from './NetworkCanvas.vue'
 import GraphLegend from './GraphLegend.vue'
 import FocusPanel from './FocusPanel.vue'
+import CoachMark from './CoachMark.vue'
 import { useAppState } from '@/composables/useAppState'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 
@@ -45,5 +52,10 @@ defineExpose({
 .graph-zone {
   position: relative;
   overflow: hidden;
+}
+.graph-coach {
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 </style>

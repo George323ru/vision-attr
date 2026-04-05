@@ -10,6 +10,12 @@
     <VisualSettingsPanel :visible="settingsPanelVisible" @close="settingsPanelVisible = false" />
     <div class="main-grid" :class="{ 'panel-collapsed': rightPanelCollapsed }">
       <GraphZone ref="graphZoneRef" />
+      <button class="collapse-toggle" @click="rightPanelCollapsed = !rightPanelCollapsed" :title="rightPanelCollapsed ? 'Показать панель' : 'Скрыть панель'" :aria-label="rightPanelCollapsed ? 'Показать панель' : 'Скрыть панель'">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path v-if="rightPanelCollapsed" d="M4 1l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path v-else d="M8 1L3 6l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
       <RightPanel
         @select-situation="onSelectSituation"
         @show-all-situations="onShowAllSituations"
@@ -302,13 +308,41 @@ watch(rightPanelCollapsed, () => {
   font-size: 16px;
 }
 .main-grid {
+  position: relative;
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 456px;
+  grid-template-columns: 1fr var(--right-panel-width, 456px);
   overflow: hidden;
   transition: grid-template-columns 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .main-grid.panel-collapsed {
   grid-template-columns: 1fr 0px;
+}
+.collapse-toggle {
+  position: absolute;
+  right: var(--right-panel-width, 456px);
+  top: 50%;
+  transform: translate(50%, -50%);
+  z-index: 20;
+  width: 28px;
+  height: 48px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--right-bg);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: color 0.2s, background 0.2s, right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: -2px 0 6px rgba(0,0,0,0.06);
+}
+.panel-collapsed .collapse-toggle {
+  right: 0px;
+}
+.collapse-toggle:hover {
+  color: var(--accent);
+  background: var(--card-hover);
 }
 </style>

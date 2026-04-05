@@ -1,41 +1,34 @@
 <template>
   <div v-if="attr">
-    <div class="breadcrumb">
-      <a v-if="attr.parent" @click="$emit('focus-parent', attr.parent)">{{ parentLabel }}</a>
-      <span>›</span>
-      <span>{{ attr.label }}</span>
-    </div>
+    <PanelBreadcrumb :crumbs="breadcrumbs" />
     <div v-if="attr.description" class="rp-description">{{ attr.description }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { toRef } from 'vue'
+import { computed, toRef } from 'vue'
 import { useAttractorDisplay } from '@/composables/useAttractorDisplay'
+import PanelBreadcrumb from '@/components/PanelBreadcrumb.vue'
+import type { BreadcrumbItem } from '@/components/PanelBreadcrumb.vue'
 
 const props = defineProps<{ nodeId: string }>()
 
-defineEmits<{ 'focus-parent': [parentId: string] }>()
+const emit = defineEmits<{ 'focus-parent': [parentId: string] }>()
 
 const { attr, parentLabel } = useAttractorDisplay(toRef(props, 'nodeId'))
+
+const breadcrumbs = computed<BreadcrumbItem[]>(() => {
+  if (!attr.value) return []
+  const crumbs: BreadcrumbItem[] = []
+  if (attr.value.parent) {
+    crumbs.push({ label: parentLabel.value, action: () => emit('focus-parent', attr.value!.parent!) })
+  }
+  crumbs.push({ label: attr.value.label })
+  return crumbs
+})
 </script>
 
 <style scoped>
-.breadcrumb {
-  font-size: 11px;
-  color: var(--breadcrumb);
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.breadcrumb a {
-  color: var(--accent);
-  cursor: pointer;
-  text-decoration: none;
-}
-.breadcrumb a:hover { text-decoration: underline; }
-
 .rp-description {
   font-size: 12px;
   color: var(--text-muted);

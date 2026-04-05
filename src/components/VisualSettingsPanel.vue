@@ -4,7 +4,7 @@
     <div v-if="visible" class="vsp-panel">
       <div class="vsp-header">
         <span>Настройки графа</span>
-        <button class="vsp-close" @click="close">&times;</button>
+        <button class="vsp-close" aria-label="Закрыть настройки" @click="close">&times;</button>
       </div>
 
       <div class="vsp-body">
@@ -92,7 +92,8 @@
       </div>
 
       <div class="vsp-footer">
-        <button class="vsp-reset" @click="reset">Сбросить</button>
+        <button class="vsp-reset" @click="reset">Сбросить настройки</button>
+        <button class="vsp-reset vsp-reset-coach" @click="resetCoachMarks">Показать подсказки заново</button>
       </div>
     </div>
   </Teleport>
@@ -100,9 +101,12 @@
 
 <script setup lang="ts">
 import { useVisualSettings } from '@/composables/useVisualSettings'
+import { useCoachMarks } from '@/composables/useCoachMarks'
 
 defineProps<{ visible: boolean }>()
 const emit = defineEmits<{ close: [] }>()
+
+const { resetAll: resetCoachMarksState } = useCoachMarks()
 
 const {
   nodeSizeL1, nodeSizeL2, nodeSizeL3,
@@ -116,6 +120,7 @@ const {
 function apply() { applySettings() }
 function reset() { resetToDefaults() }
 function close() { emit('close') }
+function resetCoachMarks() { resetCoachMarksState() }
 </script>
 
 <style scoped>
@@ -243,5 +248,10 @@ function close() { emit('close') }
 .vsp-reset:hover {
   background: var(--card-hover);
   color: var(--text);
+}
+.vsp-reset-coach {
+  margin-top: 6px;
+  color: var(--accent);
+  border-color: var(--accent);
 }
 </style>

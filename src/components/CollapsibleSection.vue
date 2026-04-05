@@ -1,9 +1,12 @@
 <template>
   <div class="collapsible-section" :class="{ collapsed: isCollapsed }">
-    <button class="cs-header" @click="isCollapsed = !isCollapsed">
-      <span class="cs-title">{{ title }}</span>
-      <span class="cs-chevron">{{ isCollapsed ? '▼' : '▲' }}</span>
-    </button>
+    <div class="cs-header-wrap">
+      <button class="cs-header" :aria-expanded="!isCollapsed" @click="onToggle">
+        <span class="cs-title">{{ title }}</span>
+        <span class="cs-chevron">{{ isCollapsed ? '▼' : '▲' }}</span>
+      </button>
+      <CoachMark v-if="coachMarkId && showCoachOnExpand" :id="coachMarkId" :text="coachMarkText" position="bottom" />
+    </div>
     <div v-show="!isCollapsed" class="cs-body">
       <slot />
     </div>
@@ -12,20 +15,36 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import CoachMark from './CoachMark.vue'
 
 const props = withDefaults(defineProps<{
   title: string
   initialCollapsed?: boolean
+  coachMarkId?: string
+  coachMarkText?: string
 }>(), {
   initialCollapsed: false,
+  coachMarkId: '',
+  coachMarkText: '',
 })
 
 const isCollapsed = ref(props.initialCollapsed)
+const showCoachOnExpand = ref(false)
+
+function onToggle() {
+  isCollapsed.value = !isCollapsed.value
+  if (!isCollapsed.value && props.coachMarkId) {
+    showCoachOnExpand.value = true
+  }
+}
 </script>
 
 <style scoped>
 .collapsible-section {
   border-bottom: 1px solid var(--border);
+}
+.cs-header-wrap {
+  position: relative;
 }
 .cs-header {
   width: 100%;

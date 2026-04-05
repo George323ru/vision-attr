@@ -5,37 +5,23 @@
       <div class="demo-label">
         Возраст: <b>{{ ageMin }}–{{ ageMax }}</b>
       </div>
-      <div class="range-slider">
-        <input
-          type="range"
-          class="range-input range-min"
-          min="18" max="75"
-          :value="ageMin"
-          @input="onMinInput"
-        >
-        <input
-          type="range"
-          class="range-input range-max"
-          min="18" max="75"
-          :value="ageMax"
-          @input="onMaxInput"
-        >
-        <div class="range-track">
-          <div
-            class="range-fill"
-            :style="{ left: fillLeft + '%', width: fillWidth + '%' }"
-          ></div>
-        </div>
-      </div>
-      <div class="age-ticks">
-        <span v-for="tick in ticks" :key="tick">{{ tick }}</span>
-      </div>
+      <DualRangeSlider
+        :min="18"
+        :max="75"
+        :model-min="ageMin"
+        :model-max="ageMax"
+        :ticks="[18, 25, 35, 45, 55, 65, 75]"
+        aria-label-min="Минимальный возраст"
+        aria-label-max="Максимальный возраст"
+        @update:model-min="ageMin = $event; emit('age-change')"
+        @update:model-max="ageMax = $event; emit('age-change')"
+      />
     </div>
 
     <!-- Gender -->
     <div class="demo-section">
       <div class="demo-label">Пол</div>
-      <select v-model="gender" class="demo-select">
+      <select v-model="gender" class="demo-select" aria-label="Выберите пол">
         <option value="any">Любой</option>
         <option value="male">Мужской</option>
         <option value="female">Женский</option>
@@ -45,7 +31,7 @@
     <!-- Marital status -->
     <div class="demo-section">
       <div class="demo-label">Семейное положение</div>
-      <select v-model="maritalStatus" class="demo-select">
+      <select v-model="maritalStatus" class="demo-select" aria-label="Семейное положение">
         <option value="any">Любое</option>
         <option value="married">В браке</option>
         <option value="not_married">Не в браке</option>
@@ -58,7 +44,7 @@
     <!-- Children -->
     <div class="demo-section">
       <div class="demo-label">Дети</div>
-      <select v-model="childrenCount" class="demo-select">
+      <select v-model="childrenCount" class="demo-select" aria-label="Количество детей">
         <option value="any">Не важно</option>
         <option value="0">Нет детей</option>
         <option value="1">1 ребёнок</option>
@@ -72,33 +58,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useAppState } from '@/composables/useAppState'
+import DualRangeSlider from './DualRangeSlider.vue'
 
 const { ageMin, ageMax, gender, childrenCount, maritalStatus } = useAppState()
 
 const emit = defineEmits<{ 'age-change': [] }>()
-
-const ticks = [18, 25, 35, 45, 55, 65, 75]
-
-const fillLeft = computed(() => ((ageMin.value - 18) / 57) * 100)
-const fillWidth = computed(() => ((ageMax.value - ageMin.value) / 57) * 100)
-
-function onMinInput(e: Event) {
-  const v = parseInt((e.target as HTMLInputElement).value)
-  if (v <= ageMax.value) {
-    ageMin.value = v
-    emit('age-change')
-  }
-}
-
-function onMaxInput(e: Event) {
-  const v = parseInt((e.target as HTMLInputElement).value)
-  if (v >= ageMin.value) {
-    ageMax.value = v
-    emit('age-change')
-  }
-}
 </script>
 
 <style scoped>
@@ -123,73 +88,6 @@ function onMaxInput(e: Event) {
 .demo-label b {
   color: var(--accent);
   font-size: 13px;
-}
-
-/* ── Range slider ── */
-.range-slider {
-  position: relative;
-  height: 20px;
-}
-.range-track {
-  position: absolute;
-  top: 8px;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--slider-track);
-  border-radius: 2px;
-  pointer-events: none;
-}
-.range-fill {
-  position: absolute;
-  height: 100%;
-  background: var(--accent);
-  border-radius: 2px;
-  opacity: 0.5;
-}
-.range-input {
-  -webkit-appearance: none;
-  appearance: none;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 20px;
-  background: transparent;
-  pointer-events: none;
-  outline: none;
-  margin: 0;
-}
-.range-input::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--slider-thumb);
-  border: 2px solid var(--bg);
-  cursor: pointer;
-  pointer-events: all;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-  position: relative;
-  z-index: 1;
-}
-.range-input::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--slider-thumb);
-  border: 2px solid var(--bg);
-  cursor: pointer;
-  pointer-events: all;
-}
-
-.age-ticks {
-  display: flex;
-  justify-content: space-between;
-  font-size: 9px;
-  color: var(--text-dim);
-  padding: 0 4px;
 }
 
 /* ── Select dropdown ── */

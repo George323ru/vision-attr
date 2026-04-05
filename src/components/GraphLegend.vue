@@ -14,12 +14,12 @@
       <span>Аттрактор 3 уровня</span>
     </div>
     <div class="leg-row">
-      <span class="leg-line" style="width:20px;background:#059669"></span>
-      <span>положительная корреляция</span>
+      <span class="leg-line" style="width:20px;background:#0891b2"></span>
+      <span>усиливающая корреляция</span>
     </div>
     <div class="leg-row">
       <span class="leg-line" style="width:20px;background:#dc2626"></span>
-      <span>отрицательная корреляция</span>
+      <span>конфликтующая корреляция</span>
     </div>
     <div class="leg-row">
       <span class="leg-line" style="width:20px;background:#7070a0"></span>

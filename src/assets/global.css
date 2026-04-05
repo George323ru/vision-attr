@@ -9,8 +9,9 @@
   --border:       rgba(0,0,0,0.08);
   --border2:      rgba(0,0,0,0.05);
   --text:         #1a1a2e;
-  --text-muted:   rgba(0,0,0,0.35);
-  --text-dim:     rgba(0,0,0,0.2);
+  --text-muted:   rgba(0,0,0,0.55);
+  --text-muted-soft: rgba(0,0,0,0.35);
+  --text-dim:     rgba(0,0,0,0.4);
   --accent:       #c08a3e;
   --panel-bg:     rgba(255,255,255,0.94);
   --panel-border: rgba(192,138,62,0.30);
@@ -32,7 +33,10 @@
   --slider-thumb: #c08a3e;
   --right-bg:     rgba(255,255,255,0.7);
   --right-border: rgba(0,0,0,0.08);
-  --breadcrumb:   rgba(0,0,0,0.4);
+  --breadcrumb:   rgba(0,0,0,0.55);
+
+  /* Panel width (responsive) */
+  --right-panel-width: 456px;
 
   /* Typography */
   --font-display: 'Inter Tight', 'Inter', system-ui, sans-serif;
@@ -115,4 +119,17 @@ div.vis-tooltip {
   color: var(--text, #111);
   border-radius: 6px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+/* ── RESPONSIVE BREAKPOINTS ── */
+@media (max-width: 1280px) {
+  :root {
+    --right-panel-width: 360px;
+  }
+}
+@media (max-width: 1024px) {
+  :root {
+    --right-panel-width: 300px;
+    --fs-brand: 18px;
+  }
 }

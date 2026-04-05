@@ -1,17 +1,6 @@
 <template>
   <div v-if="sit && attr">
-    <div class="breadcrumb">
-      <template v-if="fromAllSituations">
-        <a @click="$emit('back-to-all')">Ситуации</a>
-        <span>›</span>
-        <span>{{ attr.label }}</span>
-      </template>
-      <template v-else>
-        <a @click="$emit('back-to-attractor', attrId)">{{ attr.label }}</a>
-      </template>
-      <span>›</span>
-      <span>{{ sit.title }}</span>
-    </div>
+    <PanelBreadcrumb :crumbs="breadcrumbs" />
 
     <div class="sit-description">{{ sit.description }}</div>
 
@@ -62,6 +51,8 @@ import { useAppState } from '@/composables/useAppState'
 import { predictBehavior } from '@/composables/usePrediction'
 import { useMarkupStore } from '@/composables/useMarkupStore'
 import StrategyBar from '@/components/StrategyBar.vue'
+import PanelBreadcrumb from '@/components/PanelBreadcrumb.vue'
+import type { BreadcrumbItem } from '@/components/PanelBreadcrumb.vue'
 
 const props = defineProps<{
   attrId: string
@@ -76,18 +67,31 @@ const emit = defineEmits<{
 
 const { getAttractor } = useAttractorStore()
 const { midAge, currentStrategy } = useAppState()
-
 const { getMarkupForSituation } = useMarkupStore()
+
+const attr = computed(() => getAttractor(props.attrId))
+const sit = computed(() => SITUATIONS.find(s => s.id === props.sitId))
+const markup = computed(() => getMarkupForSituation(props.sitId))
+
+const breadcrumbs = computed<BreadcrumbItem[]>(() => {
+  const crumbs: BreadcrumbItem[] = []
+  if (props.fromAllSituations) {
+    crumbs.push({ label: 'Ситуации', action: () => emit('back-to-all') })
+  }
+  if (attr.value) {
+    crumbs.push({ label: attr.value.label, action: () => emit('back-to-attractor', props.attrId) })
+  }
+  if (sit.value) {
+    crumbs.push({ label: sit.value.title })
+  }
+  return crumbs
+})
 
 function barColor(probability: number, maxProb: number): string {
   const ratio = maxProb > 0 ? probability / maxProb : 0
   const opacity = 0.35 + 0.65 * ratio
   return `rgba(192,138,62,${opacity.toFixed(2)})`
 }
-
-const attr = computed(() => getAttractor(props.attrId))
-const sit = computed(() => SITUATIONS.find(s => s.id === props.sitId))
-const markup = computed(() => getMarkupForSituation(props.sitId))
 
 const predictions = computed(() =>
   predictBehavior(props.sitId, midAge.value)
@@ -111,21 +115,6 @@ function onBack() {
 </script>
 
 <style scoped>
-.breadcrumb {
-  font-size: 11px;
-  color: var(--breadcrumb);
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.breadcrumb a {
-  color: var(--accent);
-  cursor: pointer;
-  text-decoration: none;
-}
-.breadcrumb a:hover { text-decoration: underline; }
-
 .sit-description {
   font-size: 12px;
   color: var(--text-muted);

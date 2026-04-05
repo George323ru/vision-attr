@@ -29,7 +29,7 @@
         :class="{ active: currentMode === 'situations' }"
         @click="$emit('toggle-situations')"
       >Ситуации</button>
-      <button class="settings-btn" title="Настройки графа" @click="$emit('toggle-settings')">⚙</button>
+      <button class="settings-btn" title="Настройки графа" aria-label="Настройки графа" @click="$emit('toggle-settings')">⚙</button>
       <span class="version">v2.0</span>
     </div>
   </header>
@@ -73,6 +73,12 @@ const { currentMode, correlationsVisible, expansionMode } = useAppState()
   display: flex;
   align-items: center;
   gap: 14px;
+}
+@media (max-width: 1024px) {
+  .header-right { gap: 8px; }
+  .app-header { padding: 10px 16px; }
+  .header-btn-sm { padding: 4px 8px; font-size: 10px; }
+  .header-btn { padding: 5px 12px; font-size: 11px; }
 }
 .header-right .version {
   font-size: 11px;

@@ -32,7 +32,7 @@ export const THEMES: Record<ThemeName, ThemeColors> = {
       node: { bg: '#f0f0f4', border: '#e0e0e8' },
       font: '#c0c0d0',
     },
-    corrReinforcing: { color: '#059669', opacity: 0.9 },
+    corrReinforcing: { color: '#0891b2', opacity: 0.9 },
     corrConflicting: { color: '#dc2626', opacity: 0.9 },
     corrDefault: { color: '#7070a0', opacity: 0.55 },
     focusFont: { color: '#0d0d1a', stroke: '#fbbf24' },

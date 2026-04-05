@@ -378,10 +378,10 @@ const externalCorr = computed<CorrItem[]>(() => {
   flex-shrink: 0;
 }
 .corr-dot.green {
-  background: #22c55e;
+  background: #0891b2;
 }
 .corr-dot.red {
-  background: #ef4444;
+  background: #dc2626;
 }
 .corr-names {
   flex: 1;
@@ -398,7 +398,7 @@ const externalCorr = computed<CorrItem[]>(() => {
   flex-shrink: 0;
 }
 .corr-pct.green {
-  color: #16a34a;
+  color: #0891b2;
 }
 .corr-pct.red {
   color: #dc2626;

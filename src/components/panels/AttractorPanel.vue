@@ -1,5 +1,7 @@
 <template>
   <div v-if="attr">
+    <PanelBreadcrumb :crumbs="breadcrumbs" />
+
     <!-- Инсайты — показываем всегда если есть -->
     <div v-if="attr.insights" class="insights-section">
       <div class="insights-label">Инсайт</div>
@@ -38,20 +40,36 @@ import { useAttractorStore } from '@/composables/useAttractorStore'
 import { useAttractorDisplay } from '@/composables/useAttractorDisplay'
 import { useAppState } from '@/composables/useAppState'
 import SituationCard from '@/components/SituationCard.vue'
+import PanelBreadcrumb from '@/components/PanelBreadcrumb.vue'
+import type { BreadcrumbItem } from '@/components/PanelBreadcrumb.vue'
 
 const props = defineProps<{ nodeId: string }>()
 
 defineEmits<{ 'select-situation': [attrId: string, sitId: string] }>()
 
-const { attractors } = useAttractorStore()
+const { attractors, domains, getAttractor } = useAttractorStore()
 const { l3NodeId, currentFocus } = useAppState()
 const { attr, domainColor } = useAttractorDisplay(toRef(props, 'nodeId'))
+
+const breadcrumbs = computed<BreadcrumbItem[]>(() => {
+  if (!attr.value) return []
+  const crumbs: BreadcrumbItem[] = []
+  const domainName = domains.value[attr.value.domain]?.name ?? attr.value.domain
+  crumbs.push({ label: domainName })
+  if (attr.value.parent) {
+    const parent = getAttractor(attr.value.parent)
+    if (parent) {
+      crumbs.push({ label: parent.label, action: () => { currentFocus.value = parent.id } })
+    }
+  }
+  crumbs.push({ label: attr.value.label })
+  return crumbs
+})
 
 function selectChild(child: { id: string; level: number }) {
   if (child.level === 3) {
     l3NodeId.value = child.id
   } else {
-    // L2-ребёнок (клик из L1-панели) — переключаем фокус
     currentFocus.value = child.id
   }
 }

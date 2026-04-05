@@ -1,16 +1,20 @@
 <template>
   <div class="right-panel">
-    <button class="collapse-toggle" @click="rightPanelCollapsed = !rightPanelCollapsed" :title="rightPanelCollapsed ? 'Показать панель' : 'Скрыть панель'">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path v-if="rightPanelCollapsed" d="M4 1l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-        <path v-else d="M8 1L3 6l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
     <template v-if="!rightPanelCollapsed">
-      <CollapsibleSection title="Демография">
+      <CollapsibleSection
+        title="Демография"
+        :initial-collapsed="true"
+        coach-mark-id="cm-demographics"
+        coach-mark-text="Фильтры влияют на расчёт корреляций и предиктивный анализ стратегий"
+      >
         <DemographicsPanel @age-change="$emit('age-change')" />
       </CollapsibleSection>
-      <CollapsibleSection title="Аттракторы человека">
+      <CollapsibleSection
+        title="Аттракторы человека"
+        :initial-collapsed="true"
+        coach-mark-id="cm-attractors"
+        coach-mark-text="Выберите до 3 аттракторов — их корреляции отобразятся на графе"
+      >
         <AttractorDropdowns />
       </CollapsibleSection>
       <Transition name="header-fade" mode="out-in">
@@ -123,29 +127,6 @@ function onBackToAttractor(attrId: string) {
   flex-direction: column;
   overflow: hidden;
   transition: background 0.3s, border-color 0.3s;
-}
-.collapse-toggle {
-  position: absolute;
-  left: -14px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  width: 28px;
-  height: 48px;
-  border: 1px solid var(--border);
-  border-radius: 6px 0 0 6px;
-  background: var(--card-bg);
-  color: var(--text-muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  transition: color 0.2s, background 0.2s;
-}
-.collapse-toggle:hover {
-  color: var(--accent);
-  background: var(--card-hover);
 }
 .right-panel-header {
   padding: 16px 20px 12px;
