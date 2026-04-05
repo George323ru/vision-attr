@@ -36,14 +36,119 @@ interface DropdownCorrLine {
 }
 let dropdownCorrLines: DropdownCorrLine[] = []
 
+// «Дыхание» — плавные микро-колебания нод
+let breatheAnimId: number | null = null
+let breatheBasePositions: Record<string, { x: number; y: number }> = {}
+const BREATHE_AMPLITUDE = 1.8  // px макс. смещение
+const BREATHE_SPEED = 0.0006   // скорость колебания
+
+function startBreatheAnimation() {
+  stopBreatheAnimation()
+  // Каждая нода получает уникальную фазу для естественного вида
+  const phases: Record<string, { px: number; py: number }> = {}
+  for (const id of Object.keys(breatheBasePositions)) {
+    phases[id] = { px: Math.random() * Math.PI * 2, py: Math.random() * Math.PI * 2 }
+  }
+
+  function animate(time: number) {
+    if (!nodes || !network) return
+    for (const [id, base] of Object.entries(breatheBasePositions)) {
+      const ph = phases[id]
+      if (!ph) continue
+      const dx = Math.sin(time * BREATHE_SPEED + ph.px) * BREATHE_AMPLITUDE
+      const dy = Math.cos(time * BREATHE_SPEED * 0.7 + ph.py) * BREATHE_AMPLITUDE
+      try {
+        network!.moveNode(id, base.x + dx, base.y + dy)
+      } catch (_) { /* нода может быть скрыта */ }
+    }
+    breatheAnimId = requestAnimationFrame(animate)
+  }
+
+  breatheAnimId = requestAnimationFrame(animate)
+}
+
+function stopBreatheAnimation() {
+  if (breatheAnimId !== null) {
+    cancelAnimationFrame(breatheAnimId)
+    breatheAnimId = null
+  }
+}
+
+function updateBreatheBase(nodeId: string, x: number, y: number) {
+  breatheBasePositions[nodeId] = { x, y }
+}
+
+function computeInitialPositions(attractors: Attractor[]): Record<string, { x: number; y: number }> {
+  const positions: Record<string, { x: number; y: number }> = {}
+
+  // L1 — равномерно по кругу
+  const l1Nodes = attractors.filter(a => a.level === 1)
+  const L1_RADIUS = 4000
+  l1Nodes.forEach((a, i) => {
+    const angle = (2 * Math.PI * i) / l1Nodes.length - Math.PI / 2
+    positions[a.id] = { x: Math.cos(angle) * L1_RADIUS, y: Math.sin(angle) * L1_RADIUS }
+  })
+
+  // L2 — веером наружу от центра (в секторе домена, не по кругу вокруг L1)
+  const L2_RADIUS = 700
+  const SECTOR_SPAN = (2 * Math.PI / l1Nodes.length) * 0.6 // 60% сектора домена
+  const childrenOfL1: Record<string, Attractor[]> = {}
+  attractors.filter(a => a.level === 2 && a.parent).forEach(a => {
+    if (!childrenOfL1[a.parent!]) childrenOfL1[a.parent!] = []
+    childrenOfL1[a.parent!].push(a)
+  })
+  for (const [parentId, children] of Object.entries(childrenOfL1)) {
+    const parentPos = positions[parentId]
+    if (!parentPos) continue
+    // Угол домена (от центра к L1)
+    const domainAngle = Math.atan2(parentPos.y, parentPos.x)
+    children.forEach((a, i) => {
+      // Распределяем L2 веером в секторе домена
+      const t = children.length === 1 ? 0 : (i / (children.length - 1) - 0.5)
+      const angle = domainAngle + t * SECTOR_SPAN
+      positions[a.id] = {
+        x: parentPos.x + Math.cos(angle) * L2_RADIUS,
+        y: parentPos.y + Math.sin(angle) * L2_RADIUS,
+      }
+    })
+  }
+
+  // L3 — веером наружу от L2 (в направлении от центра)
+  const L3_RADIUS = 200
+  const L3_SPAN = SECTOR_SPAN * 0.4
+  const childrenOfL2: Record<string, Attractor[]> = {}
+  attractors.filter(a => a.level === 3 && a.parent).forEach(a => {
+    if (!childrenOfL2[a.parent!]) childrenOfL2[a.parent!] = []
+    childrenOfL2[a.parent!].push(a)
+  })
+  for (const [parentId, children] of Object.entries(childrenOfL2)) {
+    const parentPos = positions[parentId]
+    if (!parentPos) continue
+    children.forEach((a, i) => {
+      // L3 веером наружу от L2 (в направлении от центра)
+      const l2Angle = Math.atan2(parentPos.y, parentPos.x)
+      const t = children.length === 1 ? 0 : (i / (children.length - 1) - 0.5)
+      const angle = l2Angle + t * L3_SPAN
+      positions[a.id] = {
+        x: parentPos.x + Math.cos(angle) * L3_RADIUS,
+        y: parentPos.y + Math.sin(angle) * L3_RADIUS,
+      }
+    })
+  }
+
+  return positions
+}
+
 function buildNodesData() {
   const { domains, attractors } = useAttractorStore()
   const { T, currentTheme } = useTheme()
   const { nodeSizeL1, nodeSizeL2, nodeSizeL3, fontSizeL1, fontSizeL2, fontSizeL3 } = useVisualSettings()
+  const initialPositions = computeInitialPositions(attractors.value)
   return attractors.value.map((a: Attractor) => {
     const sz = a.level === 1 ? nodeSizeL1.value : a.level === 2 ? nodeSizeL2.value : nodeSizeL3.value
     const baseFont = nodeFont(domains.value, T.value, currentTheme.value, a.domain, a.level)
     const fs = a.level === 1 ? fontSizeL1.value : a.level === 2 ? fontSizeL2.value : fontSizeL3.value
+    const pos = initialPositions[a.id]
     return {
       id: a.id,
       label: a.level === 2 ? wrapLabel(a.label, 2) : a.level === 3 ? wrapLabel(a.label) : a.label,
@@ -52,7 +157,6 @@ function buildNodesData() {
       parent: a.parent,
       description: a.description || '',
       insights: a.insights || '',
-      // title убрано — hover отключён
       shape: 'dot',
       size: sz,
       mass: nodeMass(a.level),
@@ -60,6 +164,9 @@ function buildNodesData() {
       borderWidth: a.level === 1 ? 2 : 1,
       font: { ...baseFont, size: fs },
       hidden: a.level !== 1,
+      x: pos?.x ?? 0,
+      y: pos?.y ?? 0,
+      fixed: a.level === 1 ? { x: true, y: true } : false,
     }
   })
 }
@@ -220,7 +327,7 @@ function collapseAllL2() {
 }
 
 function expandAllL2() {
-  if (!nodes) return
+  if (!nodes || !edges) return
   const { attractors } = useAttractorStore()
   attractors.value.forEach((a: Attractor) => {
     if (a.level === 1) expandL1(a.id)
@@ -229,11 +336,18 @@ function expandAllL2() {
 
 function expandAllL3() {
   expandAllL2()
-  if (!nodes) return
+  if (!nodes || !edges) return
   const { attractors } = useAttractorStore()
   attractors.value.forEach((a: Attractor) => {
     if (a.level === 2) expandL2(a.id)
   })
+  // Принудительно показать все иерархические рёбра
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hierUpdates: any[] = []
+  edges.forEach((e) => {
+    if (e.type === 'hierarchy') hierUpdates.push({ id: e.id, hidden: false })
+  })
+  if (hierUpdates.length) edges.update(hierUpdates)
 }
 
 function resetExpansionState() {
@@ -736,7 +850,12 @@ function clearDropdownHighlight() {
   edges.forEach((e) => {
     const origE = ORIG_EDGE[e.id]
     if (!origE) return
-    eu.push({ id: e.id, hidden: origE.hidden, color: origE.color, width: origE.width, label: undefined, font: undefined })
+    if (e.type === 'hierarchy') {
+      // Не трогать hidden — управляется expand/collapse
+      eu.push({ id: e.id, color: origE.color, width: origE.width })
+    } else {
+      eu.push({ id: e.id, hidden: origE.hidden, color: origE.color, width: origE.width, label: undefined, font: undefined })
+    }
   })
   edges.update(eu)
 
@@ -772,17 +891,17 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
         enabled: true,
         solver: 'barnesHut' as const,
         barnesHut: {
-          gravitationalConstant: -5000,
-          centralGravity: 0.2,
-          springLength: 80,
-          springConstant: 0.04,
-          damping: 0.09,
-          avoidOverlap: 0.3,
+          gravitationalConstant: -8000,
+          centralGravity: 0.02,
+          springLength: 350,
+          springConstant: 0.01,
+          damping: 0.4,
+          avoidOverlap: 0.6,
         },
-        stabilization: { enabled: true, iterations: 500, fit: true },
-        maxVelocity: 30,
+        stabilization: { enabled: true, iterations: 1000, fit: true },
+        maxVelocity: 10,
         minVelocity: 0.75,
-        timestep: 0.5,
+        timestep: 0.35,
       },
       interaction: {
         hover: false,
@@ -850,11 +969,16 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const positions = network!.getPositions()
         const updates: any[] = []
+        breatheBasePositions = {}
         nodes.forEach((n) => {
           const pos = positions[n.id as string]
-          if (pos) updates.push({ id: n.id, x: pos.x, y: pos.y, fixed: { x: true, y: true } })
+          if (pos) {
+            updates.push({ id: n.id, x: pos.x, y: pos.y, fixed: { x: true, y: true } })
+            breatheBasePositions[n.id as string] = { x: pos.x, y: pos.y }
+          }
         })
         nodes.update(updates)
+        startBreatheAnimation()
       }
     })
 
@@ -911,6 +1035,7 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
       if (endPos[nodeId]) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         nodes.update([{ id: nodeId, x: endPos[nodeId].x, y: endPos[nodeId].y, fixed: { x: true, y: true } } as any])
+        updateBreatheBase(nodeId, endPos[nodeId].x, endPos[nodeId].y)
       }
 
       lastDragNodePos = null
@@ -943,6 +1068,7 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
 
   onMounted(() => init())
   onBeforeUnmount(() => {
+    stopBreatheAnimation()
     network?.destroy()
     network = null
     nodes = null
@@ -950,6 +1076,7 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
     ORIG = {}
     ORIG_EDGE = {}
     dropdownCorrLines = []
+    breatheBasePositions = {}
     expandedL1.clear()
     expandedL2.clear()
     graphFocusSet.clear()
