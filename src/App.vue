@@ -196,7 +196,7 @@ function onShowAllSituations() {
   currentSituation.value = null
   currentStrategy.value = null
   l3NodeId.value = null
-  net?.resetGraphVisuals()
+  net?.clearFocusVisualsPreserveVisibility()
   applyHighlightFromState()
 }
 
@@ -204,7 +204,9 @@ function onSelectSituation(attrId: string, sitId: string) {
   pushNavState()
   const net = getNetwork()
   if (net) {
-    backSnapshot.value = net.snapshotExpansionState()
+    if (!situationsSnapshot.value) {
+      backSnapshot.value = net.snapshotExpansionState()
+    }
     // Подсветить связанный L2 на графе
     const l2 = getAttractor(attrId)
     if (l2?.parent) {
@@ -214,6 +216,9 @@ function onSelectSituation(attrId: string, sitId: string) {
   }
   currentSituation.value = { attrId, sitId }
   currentStrategy.value = null
+  currentFocus.value = attrId
+  const focusResult = net?.applyFocus(attrId)
+  if (focusResult) graphZoneRef.value?.setFocusCount(focusResult.correlated)
 }
 
 function onBackToAttractor(attrId: string) {
@@ -311,8 +316,10 @@ watch(
       if (!currentFocus.value || !activeSelectedIds.value.has(currentFocus.value)) {
         currentFocus.value = null
       }
-      currentSituation.value = null
-      l3NodeId.value = null
+      // Не сбрасываем currentSituation — она управляется onSelectSituation
+      if (currentMode.value !== 'situations' && !currentSituation.value) {
+        l3NodeId.value = null
+      }
       applyHighlightFromState()
     } else {
       net.clearDropdownHighlight()
