@@ -6,12 +6,14 @@ type RawDomain = { id: string; name: string; hue: number; sat: number; color: st
 
 const domains = ref<DomainMap>({})
 const attractors = ref<Attractor[]>([])
+const loaded = ref(false)
 
 const l2Ids = computed(() =>
   attractors.value.filter(a => a.level === 2).map(a => a.id)
 )
 
 async function loadData(): Promise<void> {
+  if (loaded.value) return
   const r = await fetch('/data/attractors.json')
   if (!r.ok) throw new Error(`Не удалось загрузить data/attractors.json (HTTP ${r.status})`)
   const data = await r.json()
@@ -24,11 +26,7 @@ async function loadData(): Promise<void> {
 
   const attrData = data.attractors as Attractor[]
   attractors.value = attrData
-
-  const l1 = attrData.filter(a => a.level === 1).length
-  const l2 = attrData.filter(a => a.level === 2).length
-  const l3 = attrData.filter(a => a.level === 3).length
-  console.log(`[data] Загружено: ${l1} L1, ${l2} L2, ${l3} L3`)
+  loaded.value = true
 }
 
 function getAttractor(id: string): Attractor | undefined {

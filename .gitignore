@@ -9,3 +9,4 @@ dist/
 data/
 public/data/
 *.zip
+__pycache__/

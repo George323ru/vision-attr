@@ -541,7 +541,8 @@ function updateCorrelationsForAge(age: number) {
         : { color: cColor.value, opacity: 0.9 }
       eu.push({ id: e.id, hidden: false, color: corrColor, width: 5 + corrInfo.strength * 16 })
     } else {
-      eu.push({ id: e.id, color: ORIG_EDGE[e.id].color, width: ORIG_EDGE[e.id].width })
+      const origE = ORIG_EDGE[e.id]
+      if (origE) eu.push({ id: e.id, color: origE.color, width: origE.width })
     }
   })
   edges.update(eu)

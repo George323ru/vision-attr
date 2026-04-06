@@ -88,7 +88,7 @@ export function predictBehavior(
     }
   }
 
-  if (filteredCount === 0) return []
+  if (filteredCount === 0 || totalWeight === 0) return []
 
   const result: Prediction[] = strategyNames.map((name, i) => ({
     name,
