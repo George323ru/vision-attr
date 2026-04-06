@@ -212,7 +212,6 @@ function onSelectSituation(attrId: string, sitId: string) {
     if (l2?.parent) {
       net.expandL1(l2.parent)
     }
-    addToSelectedAttractors(attrId)
   }
   currentSituation.value = { attrId, sitId }
   currentStrategy.value = null
