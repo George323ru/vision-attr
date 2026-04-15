@@ -1,6 +1,6 @@
 <template>
   <div class="correlation-panel">
-    <div v-if="!correlationFocusId" class="cp-empty">
+    <div v-if="!focusedNodeId" class="cp-empty">
       <div class="cp-icon">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="6" cy="6" r="3"/>
@@ -17,14 +17,15 @@
         <span class="cp-node-name">{{ focusedName }}</span>
         <div class="cp-header-right">
           <span class="cp-node-count">{{ correlationList.length }} связей</span>
-          <button class="cp-reset-btn" @click="emit('reset')" title="Снять выделение" aria-label="Снять выделение">×</button>
+          <button class="cp-reset-btn" @click="dispatch({ type: 'CLICK_EMPTY' })" title="Снять выделение" aria-label="Снять выделение">×</button>
         </div>
       </div>
       <div class="cp-age-section">
-        <div class="cp-age-label">Возраст: <b>{{ correlationAge }}</b></div>
+        <div class="cp-age-label">Возраст: <b>{{ corrAge }}</b></div>
         <input
           type="range"
-          v-model.number="correlationAge"
+          :value="corrAge"
+          @input="dispatch({ type: 'SET_CORR_AGE', age: Number(($event.target as HTMLInputElement).value) })"
           min="18"
           max="75"
           class="cp-age-slider"
@@ -36,7 +37,7 @@
         </div>
       </div>
       <div v-if="correlationList.length === 0" class="cp-no-corr">
-        Нет корреляций для возраста {{ correlationAge }}
+        Нет корреляций для возраста {{ corrAge }}
       </div>
       <div v-else class="cp-list">
         <div v-for="item in correlationList" :key="item.id" class="cp-item">
@@ -58,19 +59,19 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useAppState } from '@/composables/useAppState'
+import { useStore } from '@/composables/state/useStore'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 import { getCorrEdgesForNode } from '@/composables/useCorrelations'
 import { CORRELATIONS } from '@/data/correlations'
 
-const emit = defineEmits<{ reset: [] }>()
-
-const { correlationFocusId, correlationAge } = useAppState()
+const { focusedNodeId, correlationAge, dispatch } = useStore()
 const { getAttractor } = useAttractorStore()
 
+const corrAge = computed((): number => correlationAge.value ?? 42)
+
 const focusedName = computed(() => {
-  if (!correlationFocusId.value) return ''
-  const attr = getAttractor(correlationFocusId.value)
+  if (!focusedNodeId.value) return ''
+  const attr = getAttractor(focusedNodeId.value)
   return attr?.label?.replace(/\n/g, ' ') ?? ''
 })
 
@@ -83,12 +84,12 @@ interface CorrItem {
 }
 
 const correlationList = computed((): CorrItem[] => {
-  if (!correlationFocusId.value) return []
-  return getCorrEdgesForNode(correlationFocusId.value, correlationAge.value)
+  if (!focusedNodeId.value) return []
+  return getCorrEdgesForNode(focusedNodeId.value, corrAge.value)
     .map(ce => {
       const corr = CORRELATIONS.find(c => c.id === ce.corrId)
       if (!corr) return null
-      const otherId = corr.from === correlationFocusId.value ? corr.to : corr.from
+      const otherId = corr.from === focusedNodeId.value ? corr.to : corr.from
       const otherAttr = getAttractor(otherId)
       return {
         id: ce.corrId,

@@ -1,0 +1,28 @@
+<template>
+  <aside class="profile-sidebar">
+    <CollapsibleSection title="Demographics" :initial-collapsed="false">
+      <DemographicsPanel />
+    </CollapsibleSection>
+    <CollapsibleSection title="Your values" :initial-collapsed="false">
+      <AttractorPicker />
+    </CollapsibleSection>
+  </aside>
+</template>
+
+<script setup lang="ts">
+import CollapsibleSection from '@/components/CollapsibleSection.vue'
+import DemographicsPanel from '@/components/DemographicsPanel.vue'
+import AttractorPicker from '@/components/AttractorPicker.vue'
+</script>
+
+<style scoped>
+.profile-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  background: var(--right-bg);
+}
+</style>

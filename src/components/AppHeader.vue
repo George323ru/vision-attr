@@ -2,57 +2,27 @@
   <header class="app-header">
     <h1>LOGOS</h1>
     <div class="header-right">
-      <div class="expansion-group">
-        <button
-          class="header-btn-sm"
-          :class="{ active: expansionMode === 'click' }"
-          @click="$emit('change-expansion-mode', 'click')"
-        >По клику</button>
-        <button
-          class="header-btn-sm"
-          :class="{ active: expansionMode === 'allL2' }"
-          @click="$emit('change-expansion-mode', 'allL2')"
-        >Все 2 уровня</button>
-        <button
-          class="header-btn-sm"
-          :class="{ active: expansionMode === 'allL3' }"
-          @click="$emit('change-expansion-mode', 'allL3')"
-        >Все 3 уровня</button>
-      </div>
       <div class="mode-group">
         <button
           class="mode-btn"
-          :class="{ active: currentMode === 'graph' }"
-          @click="$emit('change-mode', 'graph')"
-        >Граф</button>
+          :class="{ active: currentView === 'scenarios' }"
+          @click="dispatch({ type: 'SWITCH_VIEW', view: 'scenarios' })"
+        >Analyse</button>
         <button
           class="mode-btn"
-          :class="{ active: currentMode === 'correlations' }"
-          @click="$emit('change-mode', 'correlations')"
-        >Корреляции</button>
-        <button
-          class="mode-btn"
-          :class="{ active: currentMode === 'situations' }"
-          @click="$emit('change-mode', 'situations')"
-        >Ситуации</button>
+          :class="{ active: currentView === 'graph' }"
+          @click="dispatch({ type: 'SWITCH_VIEW', view: 'graph' })"
+        >Graph</button>
       </div>
-      <button class="settings-btn" title="Настройки графа" aria-label="Настройки графа" @click="$emit('toggle-settings')">⚙</button>
-      <span class="version">v2.0</span>
+      <span class="version">v3.0</span>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
-import { useAppState } from '@/composables/useAppState'
-import type { AppMode } from '@/composables/useAppState'
+import { useStore } from '@/composables/state/useStore'
 
-defineEmits<{
-  'change-mode': [mode: AppMode]
-  'change-expansion-mode': [mode: 'click' | 'allL2' | 'allL3']
-  'toggle-settings': []
-}>()
-
-const { currentMode, expansionMode } = useAppState()
+const { currentView, dispatch } = useStore()
 </script>
 
 <style scoped>
@@ -84,58 +54,11 @@ const { currentMode, expansionMode } = useAppState()
 @media (max-width: 1024px) {
   .header-right { gap: 8px; }
   .app-header { padding: 10px 16px; }
-  .header-btn-sm { padding: 4px 8px; font-size: 10px; }
-  .header-btn { padding: 5px 12px; font-size: 11px; }
 }
 .header-right .version {
   font-size: 11px;
   color: var(--text-dim);
   letter-spacing: 1px;
-}
-.settings-btn {
-  font-size: 15px;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 2px 4px;
-  line-height: 1;
-  transition: color 0.2s;
-  opacity: 0.6;
-}
-.settings-btn:hover {
-  color: var(--text);
-  opacity: 1;
-}
-
-.expansion-group {
-  display: flex;
-  gap: 2px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 2px;
-}
-
-.header-btn-sm {
-  font-size: 11px;
-  padding: 4px 12px;
-  border-radius: 16px;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  letter-spacing: 0.3px;
-  transition: background 0.2s, color 0.2s;
-  white-space: nowrap;
-}
-.header-btn-sm:hover {
-  background: var(--card-hover);
-  color: var(--text);
-}
-.header-btn-sm.active {
-  background: var(--accent);
-  color: #fff;
 }
 
 .mode-group {

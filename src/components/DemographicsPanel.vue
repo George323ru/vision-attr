@@ -13,8 +13,8 @@
         :ticks="[18, 25, 35, 45, 55, 65, 75]"
         aria-label-min="Минимальный возраст"
         aria-label-max="Максимальный возраст"
-        @update:model-min="ageMin = $event; emit('age-change')"
-        @update:model-max="ageMax = $event; emit('age-change')"
+        @update:model-min="dispatch({ type: 'SET_AGE_RANGE', min: $event, max: ageMax })"
+        @update:model-max="dispatch({ type: 'SET_AGE_RANGE', min: ageMin, max: $event })"
       />
     </div>
 
@@ -25,7 +25,7 @@
         :value="gender"
         class="demo-select"
         aria-label="Выберите пол"
-        @change="gender = ($event.target as HTMLSelectElement).value as typeof gender"
+        @change="dispatch({ type: 'SET_GENDER', value: ($event.target as HTMLSelectElement).value as 'male' | 'female' | 'any' })"
       >
         <option value="any">Любой</option>
         <option value="male">Мужской</option>
@@ -40,7 +40,7 @@
         :value="maritalStatus"
         class="demo-select"
         aria-label="Семейное положение"
-        @change="maritalStatus = ($event.target as HTMLSelectElement).value as typeof maritalStatus"
+        @change="dispatch({ type: 'SET_MARITAL', value: ($event.target as HTMLSelectElement).value as 'married' | 'not_married' | 'divorced' | 'widowed' | 'civil_union' | 'any' })"
       >
         <option value="any">Любое</option>
         <option value="married">В браке</option>
@@ -58,7 +58,7 @@
         :value="childrenCount"
         class="demo-select"
         aria-label="Количество детей"
-        @change="childrenCount = ($event.target as HTMLSelectElement).value"
+        @change="dispatch({ type: 'SET_CHILDREN', value: ($event.target as HTMLSelectElement).value })"
       >
         <option value="any">Не важно</option>
         <option value="0">Нет детей</option>
@@ -73,12 +73,17 @@
 </template>
 
 <script setup lang="ts">
-import { useAppState } from '@/composables/useAppState'
+import { computed } from 'vue'
+import { useStore } from '@/composables/state/useStore'
 import DualRangeSlider from './DualRangeSlider.vue'
 
-const { ageMin, ageMax, gender, childrenCount, maritalStatus } = useAppState()
+const { profile, dispatch } = useStore()
 
-const emit = defineEmits<{ 'age-change': [] }>()
+const ageMin = computed(() => profile.value.demographics.ageMin)
+const ageMax = computed(() => profile.value.demographics.ageMax)
+const gender = computed(() => profile.value.demographics.gender)
+const childrenCount = computed(() => profile.value.demographics.childrenCount)
+const maritalStatus = computed(() => profile.value.demographics.maritalStatus)
 </script>
 
 <style scoped>

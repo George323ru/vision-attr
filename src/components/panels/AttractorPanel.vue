@@ -13,11 +13,10 @@
       <SituationCard
         v-for="s in situations"
         :key="s.id"
-        :title="s.title"
-        :description="s.description"
-        :domain-color="domainColor"
-        :has-data="hasMarkup(s.id)"
-        @select="$emit('select-situation', nodeId, s.id)"
+        :situation="s"
+        :has-markup="hasMarkup(s.id)"
+        :relevant="false"
+        @open="dispatch({ type: 'OPEN_SITUATION', sitId: s.id, attrId: nodeId })"
       />
     </template>
 
@@ -31,7 +30,7 @@
           v-for="c in relatedCorrelations"
           :key="c.id"
           class="corr-item clickable"
-          @click="pushNavState(); currentFocus = c.otherId"
+          @click="dispatch({ type: 'CLICK_NODE', nodeId: c.otherId, level: 2 })"
         >
           <span class="corr-dot" :class="c.type"></span>
           <span class="corr-name">{{ c.otherLabel }}</span>
@@ -58,7 +57,7 @@ import { CORRELATIONS } from '@/data/correlations'
 import { getCorrelationAtAge } from '@/composables/useCorrelations'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 import { useAttractorDisplay } from '@/composables/useAttractorDisplay'
-import { useAppState } from '@/composables/useAppState'
+import { useStore } from '@/composables/state/useStore'
 import { useMarkupStore } from '@/composables/useMarkupStore'
 import SituationCard from '@/components/SituationCard.vue'
 import PanelBreadcrumb from '@/components/PanelBreadcrumb.vue'
@@ -66,10 +65,8 @@ import type { BreadcrumbItem } from '@/components/PanelBreadcrumb.vue'
 
 const props = defineProps<{ nodeId: string }>()
 
-defineEmits<{ 'select-situation': [attrId: string, sitId: string] }>()
-
 const { attractors, domains, getAttractor } = useAttractorStore()
-const { l3NodeId, currentFocus, midAge, pushNavState } = useAppState()
+const { midAge, dispatch } = useStore()
 const { getMarkupForSituation } = useMarkupStore()
 
 function hasMarkup(sitId: string): boolean {
@@ -85,7 +82,7 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => {
   if (attr.value.parent) {
     const parent = getAttractor(attr.value.parent)
     if (parent) {
-      crumbs.push({ label: parent.label, action: () => { currentFocus.value = parent.id } })
+      crumbs.push({ label: parent.label, action: () => { dispatch({ type: 'CLICK_NODE', nodeId: parent.id, level: parent.level as 1 | 2 | 3 }) } })
     }
   }
   crumbs.push({ label: attr.value.label })
@@ -93,11 +90,7 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => {
 })
 
 function selectChild(child: { id: string; level: number }) {
-  if (child.level === 3) {
-    l3NodeId.value = child.id
-  } else {
-    currentFocus.value = child.id
-  }
+  dispatch({ type: 'CLICK_NODE', nodeId: child.id, level: child.level as 1 | 2 | 3 })
 }
 
 const situations = computed(() =>

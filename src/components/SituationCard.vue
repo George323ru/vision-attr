@@ -1,79 +1,115 @@
 <template>
-  <div
+  <button
     class="situation-card"
-    :class="{ 'no-data': hasData === false }"
-    :style="{ borderLeftColor: domainColor }"
-    @click="$emit('select')"
+    :class="{ relevant, 'has-data': hasMarkup }"
+    @click="$emit('open')"
   >
-    <div class="sc-title">
-      {{ title }}
-      <span v-if="hasData" class="sc-badge data">данные</span>
-      <span v-else-if="hasData === false" class="sc-badge no-data">в работе</span>
+    <div class="card-top">
+      <span class="card-title">{{ situation.title }}</span>
+      <span v-if="hasMarkup" class="card-badge">ANALYSE</span>
     </div>
-    <div class="sc-desc">{{ description }}</div>
-  </div>
+    <p class="card-desc">{{ situation.description }}</p>
+    <div class="card-meta">
+      <span v-if="domainLabel" class="card-domain" :style="{ color: domainColorValue }">{{ domainLabel }}</span>
+    </div>
+  </button>
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  title: string
-  description: string
-  domainColor: string
-  hasData?: boolean
+import { computed } from 'vue'
+import type { Situation } from '@/types/situation'
+import { useAttractorStore } from '@/composables/useAttractorStore'
+import { domainColor } from '@/utils/colors'
+
+const props = defineProps<{
+  situation: Situation
+  hasMarkup: boolean
+  relevant: boolean
 }>()
 
-defineEmits<{ select: [] }>()
+defineEmits<{ open: [] }>()
+
+const { getAttractor, domains } = useAttractorStore()
+
+const attr = computed(() => getAttractor(props.situation.attractorL2))
+const domainLabel = computed(() => {
+  if (!attr.value) return ''
+  const d = domains.value[attr.value.domain]
+  return d?.name ?? attr.value.domain
+})
+const domainColorValue = computed(() => {
+  if (!attr.value) return 'var(--text-muted)'
+  return domainColor(domains.value, attr.value.domain, 2)
+})
 </script>
 
 <style scoped>
 .situation-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin-bottom: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s, transform 0.15s;
-  border-left-width: 3px;
-  border-left-style: solid;
-  border-left-color: var(--accent);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
 }
 .situation-card:hover {
   background: var(--card-hover);
+  border-color: var(--border);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.situation-card.relevant {
   border-color: var(--accent);
-  transform: translateX(2px);
+  box-shadow: 0 0 0 1px var(--accent);
 }
-.sc-title {
-  font-size: 13px;
-  font-weight: 500;
-  margin-bottom: 4px;
-  color: var(--text);
+.situation-card.has-data {
+  background: var(--bg-surface2);
 }
-.sc-desc {
-  font-size: 11px;
-  color: var(--text-muted);
-  line-height: 1.4;
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
 }
-.situation-card.no-data {
-  opacity: 0.55;
-}
-.sc-badge {
-  display: inline-block;
-  font-size: 9px;
+.card-title {
+  font-size: var(--fs-sm);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 1px 5px;
-  border-radius: 3px;
-  vertical-align: middle;
-  margin-left: 6px;
+  color: var(--text);
+  line-height: 1.35;
 }
-.sc-badge.data {
-  background: rgba(8, 145, 178, 0.12);
-  color: #0891b2;
+.card-badge {
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(192,138,62,0.12);
+  color: var(--accent);
 }
-.sc-badge.no-data {
-  background: rgba(0, 0, 0, 0.06);
-  color: var(--text-dim);
+
+.card-desc {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+.card-domain {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
 }
 </style>
