@@ -32,7 +32,7 @@ src/
 │   ├── usePrediction.ts           # STATELESS: predictBehavior (Largest Remainder Method)
 │   └── useAttractorDisplay.ts     # STATELESS: утилиты отображения
 ├── components/
-│   ├── AppHeader.vue              # шапка: режимы, ситуации, настройки
+│   ├── AppHeader.vue              # шапка: pill-группа Граф/Корреляции/Ситуации + expansion + настройки
 │   ├── GraphZone.vue              # обёртка: NetworkCanvas + GraphLegend + FocusPanel + CoachMark
 │   ├── NetworkCanvas.vue          # vis-network + defineExpose методов графа
 │   ├── RightPanel.vue             # правая панель: collapsible секции + роутинг + transitions
@@ -47,9 +47,9 @@ src/
 │   ├── StrategyBar.vue            # бар стратегии с анимацией
 │   └── panels/
 │       ├── AttractorPanel.vue     # аттрактор: breadcrumb + описание + ситуации
-│       ├── CorrelationPanel.vue   # корреляции: placeholder (фаза 3 — слайдер возраста + список)
+│       ├── CorrelationPanel.vue   # корреляции: хедер + слайдер возраста + список по силе (teal/red)
 │       ├── SituationPanel.vue     # ситуация: breadcrumb + стратегии + разметка
-│       ├── AllSituationsPanel.vue # список всех 33 ситуаций
+│       ├── AllSituationsPanel.vue # список 33 ситуаций, сгруппированных по 6 категориям таксономии
 │       ├── EmptyPanel.vue         # onboarding: 3-шаговый гид
 │       └── L3Panel.vue            # L3-узел: breadcrumb + описание
 ├── data/
@@ -121,18 +121,38 @@ scripts/
 NetworkCanvas → defineExpose({...}) → GraphZone → defineExpose({networkRef}) → App.vue
 ```
 
+## Режимы
+
+`currentMode: 'graph' | 'correlations' | 'situations'` в `useAppState`. Три взаимоисключающих режима переключаются pill-группой в `AppHeader`. При смене режима сбрасываются все фокусы и выбранные аттракторы.
+
+| Режим | Граф | Правая панель |
+|-------|------|---------------|
+| **graph** | клики = раскрытие/фокус | Демография + Аттракторы + EmptyPanel/AttractorPanel/SituationPanel/L3Panel |
+| **correlations** | клик по L2 = показать его корреляции (один узел) | только CorrelationPanel (слайдер возраста + список) |
+| **situations** | клики заблокированы | Демография + Аттракторы + AllSituationsPanel/SituationPanel |
+
+`correlationsVisible` — computed: `true` везде кроме situations-режима (рёбра корреляций скрыты в situations).
+
 ## Правая панель — роутинг
 
 ```
 RightPanel
-  ├── CollapsibleSection "Демография" (collapsed by default, CoachMark)
+  ├── [v-if≠correlations] CollapsibleSection "Демография" (collapsed, CoachMark cm-demographics)
   │     └── DemographicsPanel (DualRangeSlider + selects)
-  ├── CollapsibleSection "Аттракторы человека" (collapsed by default, auto-expand on L2 click, CoachMark)
+  ├── [v-if≠correlations] CollapsibleSection "Аттракторы человека" (collapsed, auto-expand на L2, CoachMark cm-attractors)
   │     └── AttractorDropdowns (SearchableCombobox × 3)
-  ├── ActiveNodeIndicator | header (Transition)
+  ├── ActiveNodeIndicator [только graph] | header-div (Transition)
   └── panelState → (Transition mode="out-in")
         CorrelationPanel | EmptyPanel (onboarding) | AllSituationsPanel | AttractorPanel | SituationPanel | L3Panel
 ```
+
+`panelState` computed (`useAppState`):
+- `correlations` — если `currentMode === 'correlations'`
+- `situation` — если `currentSituation` задана
+- `l3` — если `l3NodeId` задан
+- `all-situations` — если `currentMode === 'situations'`
+- `attractor` — если `currentFocus` задан
+- `empty` — иначе
 
 Все панели используют `PanelBreadcrumb` для единообразной навигации.
 
@@ -197,9 +217,13 @@ mk04: Регистрация брака      → s21 (l2_semya_02)    mk08: По
 ## Onboarding (CoachMarks)
 
 `useCoachMarks.ts` — localStorage-based. Подсказки появляются при первом взаимодействии:
-- Граф: "Кликните на любой узел для анализа"
-- Демография: "Фильтры влияют на расчёт корреляций..."
-- Аттракторы: "Выберите до 3 аттракторов..."
+
+| ID | Где | Текст |
+|----|-----|-------|
+| `cm-graph` | GraphZone, только в graph-режиме | «Кликните на любой узел для анализа» |
+| `cm-correlations` | GraphZone, только в correlations-режиме | «Кликните на аттрактор второго уровня, чтобы увидеть его корреляции» |
+| `cm-demographics` | CollapsibleSection «Демография» | «Фильтры влияют на расчёт корреляций и предиктивный анализ стратегий» |
+| `cm-attractors` | CollapsibleSection «Аттракторы человека» | «Выберите до 3 аттракторов — их корреляции отобразятся на графе (в режиме «Граф»)» |
 
 Сброс: ⚙ Настройки → "Показать подсказки заново".
 
