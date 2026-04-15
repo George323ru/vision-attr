@@ -54,28 +54,32 @@ const graphMode = computed(() =>
 /* Переключатель режима графа */
 .graph-mode-toggle {
   position: absolute;
-  top: 12px;
+  top: 14px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   gap: 2px;
-  background: var(--bg-surface, #fff);
+  background: var(--legend-bg);
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 2px;
   z-index: 10;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 .gm-btn {
   font-size: 11px;
-  padding: 4px 12px;
-  border-radius: 14px;
+  font-weight: 500;
+  padding: 5px 14px;
+  border-radius: 16px;
   border: none;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  letter-spacing: 0.3px;
-  transition: background 0.2s, color 0.2s;
+  letter-spacing: 0.4px;
+  transition: background var(--duration-fast) var(--ease-out-expo),
+              color var(--duration-fast);
   white-space: nowrap;
 }
 .gm-btn:hover {
@@ -85,6 +89,7 @@ const graphMode = computed(() =>
 .gm-btn.active {
   background: var(--accent);
   color: #fff;
+  box-shadow: 0 1px 4px rgba(192,138,62,0.25);
 }
 
 @media (max-width: 1280px) {

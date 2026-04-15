@@ -133,10 +133,10 @@ const relatedCorrelations = computed(() => {
 .rp-description {
   font-size: 12px;
   color: var(--text-muted);
-  line-height: 1.5;
-  padding: 10px 12px;
+  line-height: 1.55;
+  padding: 12px 14px;
   background: var(--card-bg);
-  border-radius: 6px;
+  border-radius: var(--radius-md, 10px);
   margin-bottom: 12px;
 }
 .rp-empty {
@@ -247,15 +247,21 @@ const relatedCorrelations = computed(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 7px 14px;
   font-size: 11px;
+  font-weight: 500;
   color: var(--accent);
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 6px);
   cursor: pointer;
   margin-top: 12px;
-  transition: background 0.2s;
+  letter-spacing: 0.02em;
+  transition: background var(--duration-fast) var(--ease-out-quad),
+              box-shadow var(--duration-fast);
 }
-.btn-back:hover { background: var(--card-hover); }
+.btn-back:hover {
+  background: var(--card-hover);
+  box-shadow: var(--shadow-sm);
+}
 </style>

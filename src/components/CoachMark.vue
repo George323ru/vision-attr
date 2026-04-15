@@ -33,13 +33,13 @@ function onDismiss() {
 .coach-mark {
   position: absolute;
   z-index: 100;
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.12));
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.08)) drop-shadow(0 8px 20px rgba(0,0,0,0.10));
 }
 .cm-body {
   background: var(--accent);
   color: #fff;
-  border-radius: 8px;
-  padding: 10px 14px;
+  border-radius: var(--radius-md, 10px);
+  padding: 12px 16px;
   max-width: 240px;
   display: flex;
   flex-direction: column;
@@ -47,23 +47,26 @@ function onDismiss() {
 }
 .cm-text {
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.55;
   margin: 0;
+  letter-spacing: 0.005em;
 }
 .cm-dismiss {
   align-self: flex-end;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.18);
   color: #fff;
   border: none;
-  border-radius: 4px;
-  padding: 3px 10px;
+  border-radius: var(--radius-sm, 6px);
+  padding: 4px 12px;
   font-size: 11px;
+  font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.15s;
+  letter-spacing: 0.03em;
+  transition: background var(--duration-fast) var(--ease-out-quad);
 }
 .cm-dismiss:hover {
-  background: rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.30);
 }
 .cm-arrow {
   position: absolute;

@@ -1,5 +1,5 @@
 import { ref, onMounted, onBeforeUnmount, type Ref } from 'vue'
-import { zoom as d3Zoom, zoomIdentity, select, type ZoomBehavior, type D3ZoomEvent } from 'd3'
+import { zoom as d3Zoom, zoomIdentity, select, type ZoomBehavior, type D3ZoomEvent, easeExpOut as expOut } from 'd3'
 import type { NodePosition } from './useGraphLayout'
 
 export interface D3ZoomApi {
@@ -53,7 +53,8 @@ export function useD3Zoom(svgRef: Ref<SVGSVGElement | null>): D3ZoomApi {
 
     select(svg)
       .transition()
-      .duration(600)
+      .duration(800)
+      .ease(expOut)
       .call(zoomBehavior.transform, t)
   }
 
@@ -88,7 +89,8 @@ export function useD3Zoom(svgRef: Ref<SVGSVGElement | null>): D3ZoomApi {
 
     select(svg)
       .transition()
-      .duration(500)
+      .duration(600)
+      .ease(expOut)
       .call(zoomBehavior.transform, t)
   }
 

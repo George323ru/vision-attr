@@ -141,11 +141,11 @@ function barColor(probability: number, maxProb: number): string {
 .sit-description {
   font-size: 12px;
   color: var(--text-muted);
-  line-height: 1.5;
+  line-height: 1.55;
   margin-bottom: 16px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   background: var(--card-bg);
-  border-radius: 6px;
+  border-radius: var(--radius-md, 10px);
 }
 
 .section-header {
@@ -188,30 +188,33 @@ function barColor(probability: number, maxProb: number): string {
 .help-icon:hover::after {
   content: attr(data-tooltip);
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 8px);
   left: 0;
   width: 230px;
-  padding: 8px 10px;
+  padding: 10px 12px;
   font-size: 11px;
   font-weight: 400;
-  line-height: 1.4;
+  line-height: 1.5;
   color: var(--text);
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  border-radius: var(--radius-md, 10px);
+  box-shadow: var(--shadow-lg);
   z-index: 100;
   white-space: normal;
   pointer-events: none;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .small-sample-warn {
   font-size: 11px;
   color: #b45309;
-  background: rgba(180,83,9,0.08);
-  padding: 6px 10px;
-  border-radius: 4px;
+  background: rgba(180,83,9,0.06);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm, 6px);
   margin-bottom: 8px;
+  letter-spacing: 0.01em;
 }
 
 .no-data {
@@ -238,16 +241,23 @@ function barColor(probability: number, maxProb: number): string {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 7px 14px;
   font-size: 11px;
+  font-weight: 500;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 6px);
   cursor: pointer;
-  transition: background 0.2s;
+  letter-spacing: 0.02em;
+  transition: background var(--duration-fast) var(--ease-out-quad),
+              border-color var(--duration-fast),
+              box-shadow var(--duration-fast);
 }
 .btn-back { color: var(--accent); }
 .btn-graph { color: var(--text-muted); margin-left: auto; }
 .btn-back:hover,
-.btn-graph:hover { background: var(--card-hover); }
+.btn-graph:hover {
+  background: var(--card-hover);
+  box-shadow: var(--shadow-sm);
+}
 </style>

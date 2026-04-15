@@ -19,10 +19,12 @@ import AttractorPicker from '@/components/AttractorPicker.vue'
 .profile-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 16px;
+  gap: 2px;
+  padding: 16px 18px;
   border-right: 1px solid var(--border);
   overflow-y: auto;
   background: var(--right-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 </style>

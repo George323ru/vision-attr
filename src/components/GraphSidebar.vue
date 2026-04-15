@@ -59,11 +59,13 @@ const { panelRoute, focusedNodeId } = useStore()
 .graph-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 12px 16px;
+  gap: 2px;
+  padding: 14px 18px;
   border-left: 1px solid var(--border);
   overflow-y: auto;
   background: var(--right-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .sidebar-panel {
@@ -100,8 +102,8 @@ const { panelRoute, focusedNodeId } = useStore()
 }
 
 /* Transition */
-.slide-fade-enter-active { transition: all 0.2s ease-out; }
-.slide-fade-leave-active { transition: all 0.15s ease-in; }
-.slide-fade-enter-from { opacity: 0; transform: translateY(6px); }
+.slide-fade-enter-active { transition: all var(--duration-base) var(--ease-out-expo); }
+.slide-fade-leave-active { transition: all var(--duration-fast) ease-in; }
+.slide-fade-enter-from { opacity: 0; transform: translateY(8px); }
 .slide-fade-leave-to { opacity: 0; transform: translateY(-4px); }
 </style>

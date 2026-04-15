@@ -21,23 +21,27 @@ defineProps<{ crumbs: BreadcrumbItem[] }>()
 .breadcrumb {
   font-size: 11px;
   color: var(--breadcrumb);
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   display: flex;
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
+  letter-spacing: 0.01em;
 }
 .bc-link {
   color: var(--accent);
   cursor: pointer;
   text-decoration: none;
+  transition: opacity var(--duration-fast);
 }
-.bc-link:hover { text-decoration: underline; }
+.bc-link:hover { opacity: 0.75; }
 .bc-current {
-  color: var(--breadcrumb);
+  color: var(--text-muted);
+  font-weight: 500;
 }
 .bc-sep {
   color: var(--breadcrumb);
-  opacity: 0.6;
+  opacity: 0.4;
+  font-size: 10px;
 }
 </style>

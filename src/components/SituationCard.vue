@@ -47,13 +47,16 @@ const domainColorValue = computed(() => {
 .situation-card {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 14px 16px;
+  gap: 8px;
+  padding: 16px 18px;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  transition: background var(--duration-fast) var(--ease-out-expo),
+              border-color var(--duration-fast),
+              box-shadow var(--duration-base) var(--ease-out-expo),
+              transform var(--duration-base) var(--ease-out-expo);
   text-align: left;
   font-family: inherit;
   color: inherit;
@@ -61,11 +64,16 @@ const domainColorValue = computed(() => {
 .situation-card:hover {
   background: var(--card-hover);
   border-color: var(--border);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+.situation-card:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
 }
 .situation-card.relevant {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), var(--shadow-sm);
 }
 .situation-card.has-data {
   background: var(--bg-surface2);
@@ -81,23 +89,23 @@ const domainColorValue = computed(() => {
   font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--text);
-  line-height: 1.35;
+  line-height: 1.4;
 }
 .card-badge {
   flex-shrink: 0;
   font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  padding: 2px 6px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  padding: 3px 7px;
   border-radius: 4px;
-  background: rgba(192,138,62,0.12);
+  background: var(--accent-subtle);
   color: var(--accent);
 }
 
 .card-desc {
   font-size: var(--fs-xs);
   color: var(--text-muted);
-  line-height: 1.45;
+  line-height: 1.5;
   margin: 0;
 }
 
@@ -110,6 +118,7 @@ const domainColorValue = computed(() => {
 .card-domain {
   font-size: 10px;
   font-weight: 500;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
 }
 </style>

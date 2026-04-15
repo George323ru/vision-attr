@@ -3,6 +3,31 @@
     ref="svgRef"
     class="d3-graph"
   >
+    <defs>
+      <!-- Radial gradient для каждого L1 домена -->
+      <radialGradient
+        v-for="node in l1Nodes"
+        :key="'grad-' + node.id"
+        :id="'grad-' + node.id"
+        cx="40%" cy="38%" r="60%"
+      >
+        <stop offset="0%" :stop-color="node.gradientCenter" />
+        <stop offset="100%" :stop-color="node.color" />
+      </radialGradient>
+      <!-- Тень для L1 -->
+      <filter id="shadow-l1" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="rgba(0,0,0,0.10)" />
+        <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="rgba(0,0,0,0.06)" />
+      </filter>
+      <!-- Subtle glow для корреляционных рёбер -->
+      <filter id="glow-teal" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="rgba(8,145,178,0.35)" />
+      </filter>
+      <filter id="glow-red" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="rgba(220,38,38,0.30)" />
+      </filter>
+    </defs>
+
     <g :transform="zoomTransform">
       <!-- Фон для клика по пустому месту -->
       <rect
@@ -10,24 +35,27 @@
         fill="transparent"
         @click="dispatch({ type: 'CLICK_EMPTY' })"
       />
-      <!-- Иерархические рёбра -->
-      <line
+
+      <!-- Иерархические рёбра — curved, утончающиеся -->
+      <path
         v-for="edge in visibleHierarchyEdges"
         :key="edge.id"
-        :x1="edge.x1" :y1="edge.y1"
-        :x2="edge.x2" :y2="edge.y2"
+        :d="edge.path"
         class="edge-hierarchy"
         :class="{ faded: hasFocus && !edge.relevant }"
+        :stroke-width="edge.strokeWidth"
+        fill="none"
       />
 
-      <!-- Корреляционные рёбра -->
+      <!-- Корреляционные рёбра — с glow -->
       <path
         v-for="edge in visibleCorrEdges"
         :key="edge.id"
         :d="edge.path"
         class="edge-correlation"
         :class="edge.type"
-        :stroke-width="2 + edge.strength * 4"
+        :stroke-width="1.5 + edge.strength * 3.5"
+        :filter="edge.type === 'reinforcing' ? 'url(#glow-teal)' : 'url(#glow-red)'"
       />
 
       <!-- Ноды -->
@@ -50,12 +78,24 @@
         @mouseenter="hoveredNodeId = node.id"
         @mouseleave="hoveredNodeId = null"
       >
+        <!-- L1: gradient fill + shadow -->
         <circle
+          v-if="node.level === 1"
+          :r="node.radius"
+          :fill="`url(#grad-${node.id})`"
+          :stroke="node.borderColor"
+          stroke-width="3"
+          filter="url(#shadow-l1)"
+        />
+        <!-- L2/L3: плоский круг с тонкой обводкой -->
+        <circle
+          v-else
           :r="node.radius"
           :fill="node.color"
           :stroke="node.borderColor"
-          :stroke-width="node.level === 1 ? 4 : 2"
+          :stroke-width="node.level === 2 ? 1.5 : 1"
         />
+
         <!-- L1: лейбл внутри круга -->
         <text
           v-if="node.level === 1"
@@ -101,7 +141,7 @@ import { useAttractorStore } from '@/composables/useAttractorStore'
 import { computeLayout, nodeRadius, nodeFontSize } from '@/composables/useGraphLayout'
 import { useD3Zoom } from '@/composables/useD3Zoom'
 import { useGraphEffects } from '@/composables/useGraphEffects'
-import { domainColor, domainBorder } from '@/utils/colors'
+import { domainColor, domainBorder, domainGradientCenter, domainFontColor } from '@/utils/colors'
 import { wrapLabel } from '@/utils/nodeStyles'
 import { CORRELATIONS } from '@/data/correlations'
 import { getCorrelationAtAge } from '@/composables/useCorrelations'
@@ -143,11 +183,26 @@ interface VisibleNode {
   radius: number
   fontSize: number
   color: string
+  gradientCenter: string
   borderColor: string
   fontColor: string
   labelLines: string[]
   relevant: boolean
 }
+
+// L1 ноды для SVG defs (градиенты) — всегда все L1
+const l1Nodes = computed(() =>
+  attractors.value
+    .filter(a => a.level === 1)
+    .map(a => {
+      const pos = positionsMap.value.get(a.id)
+      return {
+        id: a.id,
+        color: domainColor(domains.value, a.domain, 1),
+        gradientCenter: domainGradientCenter(domains.value, a.domain),
+      }
+    })
+)
 
 const visibleNodes = computed<VisibleNode[]>(() => {
   const nodes: VisibleNode[] = []
@@ -185,8 +240,9 @@ const visibleNodes = computed<VisibleNode[]>(() => {
       radius: nodeRadius(level),
       fontSize: nodeFontSize(level),
       color: domainColor(doms, a.domain, level),
+      gradientCenter: domainGradientCenter(doms, a.domain),
       borderColor: domainBorder(doms, a.domain, level),
-      fontColor: level <= 2 ? '#333' : '#666',
+      fontColor: level === 1 ? '#2a2a3a' : level === 2 ? domainFontColor(doms, a.domain) : '#888',
       labelLines: label.split('\n'),
       relevant: isRelevant,
     })
@@ -222,8 +278,8 @@ const hasFocus = computed(() => focusedNodeId.value !== null)
 
 interface HierEdge {
   id: string
-  x1: number; y1: number
-  x2: number; y2: number
+  path: string
+  strokeWidth: number
   relevant: boolean
 }
 
@@ -244,10 +300,24 @@ const visibleHierarchyEdges = computed<HierEdge[]>(() => {
       || a.id === focused
       || a.parent === focused
 
+    // Curved edge — subtle quad bezier perpendicular offset
+    const mx = (from.x + to.x) / 2
+    const my = (from.y + to.y) / 2
+    const dx = to.x - from.x
+    const dy = to.y - from.y
+    const len = Math.sqrt(dx * dx + dy * dy) || 1
+    const offset = len * 0.06
+    const cx = mx + (-dy / len) * offset
+    const cy = my + (dx / len) * offset
+
+    // L1→L2 толще, L2→L3 тоньше
+    const isL1Parent = a.level === 2
+    const strokeWidth = isL1Parent ? 3 : 1.5
+
     edges.push({
       id: `hier-${a.parent}-${a.id}`,
-      x1: from.x, y1: from.y,
-      x2: to.x, y2: to.y,
+      path: `M ${from.x},${from.y} Q ${cx},${cy} ${to.x},${to.y}`,
+      strokeWidth,
       relevant,
     })
   }
@@ -335,21 +405,22 @@ watch(attractors, (list) => {
   cursor: grabbing;
 }
 
-/* Рёбра иерархии */
+/* ── Рёбра иерархии — curved, утончённые ── */
 .edge-hierarchy {
-  stroke: rgba(0,0,0,0.15);
-  stroke-width: 4;
-  transition: opacity 0.3s ease;
+  stroke: rgba(0,0,0,0.10);
+  stroke-linecap: round;
+  transition: opacity var(--duration-slow, 0.4s) var(--ease-out-expo, ease);
 }
 .edge-hierarchy.faded {
-  opacity: 0.06;
+  opacity: 0.04;
 }
 
-/* Рёбра корреляций */
+/* ── Рёбра корреляций — glow ── */
 .edge-correlation {
   fill: none;
-  opacity: 0.85;
-  transition: opacity 0.3s ease;
+  opacity: 0.80;
+  stroke-linecap: round;
+  transition: opacity var(--duration-base, 0.25s) var(--ease-out-expo, ease);
 }
 .edge-correlation.reinforcing {
   stroke: #0891b2;
@@ -358,40 +429,74 @@ watch(attractors, (list) => {
   stroke: #dc2626;
 }
 
-/* Ноды */
+/* ── Ноды ── */
 .graph-node {
   cursor: pointer;
-  transition: opacity 0.3s ease;
-}
-.graph-node:hover circle {
-  filter: brightness(0.92);
-}
-.graph-node.focused circle {
-  stroke: #c08a3e !important;
-  stroke-width: 6 !important;
-}
-.graph-node.corr-target circle {
-  stroke-width: 4 !important;
-  filter: brightness(0.95);
-}
-.graph-node.faded {
-  opacity: 0.2;
-}
-.graph-node.faded:hover {
-  opacity: 0.6;
+  transition: opacity var(--duration-slow, 0.4s) var(--ease-out-expo, ease);
 }
 
-/* Лейблы */
+/* Hover — масштабирование + мягкая тень */
+.graph-node.level-1:hover {
+  filter: brightness(1.03);
+}
+.graph-node.level-2 circle,
+.graph-node.level-3 circle {
+  transition: transform var(--duration-base, 0.25s) var(--ease-out-expo, ease),
+              stroke-width var(--duration-fast, 0.15s);
+}
+.graph-node.level-2.hovered circle {
+  transform: scale(1.12);
+  stroke-width: 2.5;
+}
+.graph-node.level-3.hovered circle {
+  transform: scale(1.2);
+}
+
+/* Focus — accent ring */
+.graph-node.focused.level-1 circle {
+  stroke: var(--accent, #c08a3e) !important;
+  stroke-width: 5 !important;
+}
+.graph-node.focused.level-2 circle {
+  stroke: var(--accent, #c08a3e) !important;
+  stroke-width: 3.5 !important;
+  transform: scale(1.06);
+}
+.graph-node.focused.level-3 circle {
+  stroke: var(--accent, #c08a3e) !important;
+  stroke-width: 2.5 !important;
+}
+
+/* Correlation target */
+.graph-node.corr-target circle {
+  stroke-width: 3 !important;
+}
+
+/* Faded — плавное затухание */
+.graph-node.faded {
+  opacity: 0.15;
+}
+.graph-node.faded:hover {
+  opacity: 0.5;
+}
+
+/* ── Лейблы ── */
 .node-label {
   pointer-events: none;
   user-select: none;
   font-family: var(--font-display, 'Inter Tight', sans-serif);
   font-weight: 600;
+  letter-spacing: 0.01em;
 }
 .level-1 .node-label {
   font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.level-2 .node-label {
+  font-weight: 500;
 }
 .level-3 .node-label {
   font-weight: 400;
+  opacity: 0.75;
 }
 </style>

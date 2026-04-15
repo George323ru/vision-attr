@@ -100,6 +100,7 @@ const groupedSituations = computed(() => {
   font-size: var(--fs-xl);
   font-weight: 600;
   color: var(--text);
+  letter-spacing: -0.01em;
   margin-bottom: 4px;
 }
 .grid-subtitle {
@@ -117,22 +118,24 @@ const groupedSituations = computed(() => {
   font-size: var(--fs-md);
   font-weight: 600;
   color: var(--text);
+  letter-spacing: -0.005em;
   margin-bottom: 2px;
 }
 .category-desc {
   font-size: var(--fs-xs);
   color: var(--text-muted);
+  letter-spacing: 0.01em;
 }
 
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 /* Transition */
-.slide-fade-enter-active { transition: all 0.25s ease-out; }
-.slide-fade-leave-active { transition: all 0.15s ease-in; }
-.slide-fade-enter-from { opacity: 0; transform: translateY(8px); }
+.slide-fade-enter-active { transition: all var(--duration-base) var(--ease-out-expo); }
+.slide-fade-leave-active { transition: all var(--duration-fast) ease-in; }
+.slide-fade-enter-from { opacity: 0; transform: translateY(10px); }
 .slide-fade-leave-to { opacity: 0; transform: translateY(-4px); }
 </style>

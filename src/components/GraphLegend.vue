@@ -34,24 +34,27 @@
 <style scoped>
 .legend {
   position: absolute;
-  bottom: 16px;
-  left: 16px;
+  bottom: 20px;
+  left: 20px;
   background: var(--legend-bg);
   border: 1px solid var(--legend-border);
-  border-radius: 10px;
-  padding: 12px 16px;
+  border-radius: 12px;
+  padding: 14px 18px;
   font-size: 11px;
   color: var(--legend-text);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   z-index: 10;
-  transition: background 0.3s, color 0.3s;
+  transition: background var(--duration-base), color var(--duration-base);
+  box-shadow: var(--shadow-sm);
 }
 .leg-title {
-  font-size: 10px;
-  letter-spacing: 1.5px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  font-weight: 600;
   text-transform: uppercase;
   color: var(--legend-title);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 .leg-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
 .leg-dot-wrap {

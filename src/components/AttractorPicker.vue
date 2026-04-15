@@ -72,26 +72,32 @@ function getDomainColorForId(id: string): string {
   justify-content: center;
   font-size: 10px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--text-dim);
   border: 1px solid var(--border);
   border-radius: 50%;
   flex-shrink: 0;
+  letter-spacing: 0;
+  transition: border-color var(--duration-fast) var(--ease-out-quad),
+              color var(--duration-fast);
 }
 .slot-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--duration-fast) var(--ease-out-expo);
 }
 .clear-btn {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--text-dim);
   background: none;
   border: none;
   cursor: pointer;
   padding: 4px 0;
   text-align: left;
-  transition: color 0.2s;
+  letter-spacing: 0.02em;
+  transition: color var(--duration-fast) var(--ease-out-quad);
 }
 .clear-btn:hover {
   color: var(--accent);

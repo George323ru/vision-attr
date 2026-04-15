@@ -30,11 +30,11 @@ defineEmits<{ select: [] }>()
 
 <style scoped>
 .strategy-item {
-  margin-bottom: 8px;
-  border-radius: 6px;
-  padding: 6px 8px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  padding: 8px 10px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--duration-fast) var(--ease-out-quad);
 }
 .strategy-item:hover {
   background: var(--card-bg);
@@ -42,30 +42,34 @@ defineEmits<{ select: [] }>()
 .strategy-item.selected {
   background: var(--card-hover);
   outline: 1px solid var(--accent);
+  outline-offset: -1px;
 }
 .strategy-label {
   font-size: 12px;
   color: var(--text);
-  margin-bottom: 4px;
+  margin-bottom: 5px;
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
 }
 .sl-pct {
   font-weight: 600;
   color: var(--accent);
-  font-size: 12px;
+  font-size: 11px;
+  font-feature-settings: 'tnum' 1;
+  letter-spacing: 0.02em;
 }
 .strategy-bar-track {
-  height: 22px;
+  height: 20px;
   background: var(--bar-bg);
-  border-radius: 4px;
+  border-radius: 6px;
   overflow: hidden;
   position: relative;
 }
 .strategy-bar-fill {
   height: 100%;
-  border-radius: 4px;
-  transition: width 0.4s ease, background 0.3s;
+  border-radius: 6px;
+  transition: width var(--duration-slow) var(--ease-out-expo), background var(--duration-base);
   min-width: 2px;
 }
 </style>

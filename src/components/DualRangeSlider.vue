@@ -121,15 +121,15 @@ function onMaxInput(e: Event) {
   right: 0;
   height: 4px;
   background: var(--slider-track);
-  border-radius: 2px;
+  border-radius: 3px;
   pointer-events: none;
 }
 .drs-fill {
   position: absolute;
   height: 100%;
   background: var(--accent);
-  border-radius: 2px;
-  opacity: 0.8;
+  border-radius: 3px;
+  opacity: 0.75;
 }
 .drs-input {
   -webkit-appearance: none;
@@ -151,35 +151,42 @@ function onMaxInput(e: Event) {
   height: 16px;
   border-radius: 50%;
   background: var(--slider-thumb);
-  border: 2px solid var(--bg);
+  border: 2.5px solid var(--bg);
   cursor: pointer;
   pointer-events: all;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.04), 0 2px 6px rgba(0,0,0,0.03));
   position: relative;
   z-index: 1;
+  transition: transform var(--duration-fast, 0.15s) var(--ease-out-expo);
+}
+.drs-input:active::-webkit-slider-thumb {
+  transform: scale(1.15);
 }
 .drs-input::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
   background: var(--slider-thumb);
-  border: 2px solid var(--bg);
+  border: 2.5px solid var(--bg);
   cursor: pointer;
   pointer-events: all;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.04));
 }
 .drs-tooltip {
   position: absolute;
-  top: -22px;
+  top: -24px;
   transform: translateX(-50%);
   background: var(--accent);
   color: #fff;
   font-size: 10px;
   font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 4px;
+  font-feature-settings: 'tnum' 1;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm, 6px);
   white-space: nowrap;
   pointer-events: none;
   z-index: 2;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.04));
 }
 .drs-ticks {
   position: relative;
@@ -190,6 +197,8 @@ function onMaxInput(e: Event) {
   position: absolute;
   transform: translateX(-50%);
   font-size: 9px;
+  font-feature-settings: 'tnum' 1;
   color: var(--text-dim);
+  letter-spacing: 0.02em;
 }
 </style>

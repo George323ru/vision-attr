@@ -52,7 +52,7 @@ function onToggle() {
 
 <style scoped>
 .collapsible-section {
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border2);
 }
 .cs-header-wrap {
   position: relative;
@@ -62,29 +62,30 @@ function onToggle() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 16px;
+  padding: 11px 16px;
   background: none;
   border: none;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.15s;
+  transition: background var(--duration-fast) var(--ease-out-quad);
 }
 .cs-header:hover {
   background: var(--card-hover);
 }
 .cs-title {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
 }
 .cs-chevron {
-  font-size: 9px;
+  font-size: 8px;
   color: var(--text-dim);
-  transition: transform 0.2s;
+  transition: transform var(--duration-base) var(--ease-out-expo);
+  opacity: 0.6;
 }
 .cs-body {
-  padding: 0 16px 12px;
+  padding: 0 16px 14px;
 }
 </style>

@@ -100,14 +100,17 @@ const maritalStatus = computed(() => profile.value.demographics.maritalStatus)
 }
 
 .demo-label {
-  font-size: 11px;
-  color: var(--text-muted);
+  font-size: 10px;
+  color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
+  font-weight: 500;
 }
 .demo-label b {
   color: var(--accent);
-  font-size: 13px;
+  font-size: 12px;
+  letter-spacing: 0;
+  font-feature-settings: 'tnum' 1;
 }
 
 /* ── Select dropdown ── */
@@ -115,16 +118,16 @@ const maritalStatus = computed(() => profile.value.demographics.maritalStatus)
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  padding: 5px 28px 5px 10px;
+  padding: 6px 28px 6px 10px;
   font-size: 12px;
   font-family: inherit;
   color: var(--text);
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   outline: none;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color var(--duration-fast), background var(--duration-fast), box-shadow var(--duration-fast);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
@@ -134,7 +137,7 @@ const maritalStatus = computed(() => profile.value.demographics.maritalStatus)
 }
 .demo-select:focus {
   border-color: var(--accent);
-  background: var(--card-hover);
+  box-shadow: 0 0 0 2px var(--accent-subtle);
 }
 .demo-select option {
   background: var(--bg);
