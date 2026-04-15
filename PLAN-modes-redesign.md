@@ -40,6 +40,22 @@
 - `useNetworkBreathe.ts`: пропуск скрытых нод в `animate()`, новые функции `refreshBreatheFromNetwork()` и `isBreathRunning()`
 - `useNetwork.ts`: вызов `refreshBreatheFromNetwork()` в `rebuildForTheme()` и `restoreExpansionState()`, watchdog каждые 5с
 
+### Баг 0.5 ✅ Граф грузится 5 минут (спиннер «Построение графа…»)
+
+**Проблема:** `graphReady` выставлялся только по событию `stabilized`, которое ждёт пока скорость ВСЕХ нод < `minVelocity`. С 512 нодами (скрытые L2/L3 тоже участвуют в физике), слабыми пружинами (`springConstant: 0.01`) и сильным отталкиванием (`gravitationalConstant: -8000`) стабилизация не наступала.
+
+**Дополнительная проблема:** при начальной стабилизации ноды L2/L3 скрыты (`hidden: true`). Физика работает только на 11 L1-нодах, которые и так зафиксированы. `expandAllL3()` вызывается в `onMounted` ПОСЛЕ стабилизации — ноды появляются на предрассчитанных позициях (из `useNetworkLayout.ts`) без шанса раздвинуться.
+
+**Решение:** гибридный подход (индустриальный стандарт для force-directed графов):
+1. `stabilizationIterationsDone` вместо `stabilized` — гарантированно срабатывает после 200 итераций, не ждёт полной стабилизации
+2. `graphReady = true` сразу по этому событию — спиннер исчезает мгновенно
+3. Физика **продолжает работать** после показа графа — `expandAllL3()` делает L2/L3 видимыми, и физика их раздвигает (видимое «укладывание» нод ~3 сек, стандартное поведение force-directed layout)
+4. Через 3 сек — `stopSimulation()`, фиксация всех нод в финальных позициях
+5. Через 3.8 сек — запуск breathe-анимации (мягкое покачивание ±1.8px)
+
+**Файлы:**
+- `useNetwork.ts`: `stabilizationIterationsDone` + `setTimeout(stopSimulation, 3000)` + breathe с задержкой 800ms после фиксации
+
 ---
 
 ## Фаза 1: Таксономия ситуаций ✅ DONE (2026-04-15)
@@ -145,9 +161,22 @@
 
 ---
 
-## Фаза 2: Три взаимоисключающих режима + адаптивная панель
+## Фаза 2: Три взаимоисключающих режима + адаптивная панель ✅ DONE (2026-04-15)
 
 **Цель:** Заменить независимые `correlationsVisible` + `currentMode` на единый `currentMode: 'graph' | 'correlations' | 'situations'`. Правая панель адаптирует содержимое под режим.
+
+### Результат
+
+- **`useAppState.ts`**: `currentMode` расширен до `'graph' | 'correlations' | 'situations'`. `correlationsVisible` из `ref(true)` стал `computed(() => currentMode !== 'situations')` — в useNetwork.ts ничего менять не пришлось, он по-прежнему читает `.value`. Добавлен `correlationFocusId: ref<string | null>(null)` (пока не используется, подготовка к фазе 3). `PanelState` расширен на `'correlations'`; `panelState` computed проверяет correlations-mode первым. `NavEntry.mode` обновлён на `AppMode`. `resetState()` сбрасывает `correlationFocusId`. Отдельные computed-хелперы `isGraphMode`/`isCorrelationsMode`/`isSituationsMode` не понадобились — достаточно прямой проверки `currentMode.value`.
+- **`AppHeader.vue`**: Две независимые кнопки-тогглы («Корреляции», «Ситуации») заменены на pill-группу **Граф / Корреляции / Ситуации** (`.mode-group` + `.mode-btn`, стиль как у expansion-group). Единый emit `change-mode` с типом `AppMode` вместо `toggle-correlations` + `toggle-situations`.
+- **`App.vue`**: `onToggleSituations()` + `onToggleCorrelations()` заменены единым `onChangeMode(mode)`. При смене режима: pushNavState → восстановление/сохранение snapshot (ситуации) → сброс всех стейтов (focus, situation, strategy, l3, correlationFocusId, selectedAttractors) → установка нового режима → clearFocusVisualsPreserveVisibility → applyHighlight. `onShowAllSituations()` упрощён до внутренней навигации (сброс situation/strategy/l3 внутри режима). Guard в `onSelectNode`: клики игнорируются в режиме `correlations` (фаза 3 добавит логику). Убрано принудительное `currentMode.value = 'graph'` при клике по L1/L2.
+- **`RightPanel.vue`**: Секции «Демография» и «Аттракторы человека» обёрнуты в `v-if="currentMode !== 'correlations'"`. `ActiveNodeIndicator` показывается только в graph-режиме. `CorrelationPanel` добавлен первым в Transition-блок панелей. `headerTitle`/`headerDesc` адаптированы: «Корреляции» / «Все ситуации» / «Анализ аттракторов» (заменён вводящий в заблуждение «Предиктивный анализ» — проблема №3 из фидбека).
+- **`CorrelationPanel.vue`** (новый): placeholder с SVG-иконкой и подсказкой «Кликните на аттрактор второго уровня на графе, чтобы увидеть его корреляции». Полная реализация (слайдер возраста, список корреляций) — фаза 3.
+
+### Отличия от плана
+
+- Computed-хелперы `isGraphMode`/`isCorrelationsMode`/`isSituationsMode` не добавлены — прямая проверка `currentMode.value === 'correlations'` читабельнее и не требует лишних экспортов.
+- Заголовок «Предиктивный анализ» переименован в «Анализ аттракторов» уже в фазе 2 (вместо фазы 5), т.к. это затрагивало тот же `headerTitle` computed.
 
 ### Содержимое правой панели по режимам
 
@@ -194,135 +223,98 @@
 
 ---
 
-## Фаза 3: Режим «Корреляции» — полная реализация
+## Фаза 3: Режим «Корреляции» — полная реализация ✅ DONE (2026-04-15)
 
 **Цель:** В режиме корреляций: клик по L2 = показать его корреляции на графе + детали в панели. Один аттрактор одновременно. Слайдер возраста (влияет через `getCorrelationAtAge`).
 
-### Шаги реализации
+### Результат
 
-1. **useNetwork.ts:**
-   - Новая функция `applyCorrelationFocus(nodeId)`: один узел, без мульти-фокуса
-   - Подсвечивает только рёбра и ноды, связанные с этим узлом
-   - При повторном клике на тот же — снимает выделение
-
-2. **CorrelationPanel.vue:**
-   - Компактный слайдер возраста (переиспользовать `DualRangeSlider` или простой `<input type="range">`)
-   - Список корреляций: имя аттрактора, тип (иконка/цвет: teal = усиление, red = конфликт), сила (полоска или число)
-   - Пустое состояние: «Кликните на аттрактор второго уровня»
-
-3. **FocusPanel.vue:**
-   - В режиме «Корреляции»: показывать «Имя — N связей» (число = `getCorrEdgesForNode().length`)
-   - В режиме «Граф»: показывать просто имя узла (убрать «корреляций: N» — путает)
-   - В режиме «Ситуации»: скрыть FocusPanel
-
-4. **App.vue:**
-   - Обработчик клика в режиме корреляций → `applyCorrelationFocus` + обновить `correlationFocusId`
-
-### Файлы для изменения
-
-- `src/composables/useNetwork.ts`
-- `src/components/FocusPanel.vue`
-- `src/components/GraphZone.vue`
-- `src/App.vue`
-
-### Новые файлы
-
-- `src/components/panels/CorrelationPanel.vue`
+- **`useAppState.ts`**: добавлен `correlationAge = ref(42)` — возраст для режима корреляций, сбрасывается в `resetState()`
+- **`useNetwork.ts`**: новая функция `applyCorrelationFocus(nodeId)` — toggle одиночного фокуса без затрагивания `currentFocus` (graph-mode state); повторный клик снимает фокус через `clearGraphFocus()`
+- **`NetworkCanvas.vue`**: `applyCorrelationFocus` добавлен в `defineExpose`
+- **`App.vue`**: `onSelectNode` обрабатывает correlations-режим (L2 only → `applyCorrelationFocus`); `onClickEmpty` guard снимает фокус в correlations-режиме; watcher на `correlationAge` → `net.updateCorrelationsForAge(age)` обновляет граф
+- **`CorrelationPanel.vue`**: полная реализация — хедер с именем аттрактора + счётчиком связей, слайдер возраста 18–75, список корреляций отсортированных по силе (teal dot = усиление, red dot = конфликт, бар + %)
+- **`FocusPanel.vue`**: граф-режим — только имя; корреляции — `Имя — N связей`; ситуации — скрыт
+- **`GraphZone.vue`**: `focusVisible`/`focusName` адаптированы под все 3 режима (`correlationFocusId` в correlations-режиме, `currentFocus` в graph-режиме, `false` в situations-режиме)
 
 ---
 
-## Фаза 4: Режим «Ситуации» — блокировка кликов
+## Фаза 4: Режим «Ситуации» — блокировка кликов ✅ DONE (2026-04-15)
 
 **Цель:** В режиме «Ситуации» клики по графу ничего не делают.
 
-### Шаги реализации
+### Результат
 
-1. **useNetwork.ts:**
-   - В обработчике `network.on('click', ...)`: проверка `currentMode.value === 'situations'` → `return`
-   - В обработчике `network.on('doubleClick', ...)`: аналогично
-   - Опционально: менять курсор на `default` вместо `pointer`
+- **`App.vue`**: в `onSelectNode` и `onClickEmpty` добавлен guard `if (currentMode.value === 'situations') return` — любые клики по нодам и по пустому месту игнорируются. Клики по графу в situations-режиме были лишними: список ситуаций управляется через правую панель, а не через граф. Блокировка в App.vue (а не в useNetwork.ts) оказалась правильным местом — там же живут все остальные mode-guards для correlations.
+- **`RightPanel.vue`**: `headerTitle` при `panelState === 'all-situations'` → «Анализ ситуаций» (вместо «Все ситуации»); `headerDesc` → «Выберите ситуацию для предиктивного анализа». Заголовок «Все ситуации» остался только как визуальный label внутри `AllSituationsPanel`.
 
-2. **RightPanel.vue / App.vue:**
-   - Убедиться что при входе в режим «Ситуации» `currentFocus` сбрасывается
-   - Показывать `AllSituationsPanel` (с таксономией из фазы 1)
+### Отличия от плана
 
-3. **Заголовки:**
-   - `headerTitle` при пустом состоянии в «Ситуациях»: «Анализ ситуаций»
-   - `headerDesc`: «Выберите ситуацию для предиктивного анализа»
-
-### Файлы для изменения
-
-- `src/composables/useNetwork.ts`
-- `src/components/RightPanel.vue`
-- `src/App.vue`
+- Блокировка реализована в `App.vue`, а не в `useNetwork.ts`: обработчики `onSelectNode`/`onClickEmpty` — callback-и, зарегистрированные в App.vue, там и логичнее ставить guard. В `useNetwork.ts` нет `doubleClick`-обработчика — он не нужен.
+- Курсор не меняется на `default` — визуально граф в situations-режиме остаётся интерактивным (pan/zoom работают), блокированы только клики по нодам.
 
 ---
 
-## Фаза 5: Полировка
+## Фаза 5: Полировка ✅ DONE (2026-04-15)
 
-**Цель:** Доводка UX, тултипы, переходы.
+**Цель:** Доводка UX — CoachMark-и, кнопка сброса в корреляциях.
 
-### Шаги
+### Результат
 
-1. **Hover-тултипы на рёбрах корреляций** (режим «Корреляции»): при наведении на ребро — всплывающая подсказка с именами обоих L2, типом и силой
-2. **Transition-анимации** при смене содержимого правой панели между режимами
-3. **CoachMark** для режима корреляций: «Кликните на аттрактор для просмотра связей»
-4. **Обновить текст CoachMark** для демографии и аттракторов (актуализировать под новые режимы)
-5. **Кнопка сброса** в режиме корреляций — снять выделение с узла
+- **`GraphZone.vue`**: CoachMark `cm-graph` («Кликните на любой узел для анализа») скрывается вне graph-режима через `v-if="currentMode === 'graph'"`. Добавлен CoachMark `cm-correlations` («Кликните на аттрактор второго уровня, чтобы увидеть его корреляции») — показывается только в correlations-режиме. В situations-режиме подсказки на графе не появляются (клики заблокированы).
+- **`CorrelationPanel.vue`**: в хедере выбранного узла появилась кнопка `×` (emit `reset`) — снимает выделение с L2-ноды. Стиль: ghost-кнопка 20×20 с border, hover → accent-цвет.
+- **`RightPanel.vue`**: прокидывает emit `reset-correlation` от CorrelationPanel наверх; уточнён текст CoachMark аттракторов — добавлено «(в режиме «Граф»)», чтобы убрать путаницу когда секция видна в situations-режиме.
+- **`App.vue`**: обработчик `onResetCorrelation` — вызывает `net.applyCorrelationFocus(correlationFocusId.value)` (toggle = снять фокус) + `setFocusCount(0)`.
+
+### Не реализовано (осознанно)
+
+- **Hover-тултипы на рёбрах**: требуют включения `interaction.hover: true` в vis-network. Это меняет поведение всего графа (hover-стили на нодах), высокий риск регрессии. Отложено.
+- **Transition-анимации между режимами**: `panel-fade` transition уже есть внутри режима; cross-mode анимация не добавляет ценности при текущем дизайне.
 
 ---
 
-## Общая карта изменений
+## Итоговая карта изменений
 
 ```
 Фаза 0 (баги графа):
   src/composables/useNetworkLayout.ts    — L3_RADIUS, L3_MIN_SPAN, L3_PER_CHILD
-  src/composables/useNetwork.ts          — avoidOverlap, springLength, toggleL1, graphReady, breathe
+  src/composables/useNetwork.ts          — avoidOverlap, springLength, toggleL1→expandL1,
+                                           graphReady, stabilizationIterationsDone, breathe
   src/composables/useNetworkBreathe.ts   — watchdog, пропуск скрытых нод
-  src/utils/nodeStyles.ts                — проверить размеры
-  src/components/GraphZone.vue           — expose graphReady
+  src/components/GraphZone.vue           — overlay «Построение графа…» + Transition
   src/components/NetworkCanvas.vue       — expose graphReady
-  src/App.vue                            — loading overlay для графа
+  src/App.vue                            — expandL1 вместо toggleL1 при клике на L1
 
 Фаза 1 (таксономия):
-  src/types/situation.ts
-  src/data/situations.ts
-  src/components/panels/AllSituationsPanel.vue
+  src/types/situation.ts                 — интерфейс SituationCategory, поле category
+  src/data/situations.ts                 — SITUATION_CATEGORIES + category у 33 ситуаций
+  src/components/panels/AllSituationsPanel.vue — группировка по 6 категориям
 
 Фаза 2 (режимы):
-  src/composables/useAppState.ts
-  src/components/AppHeader.vue
-  src/components/RightPanel.vue
-  src/App.vue
+  src/composables/useAppState.ts         — currentMode расширен, correlationsVisible → computed,
+                                           correlationFocusId, PanelState + 'correlations'
+  src/components/AppHeader.vue           — pill-группа Граф/Корреляции/Ситуации
+  src/components/RightPanel.vue          — условный рендер секций по режиму, headerTitle/Desc
+  src/App.vue                            — onChangeMode, snapshot ситуаций, guard correlations
+  src/components/panels/CorrelationPanel.vue  [NEW] — placeholder
 
 Фаза 3 (корреляции):
-  src/composables/useNetwork.ts
-  src/components/FocusPanel.vue
-  src/components/GraphZone.vue
-  src/components/panels/CorrelationPanel.vue  [NEW]
-  src/App.vue
+  src/composables/useAppState.ts         — correlationAge = ref(42)
+  src/composables/useNetwork.ts          — applyCorrelationFocus (toggle одиночного фокуса)
+  src/components/NetworkCanvas.vue       — expose applyCorrelationFocus
+  src/components/FocusPanel.vue          — режим корреляций: «Имя — N связей»
+  src/components/GraphZone.vue           — focusVisible/focusName для 3 режимов
+  src/components/panels/CorrelationPanel.vue  — полная реализация: слайдер + список
+  src/App.vue                            — correlations-guard в onSelectNode/onClickEmpty,
+                                           watcher correlationAge
 
 Фаза 4 (ситуации):
-  src/composables/useNetwork.ts
-  src/components/RightPanel.vue
-  src/App.vue
+  src/App.vue                            — situations-guard в onSelectNode/onClickEmpty
+  src/components/RightPanel.vue          — headerTitle/Desc для situations-режима
 
 Фаза 5 (полировка):
-  src/components/*
+  src/components/GraphZone.vue           — cm-graph v-if graph, cm-correlations [NEW]
+  src/components/panels/CorrelationPanel.vue  — кнопка × сброса, emit reset
+  src/components/RightPanel.vue          — emit reset-correlation, текст CoachMark
+  src/App.vue                            — onResetCorrelation
 ```
-
-## Риски
-
-1. **Регрессия графа** — фаза 0 трогает layout и physics, фазы 2–3 трогают `useNetwork.ts` и `App.vue`. Тестировать после каждой фазы в браузере.
-2. **Баг 0.4 (расстояние)** — увеличение радиусов может привести к тому, что граф не помещается на маленьких экранах. Подобрать значения на 1024px, 1280px, 1920px.
-3. **Баг 0.3 (breathe)** — требует отладки в runtime, сложно воспроизвести. Возможно потребуется добавить console-логирование для диагностики.
-4. **Маппинг таксономии** — 3 спорные ситуации (s06, s12, s18). Показать социологу до реализации.
-5. **Удаление `correlationsVisible`** — grep по всем файлам, убедиться что ничего не сломалось.
-6. **Навигационная история** — `NavEntry` должен корректно работать с новым `currentMode`.
-
-## Чеклист перед каждой фазой
-
-- [ ] `npm run build` проходит без ошибок
-- [ ] `npx vue-tsc --noEmit` проходит без ошибок
-- [ ] Визуальная проверка в браузере: граф рендерится, клики работают, правая панель отвечает
-- [ ] Коммит после каждой завершённой фазы

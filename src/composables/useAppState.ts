@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 
-export type PanelState = 'empty' | 'all-situations' | 'attractor' | 'situation' | 'l3'
+export type PanelState = 'empty' | 'all-situations' | 'attractor' | 'situation' | 'l3' | 'correlations'
+export type AppMode = 'graph' | 'correlations' | 'situations'
 
 const ageMin = ref(30)
 const ageMax = ref(44)
@@ -9,11 +10,13 @@ const gender = ref<'male' | 'female' | 'any'>('female')
 const childrenCount = ref<string>('1')
 const maritalStatus = ref<'married' | 'not_married' | 'divorced' | 'widowed' | 'civil_union' | 'any'>('married')
 
-const correlationsVisible = ref(true)
 const expansionMode = ref<'click' | 'allL2' | 'allL3'>('click')
 const currentFocus = ref<string | null>(null)
 const currentSituation = ref<{ attrId: string; sitId: string } | null>(null)
-const currentMode = ref<'graph' | 'situations'>('graph')
+const currentMode = ref<AppMode>('graph')
+const correlationFocusId = ref<string | null>(null)
+const correlationAge = ref(42)
+const correlationsVisible = computed(() => currentMode.value !== 'situations')
 const currentStrategy = ref<number | null>(null)
 const l3NodeId = ref<string | null>(null)
 
@@ -48,7 +51,7 @@ interface NavEntry {
   focus: string | null
   situation: { attrId: string; sitId: string } | null
   l3: string | null
-  mode: 'graph' | 'situations'
+  mode: AppMode
 }
 
 const navHistory = ref<NavEntry[]>([])
@@ -87,6 +90,7 @@ function applyNavEntry(entry: NavEntry) {
 const canGoBack = computed(() => navHistory.value.length > 0)
 
 const panelState = computed<PanelState>(() => {
+  if (currentMode.value === 'correlations') return 'correlations'
   if (currentSituation.value) return 'situation'
   if (l3NodeId.value) return 'l3'
   if (currentMode.value === 'situations') return 'all-situations'
@@ -99,6 +103,8 @@ function resetState(): void {
   currentSituation.value = null
   currentStrategy.value = null
   currentMode.value = 'graph'
+  correlationFocusId.value = null
+  correlationAge.value = 42
   expansionMode.value = 'click'
   l3NodeId.value = null
   clearSelectedAttractors()
@@ -113,6 +119,8 @@ export function useAppState() {
     childrenCount,
     maritalStatus,
     correlationsVisible,
+    correlationFocusId,
+    correlationAge,
     expansionMode,
     currentFocus,
     currentSituation,

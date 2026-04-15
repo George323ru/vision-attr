@@ -411,6 +411,25 @@ function applyFocus(nodeId: string) {
   return applyMultiFocusVisuals()
 }
 
+// Фокус одного узла в режиме «Корреляции» (не трогает currentFocus)
+function applyCorrelationFocus(nodeId: string) {
+  if (!nodes || !edges) return { correlated: 0 }
+  const { correlationFocusId } = useAppState()
+
+  // Toggle: повторный клик снимает фокус
+  if (correlationFocusId.value === nodeId) {
+    correlationFocusId.value = null
+    graphFocusSet.clear()
+    clearGraphFocus()
+    return { correlated: 0 }
+  }
+
+  correlationFocusId.value = nodeId
+  graphFocusSet.clear()
+  graphFocusSet.add(nodeId)
+  return applyMultiFocusVisuals() ?? { correlated: 0 }
+}
+
 function addFocusNode(nodeId: string) {
   if (!nodes || !edges) return
 
@@ -809,7 +828,7 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
           damping: 0.4,
           avoidOverlap: 0.8,
         },
-        stabilization: { enabled: true, iterations: 400, fit: true },
+        stabilization: { enabled: true, iterations: 200, fit: true },
         maxVelocity: 10,
         minVelocity: 0.75,
         timestep: 0.35,
@@ -873,27 +892,41 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
       ctx.restore()
     })
 
-    network.once('stabilized', () => {
+    // stabilizationIterationsDone — гарантированно срабатывает после N итераций,
+    // не ждёт полной стабилизации (которая может не наступить с 500+ нодами).
+    // Показываем граф сразу, но оставляем физику работать ещё ~3 секунды —
+    // expandAllL3() в onMounted сделает L2/L3 видимыми, и физика их раздвинет.
+    network.once('stabilizationIterationsDone', () => {
       graphReady.value = true
       network?.fit({ animation: { duration: 200, easingFunction: 'easeInOutQuad' } })
-      // Фиксируем все ноды после первоначальной стабилизации
-      if (nodes) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const positions = network!.getPositions()
-        const updates: any[] = []
-        const basePositions: Record<string, { x: number; y: number }> = {}
-        nodes.forEach((n) => {
-          const pos = positions[n.id as string]
-          if (pos) {
-            updates.push({ id: n.id, x: pos.x, y: pos.y, fixed: { x: true, y: true } })
-            basePositions[n.id as string] = { x: pos.x, y: pos.y }
-          }
-        })
-        nodes.update(updates)
-        setBreatheBasePositions(basePositions)
-        startBreatheAnimation(network, nodes)
-      }
     })
+
+    // Через 3 секунды: остановить физику, зафиксировать позиции, запустить breathe
+    const physicsTimeout = setTimeout(() => {
+      if (!network || !nodes) return
+      network.stopSimulation()
+      network.fit({ animation: { duration: 300, easingFunction: 'easeInOutQuad' } })
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const positions = network.getPositions()
+      const updates: any[] = []
+      const basePositions: Record<string, { x: number; y: number }> = {}
+      nodes.forEach((n) => {
+        const pos = positions[n.id as string]
+        if (pos) {
+          updates.push({ id: n.id, x: pos.x, y: pos.y, fixed: { x: true, y: true } })
+          basePositions[n.id as string] = { x: pos.x, y: pos.y }
+        }
+      })
+      nodes.update(updates)
+      setBreatheBasePositions(basePositions)
+
+      // Breathe с задержкой — граф замирает, потом оживает
+      setTimeout(() => {
+        startBreatheAnimation(network, nodes)
+      }, 800)
+    }, 3000)
+    onBeforeUnmount(() => clearTimeout(physicsTimeout))
 
     // Watchdog: перезапуск breathe если она молча прервалась
     const breatheWatchdog = setInterval(() => {
@@ -1010,6 +1043,7 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
 
   return {
     applyFocus,
+    applyCorrelationFocus,
     addFocusNode,
     resetGraphVisuals,
     clearFocusVisualsPreserveVisibility,

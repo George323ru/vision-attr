@@ -1,16 +1,22 @@
 <template>
   <div class="focus-panel" :class="{ visible }">
     <span class="fname">{{ name }}</span>
-    <span> — корреляций: <b>{{ count }}</b></span>
+    <template v-if="currentMode === 'correlations'">
+      <span> — <b>{{ count }}</b> связей</span>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useAppState } from '@/composables/useAppState'
+
 defineProps<{
   visible: boolean
   name: string
   count: number
 }>()
+
+const { currentMode } = useAppState()
 </script>
 
 <style scoped>

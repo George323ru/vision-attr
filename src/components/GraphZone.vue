@@ -14,8 +14,16 @@
       :count="focusCount"
     />
     <CoachMark
+      v-if="currentMode === 'graph'"
       id="cm-graph"
       text="Кликните на любой узел для анализа"
+      position="bottom"
+      class="graph-coach"
+    />
+    <CoachMark
+      v-if="currentMode === 'correlations'"
+      id="cm-correlations"
+      text="Кликните на аттрактор второго уровня, чтобы увидеть его корреляции"
       position="bottom"
       class="graph-coach"
     />
@@ -33,15 +41,23 @@ import { useAttractorStore } from '@/composables/useAttractorStore'
 
 const networkRef = ref<InstanceType<typeof NetworkCanvas> | null>(null)
 
-const { currentFocus } = useAppState()
+const { currentFocus, currentMode, correlationFocusId } = useAppState()
 const { getAttractor } = useAttractorStore()
 
 const graphIsReady = computed(() => networkRef.value?.graphReady ?? false)
 
-const focusVisible = computed(() => currentFocus.value !== null)
+const focusVisible = computed(() => {
+  if (currentMode.value === 'situations') return false
+  if (currentMode.value === 'correlations') return correlationFocusId.value !== null
+  return currentFocus.value !== null
+})
+
 const focusName = computed(() => {
-  if (!currentFocus.value) return ''
-  const attr = getAttractor(currentFocus.value)
+  const id = currentMode.value === 'correlations'
+    ? correlationFocusId.value
+    : currentFocus.value
+  if (!id) return ''
+  const attr = getAttractor(id)
   return attr?.label?.replace(/\n/g, ' ') ?? ''
 })
 const focusCount = ref(0)

@@ -11,6 +11,7 @@ const networkApi = useNetwork(containerRef)
 
 defineExpose({
   applyFocus: networkApi.applyFocus,
+  applyCorrelationFocus: networkApi.applyCorrelationFocus,
   addFocusNode: networkApi.addFocusNode,
   resetGraphVisuals: networkApi.resetGraphVisuals,
   clearFocusVisualsPreserveVisibility: networkApi.clearFocusVisualsPreserveVisibility,

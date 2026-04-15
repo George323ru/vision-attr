@@ -8,18 +8,19 @@
 ageMin, ageMax              // ref<number> (18–75)
 midAge                      // computed: Math.round((min+max)/2)
 gender, childrenCount, maritalStatus
-correlationsVisible         // ref<boolean>
+correlationsVisible         // computed<boolean> — true когда currentMode !== 'situations'
+correlationFocusId          // ref<string|null> — выбранный L2 в режиме корреляций
 expansionMode               // 'click' | 'allL2' | 'allL3'
 currentFocus                // ref<string|null> — id выбранного узла
 currentSituation            // ref<{attrId, sitId}|null>
-currentMode                 // 'graph' | 'situations'
+currentMode                 // 'graph' | 'correlations' | 'situations'
 currentStrategy             // ref<number|null>
 l3NodeId                    // ref<string|null>
 selectedAttractors          // ref<(string|null)[]> — 3 слота
 activeSelectedIds           // computed Set<string>
 highlightedAttractorIdx     // ref<number|null> — индекс дропдауна для линий (0/1/2/null)
-panelState                  // computed: 'empty'|'attractor'|'situation'|'all-situations'|'l3'
-// Приоритет: currentSituation > l3NodeId > currentMode=situations > currentFocus > empty
+panelState                  // computed: 'empty'|'attractor'|'situation'|'all-situations'|'l3'|'correlations'
+// Приоритет: correlations-mode > currentSituation > l3NodeId > situations-mode > currentFocus > empty
 clearSelectedAttractors()
 resetState()
 ```

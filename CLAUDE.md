@@ -47,6 +47,7 @@ src/
 │   ├── StrategyBar.vue            # бар стратегии с анимацией
 │   └── panels/
 │       ├── AttractorPanel.vue     # аттрактор: breadcrumb + описание + ситуации
+│       ├── CorrelationPanel.vue   # корреляции: placeholder (фаза 3 — слайдер возраста + список)
 │       ├── SituationPanel.vue     # ситуация: breadcrumb + стратегии + разметка
 │       ├── AllSituationsPanel.vue # список всех 33 ситуаций
 │       ├── EmptyPanel.vue         # onboarding: 3-шаговый гид
@@ -130,7 +131,7 @@ RightPanel
   │     └── AttractorDropdowns (SearchableCombobox × 3)
   ├── ActiveNodeIndicator | header (Transition)
   └── panelState → (Transition mode="out-in")
-        EmptyPanel (onboarding) | AllSituationsPanel | AttractorPanel | SituationPanel | L3Panel
+        CorrelationPanel | EmptyPanel (onboarding) | AllSituationsPanel | AttractorPanel | SituationPanel | L3Panel
 ```
 
 Все панели используют `PanelBreadcrumb` для единообразной навигации.

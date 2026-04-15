@@ -19,16 +19,23 @@
           @click="$emit('change-expansion-mode', 'allL3')"
         >Все 3 уровня</button>
       </div>
-      <button
-        class="header-btn"
-        :class="{ active: correlationsVisible }"
-        @click="$emit('toggle-correlations')"
-      >Корреляции</button>
-      <button
-        class="header-btn"
-        :class="{ active: currentMode === 'situations' }"
-        @click="$emit('toggle-situations')"
-      >Ситуации</button>
+      <div class="mode-group">
+        <button
+          class="mode-btn"
+          :class="{ active: currentMode === 'graph' }"
+          @click="$emit('change-mode', 'graph')"
+        >Граф</button>
+        <button
+          class="mode-btn"
+          :class="{ active: currentMode === 'correlations' }"
+          @click="$emit('change-mode', 'correlations')"
+        >Корреляции</button>
+        <button
+          class="mode-btn"
+          :class="{ active: currentMode === 'situations' }"
+          @click="$emit('change-mode', 'situations')"
+        >Ситуации</button>
+      </div>
       <button class="settings-btn" title="Настройки графа" aria-label="Настройки графа" @click="$emit('toggle-settings')">⚙</button>
       <span class="version">v2.0</span>
     </div>
@@ -37,15 +44,15 @@
 
 <script setup lang="ts">
 import { useAppState } from '@/composables/useAppState'
+import type { AppMode } from '@/composables/useAppState'
 
 defineEmits<{
-  'toggle-situations': []
-  'toggle-correlations': []
+  'change-mode': [mode: AppMode]
   'change-expansion-mode': [mode: 'click' | 'allL2' | 'allL3']
   'toggle-settings': []
 }>()
 
-const { currentMode, correlationsVisible, expansionMode } = useAppState()
+const { currentMode, expansionMode } = useAppState()
 </script>
 
 <style scoped>
@@ -131,27 +138,32 @@ const { currentMode, correlationsVisible, expansionMode } = useAppState()
   color: #fff;
 }
 
-.header-btn {
-  font-size: 12px;
-  padding: 6px 16px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
+.mode-group {
+  display: flex;
+  gap: 2px;
   background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2px;
+}
+.mode-btn {
+  font-size: 12px;
+  padding: 5px 14px;
+  border-radius: 16px;
+  border: none;
+  background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  letter-spacing: 0.5px;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  letter-spacing: 0.3px;
+  transition: background 0.2s, color 0.2s;
   white-space: nowrap;
 }
-.header-btn:hover {
+.mode-btn:hover {
   background: var(--card-hover);
   color: var(--text);
-  border-color: var(--accent);
 }
-.header-btn.active {
+.mode-btn.active {
   background: var(--accent);
   color: #fff;
-  border-color: var(--accent);
-  opacity: 1;
 }
 </style>

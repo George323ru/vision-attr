@@ -2,8 +2,7 @@
   <div v-if="loading" class="app-loading">Загрузка данных…</div>
   <template v-else>
     <AppHeader
-      @toggle-situations="onToggleSituations"
-      @toggle-correlations="onToggleCorrelations"
+      @change-mode="onChangeMode"
       @change-expansion-mode="onChangeExpansionMode"
       @toggle-settings="settingsPanelVisible = !settingsPanelVisible"
     />
@@ -24,6 +23,7 @@
         @age-change="onAgeChange"
         @close-panel="onClosePanel"
         @go-back="onGoBack"
+        @reset-correlation="onResetCorrelation"
       />
     </div>
   </template>
@@ -43,7 +43,8 @@ const { loadData, getAttractor } = useAttractorStore()
 const { loadMarkupData } = useMarkupStore()
 const {
   midAge,
-  correlationsVisible,
+  correlationFocusId,
+  correlationAge,
   currentFocus,
   currentSituation,
   currentMode,
@@ -55,6 +56,7 @@ const {
   highlightedAttractorIdx,
   rightPanelCollapsed,
   addToSelectedAttractors,
+  clearSelectedAttractors,
   pushNavState,
   popNavState,
   applyNavEntry,
@@ -94,18 +96,27 @@ onMounted(async () => {
   if (!net) return
 
   net.onSelectNode((nodeId: string, level: number) => {
+    // В режиме ситуаций — клики по графу ничего не делают
+    if (currentMode.value === 'situations') return
+
+    // В режиме корреляций — только L2-ноды, одиночный фокус
+    if (currentMode.value === 'correlations') {
+      if (level !== 2) return
+      const result = net.applyCorrelationFocus(nodeId)
+      if (result) graphZoneRef.value?.setFocusCount(result.correlated)
+      return
+    }
+
     pushNavState()
     l3NodeId.value = null
 
     if (level === 1) {
-      currentMode.value = 'graph'
       currentStrategy.value = null
       net.clearGraphFocus()
       net.expandL1(nodeId)
       currentFocus.value = nodeId
       showAttractorPanel(nodeId)
     } else if (level === 2) {
-      currentMode.value = 'graph'
       currentStrategy.value = null
       net.toggleL2(nodeId)
       backSnapshot.value = net.snapshotExpansionState()
@@ -124,6 +135,17 @@ onMounted(async () => {
   })
 
   net.onClickEmpty(() => {
+    // В режиме ситуаций — клики по пустому месту ничего не делают
+    if (currentMode.value === 'situations') return
+
+    // В режиме корреляций пустой клик снимает фокус с узла
+    if (currentMode.value === 'correlations') {
+      if (correlationFocusId.value) {
+        net.applyCorrelationFocus(correlationFocusId.value)
+        graphZoneRef.value?.setFocusCount(0)
+      }
+      return
+    }
     const prev = popNavState()
     if (prev) {
       net.clearFocusVisualsPreserveVisibility()
@@ -170,34 +192,47 @@ function onResetDefault() {
   applyHighlightFromState()
 }
 
-function onToggleSituations() {
-  if (currentMode.value === 'situations') {
-    const net = getNetwork()
-    currentMode.value = 'graph'
-    currentSituation.value = null
-    currentStrategy.value = null
-    l3NodeId.value = null
-    net?.clearGraphFocus()
-    resetRightPanel()
-    if (situationsSnapshot.value && net) {
-      net.restoreExpansionState(situationsSnapshot.value)
-      situationsSnapshot.value = null
-    }
-  } else {
-    onShowAllSituations()
-  }
-}
+function onChangeMode(mode: 'graph' | 'correlations' | 'situations') {
+  if (currentMode.value === mode) return
 
-function onShowAllSituations() {
   pushNavState()
   const net = getNetwork()
-  if (net) situationsSnapshot.value = net.snapshotExpansionState()
-  currentMode.value = 'situations'
+
+  // Выходим из режима ситуаций → восстанавливаем граф
+  if (currentMode.value === 'situations' && situationsSnapshot.value && net) {
+    net.restoreExpansionState(situationsSnapshot.value)
+    situationsSnapshot.value = null
+  }
+
+  // Входим в режим ситуаций → сохраняем граф
+  if (mode === 'situations' && net) {
+    situationsSnapshot.value = net.snapshotExpansionState()
+  }
+
+  // Сброс стейта
+  currentFocus.value = null
   currentSituation.value = null
   currentStrategy.value = null
   l3NodeId.value = null
-  net?.clearFocusVisualsPreserveVisibility()
+  correlationFocusId.value = null
+  clearSelectedAttractors()
+
+  // Установить режим (correlationsVisible computed обновится автоматически)
+  currentMode.value = mode
+
+  // Обновить визуал графа
+  if (net) {
+    net.clearFocusVisualsPreserveVisibility()
+  }
   applyHighlightFromState()
+}
+
+function onShowAllSituations() {
+  // Внутренняя навигация: вернуться к списку ситуаций внутри режима
+  pushNavState()
+  currentSituation.value = null
+  currentStrategy.value = null
+  l3NodeId.value = null
 }
 
 function onSelectSituation(attrId: string, sitId: string) {
@@ -241,17 +276,6 @@ function onFocusNode(nodeId: string) {
   l3NodeId.value = null
 }
 
-function onToggleCorrelations() {
-  const net = getNetwork()
-  if (!net) return
-  correlationsVisible.value = !correlationsVisible.value
-  if (correlationsVisible.value) {
-    net.updateVisibleCorrelations()
-  } else {
-    net.hideAllCorrelations()
-  }
-}
-
 function onChangeExpansionMode(mode: 'click' | 'allL2' | 'allL3') {
   const net = getNetwork()
   if (!net) return
@@ -290,6 +314,14 @@ function onClosePanel() {
   resetRightPanel()
 }
 
+function onResetCorrelation() {
+  const net = getNetwork()
+  if (correlationFocusId.value && net) {
+    net.applyCorrelationFocus(correlationFocusId.value)
+    graphZoneRef.value?.setFocusCount(0)
+  }
+}
+
 function onAgeChange() {
   const net = getNetwork()
   if (activeSelectedIds.value.size > 0) {
@@ -300,8 +332,7 @@ function onAgeChange() {
   }
 }
 
-// Единый watcher: dropdown-выбор + переключение кнопки корреляций
-// Объединены чтобы избежать race condition при одновременном срабатывании
+// Watcher: dropdown-выбор аттракторов → подсветка корреляций на графе
 watch(
   [selectedAttractors, highlightedAttractorIdx],
   () => {
@@ -326,6 +357,15 @@ watch(
   },
   { deep: true },
 )
+
+// Слайдер возраста в режиме «Корреляции» → обновить подсветку на графе
+watch(correlationAge, (age) => {
+  if (currentMode.value !== 'correlations' || !correlationFocusId.value) return
+  const net = getNetwork()
+  if (!net) return
+  const count = net.updateCorrelationsForAge(age)
+  if (count !== undefined) graphZoneRef.value?.setFocusCount(count)
+})
 
 // Перерисовка графа при сворачивании/разворачивании панели
 watch(rightPanelCollapsed, () => {

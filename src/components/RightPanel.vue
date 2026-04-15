@@ -1,26 +1,29 @@
 <template>
   <div class="right-panel">
     <template v-if="!rightPanelCollapsed">
-      <CollapsibleSection
-        title="Демография"
-        :initial-collapsed="true"
-        coach-mark-id="cm-demographics"
-        coach-mark-text="Фильтры влияют на расчёт корреляций и предиктивный анализ стратегий"
-      >
-        <DemographicsPanel @age-change="$emit('age-change')" />
-      </CollapsibleSection>
-      <CollapsibleSection
-        title="Аттракторы человека"
-        :initial-collapsed="true"
-        :force-expanded="hasActiveAttractor"
-        coach-mark-id="cm-attractors"
-        coach-mark-text="Выберите до 3 аттракторов — их корреляции отобразятся на графе"
-      >
-        <AttractorDropdowns />
-      </CollapsibleSection>
+      <!-- Демография и аттракторы — только в graph и situations -->
+      <template v-if="currentMode !== 'correlations'">
+        <CollapsibleSection
+          title="Демография"
+          :initial-collapsed="true"
+          coach-mark-id="cm-demographics"
+          coach-mark-text="Фильтры влияют на расчёт корреляций и предиктивный анализ стратегий"
+        >
+          <DemographicsPanel @age-change="$emit('age-change')" />
+        </CollapsibleSection>
+        <CollapsibleSection
+          title="Аттракторы человека"
+          :initial-collapsed="true"
+          :force-expanded="hasActiveAttractor"
+          coach-mark-id="cm-attractors"
+          coach-mark-text="Выберите до 3 аттракторов — их корреляции отобразятся на графе (в режиме «Граф»)"
+        >
+          <AttractorDropdowns />
+        </CollapsibleSection>
+      </template>
       <Transition name="header-fade" mode="out-in">
         <ActiveNodeIndicator
-          v-if="activeNodeId"
+          v-if="activeNodeId && currentMode === 'graph'"
           :key="activeNodeId"
           :node-id="activeNodeId"
           @close="$emit('close-panel')"
@@ -30,12 +33,14 @@
           <div class="rp-desc">{{ headerDesc }}</div>
         </div>
       </Transition>
-      <button v-if="canGoBack && panelState !== 'empty'" class="back-btn" @click="$emit('go-back')">
+      <button v-if="canGoBack && panelState !== 'empty' && panelState !== 'correlations'" class="back-btn" @click="$emit('go-back')">
         ← Назад
       </button>
       <div class="right-panel-content">
         <Transition name="panel-fade" mode="out-in">
-          <EmptyPanel v-if="panelState === 'empty'" key="empty" />
+          <CorrelationPanel v-if="panelState === 'correlations'" key="correlations" @reset="$emit('reset-correlation')" />
+
+          <EmptyPanel v-else-if="panelState === 'empty'" key="empty" />
 
           <AllSituationsPanel
             v-else-if="panelState === 'all-situations'"
@@ -80,6 +85,7 @@ import ActiveNodeIndicator from './ActiveNodeIndicator.vue'
 import CollapsibleSection from './CollapsibleSection.vue'
 import DemographicsPanel from './DemographicsPanel.vue'
 import AttractorDropdowns from './AttractorDropdowns.vue'
+import CorrelationPanel from './panels/CorrelationPanel.vue'
 import EmptyPanel from './panels/EmptyPanel.vue'
 import AllSituationsPanel from './panels/AllSituationsPanel.vue'
 import AttractorPanel from './panels/AttractorPanel.vue'
@@ -94,6 +100,7 @@ const emit = defineEmits<{
   'age-change': []
   'close-panel': []
   'go-back': []
+  'reset-correlation': []
 }>()
 
 const { panelState, currentFocus, currentSituation, currentMode, l3NodeId, rightPanelCollapsed, canGoBack } = useAppState()
@@ -108,12 +115,14 @@ const activeNodeId = computed<string | null>(() => {
 })
 
 const headerTitle = computed(() => {
-  if (panelState.value === 'all-situations') return 'Все ситуации'
-  return 'Предиктивный анализ'
+  if (panelState.value === 'correlations') return 'Корреляции'
+  if (panelState.value === 'all-situations') return 'Анализ ситуаций'
+  return 'Анализ аттракторов'
 })
 
 const headerDesc = computed(() => {
-  if (panelState.value === 'all-situations') return 'Выберите ситуацию для анализа'
+  if (panelState.value === 'correlations') return 'Выберите аттрактор на графе для просмотра связей'
+  if (panelState.value === 'all-situations') return 'Выберите ситуацию для предиктивного анализа'
   return 'Выберите аттрактор на графе'
 })
 
