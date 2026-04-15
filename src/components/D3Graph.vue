@@ -56,7 +56,9 @@
           :stroke="node.borderColor"
           :stroke-width="node.level === 1 ? 4 : 2"
         />
+        <!-- L1: лейбл внутри круга -->
         <text
+          v-if="node.level === 1"
           :font-size="node.fontSize"
           text-anchor="middle"
           dominant-baseline="central"
@@ -68,6 +70,23 @@
             :key="li"
             :x="0"
             :dy="li === 0 ? `${-(node.labelLines.length - 1) * 0.5}em` : '1.1em'"
+          >{{ line }}</tspan>
+        </text>
+        <!-- L2/L3: лейбл под нодой -->
+        <text
+          v-else
+          :font-size="node.fontSize"
+          text-anchor="middle"
+          :y="node.radius + node.fontSize * 0.4"
+          dominant-baseline="hanging"
+          :fill="node.fontColor"
+          class="node-label"
+        >
+          <tspan
+            v-for="(line, li) in node.labelLines"
+            :key="li"
+            :x="0"
+            :dy="li === 0 ? 0 : '1.15em'"
           >{{ line }}</tspan>
         </text>
       </g>
