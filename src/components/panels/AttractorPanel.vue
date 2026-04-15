@@ -47,6 +47,10 @@
         Нет данных для этой категории
       </div>
     </template>
+
+    <button v-if="canGoBack" class="btn-back" @click="dispatch({ type: 'GO_BACK' })">
+      &larr; Назад
+    </button>
   </div>
 </template>
 
@@ -66,7 +70,7 @@ import type { BreadcrumbItem } from '@/components/PanelBreadcrumb.vue'
 const props = defineProps<{ nodeId: string }>()
 
 const { attractors, domains, getAttractor } = useAttractorStore()
-const { midAge, dispatch } = useStore()
+const { midAge, canGoBack, dispatch } = useStore()
 const { getMarkupForSituation } = useMarkupStore()
 
 function hasMarkup(sitId: string): boolean {
@@ -239,4 +243,19 @@ const relatedCorrelations = computed(() => {
   color: var(--text);
   line-height: 1.55;
 }
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: background 0.2s;
+}
+.btn-back:hover { background: var(--card-hover); }
 </style>

@@ -7,7 +7,7 @@
 | 1. Фундамент | **DONE** | Reducer + types + selectors + useStore. App.vue 376→36 строк. Бандл 600KB→70KB. Два экрана переключаются. |
 | 2. Scenario view | **DONE** | ProfileSidebar + DemographicsPanel (dispatch) + AttractorPicker + SituationGrid + SituationCard + SituationDetail. Build 112KB чистый. Удалены мёртвые AllSituationsPanel, L3Panel. |
 | 3. D3-граф | **DONE** | D3Graph.vue (SVG + d3-zoom), useGraphLayout.ts, useD3Zoom.ts, useGraphEffects.ts, GraphSidebar.vue, GraphView.vue. AttractorPanel + CorrelationPanel адаптированы на dispatch. Бандл 196KB (d3 вместо vis-network 600KB). |
-| 4. Кросс-навигация | — | — |
+| 4. Кросс-навигация | **DONE** | SituationDetail: «Показать на графе →» + GO_BACK. AttractorPanel: OPEN_SITUATION + «← Назад». useStore: буфер pendingEffects для отложенных эффектов при scenarios→graph. Reducer: ANIMATE_EXPAND (не toggle) для NAVIGATE_TO_GRAPH_NODE. |
 | 5. Удаление старого кода | — | — |
 | 6. Полировка | — | — |
 

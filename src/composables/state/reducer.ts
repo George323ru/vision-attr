@@ -218,7 +218,8 @@ export function reduce(state: AppState, action: Action): ReducerResult {
     case 'NAVIGATE_TO_GRAPH_NODE': {
       const effects: Effect[] = []
       if (action.parentL1) {
-        effects.push({ type: 'EXPAND_NODE', nodeId: action.parentL1 })
+        // ANIMATE_EXPAND гарантированно раскрывает (без toggle)
+        effects.push({ type: 'ANIMATE_EXPAND', parentId: action.parentL1, childIds: [] })
       }
       effects.push({ type: 'HIGHLIGHT_NODE', nodeId: action.nodeId })
       effects.push({ type: 'ZOOM_TO_FIT', nodeIds: [action.nodeId] })

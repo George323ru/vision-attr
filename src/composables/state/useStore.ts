@@ -27,20 +27,30 @@ const INITIAL_STATE: AppState = {
 // Singleton state
 const state = ref<AppState>(INITIAL_STATE)
 
-// Effect handler — устанавливается GraphView при монтировании
+// Effect handler — устанавливается D3Graph при монтировании
 let effectHandler: ((effects: readonly Effect[]) => void) | null = null
+// Буфер эффектов — для кросс-навигации (scenarios→graph), когда D3Graph ещё не смонтирован
+let pendingEffects: readonly Effect[] = []
 
 export function useStore() {
   function dispatch(action: Action): void {
     const result = reduce(state.value, action)
     state.value = result.state
-    if (result.effects.length > 0 && effectHandler) {
-      effectHandler(result.effects)
+    if (result.effects.length > 0) {
+      if (effectHandler) {
+        effectHandler(result.effects)
+      } else {
+        pendingEffects = [...pendingEffects, ...result.effects]
+      }
     }
   }
 
   function setEffectHandler(handler: (effects: readonly Effect[]) => void): void {
     effectHandler = handler
+    if (pendingEffects.length > 0) {
+      handler(pendingEffects)
+      pendingEffects = []
+    }
   }
 
   function clearEffectHandler(): void {
