@@ -1,8 +1,15 @@
+export interface SituationCategory {
+  id: string
+  title: string
+  description: string
+}
+
 export interface Situation {
   id: string
   attractorL2: string
   title: string
   description: string
+  category: string
 }
 
 export interface Prediction {
