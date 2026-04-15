@@ -1,4 +1,4 @@
-import { onMounted, onBeforeUnmount, watch, type Ref } from 'vue'
+import { ref as vueRef, onMounted, onBeforeUnmount, watch, type Ref } from 'vue'
 import { Network, DataSet } from 'vis-network/standalone'
 import type { Attractor } from '@/types/attractor'
 import type { VisNodeData, VisEdgeData, OrigNodeSnapshot, OrigEdgeSnapshot, ExpansionSnapshot } from '@/types/network'
@@ -14,6 +14,7 @@ import { computeInitialPositions } from './useNetworkLayout'
 import {
   startBreatheAnimation, stopBreatheAnimation, updateBreatheBase,
   setBreatheBasePositions, getBreatheBasePositions, resetBreatheState,
+  refreshBreatheFromNetwork, isBreathRunning,
 } from './useNetworkBreathe'
 
 const expandedL1 = new Set<string>()
@@ -276,6 +277,9 @@ function restoreExpansionState(snapshot: ExpansionSnapshot) {
 
   snapshot.l1.forEach(expandL1)
   snapshot.l2.forEach(expandL2)
+
+  // Перезапустить breathe с актуальными позициями
+  refreshBreatheFromNetwork(network, nodes)
 }
 
 // ── DRAG: СДВИГ ДЕТЕЙ ПО ДЕЛЬТЕ ─────────────────────────────
@@ -617,6 +621,9 @@ function rebuildForTheme() {
     if (activeSelectedIds.value.size > 0) {
       applyDropdownHighlight(activeSelectedIds.value)
     }
+
+    // Перезапустить breathe-анимацию с обновлёнными позициями
+    refreshBreatheFromNetwork(network, nodes)
   } catch (err) {
     // Откатываем ORIG к предыдущему состоянию
     ORIG = prevORIG
@@ -775,6 +782,7 @@ function clearDropdownHighlight() {
 
 export function useNetwork(containerRef: Ref<HTMLElement | null>) {
   const { currentTheme } = useTheme()
+  const graphReady = vueRef(false)
 
   function init() {
     if (!containerRef.value) return
@@ -799,9 +807,9 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
           springLength: 350,
           springConstant: 0.01,
           damping: 0.4,
-          avoidOverlap: 0.6,
+          avoidOverlap: 0.8,
         },
-        stabilization: { enabled: true, iterations: 1000, fit: true },
+        stabilization: { enabled: true, iterations: 400, fit: true },
         maxVelocity: 10,
         minVelocity: 0.75,
         timestep: 0.35,
@@ -866,6 +874,7 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
     })
 
     network.once('stabilized', () => {
+      graphReady.value = true
       network?.fit({ animation: { duration: 200, easingFunction: 'easeInOutQuad' } })
       // Фиксируем все ноды после первоначальной стабилизации
       if (nodes) {
@@ -885,6 +894,14 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
         startBreatheAnimation(network, nodes)
       }
     })
+
+    // Watchdog: перезапуск breathe если она молча прервалась
+    const breatheWatchdog = setInterval(() => {
+      if (graphReady.value && !isBreathRunning() && network && nodes) {
+        refreshBreatheFromNetwork(network, nodes)
+      }
+    }, 5000)
+    onBeforeUnmount(() => clearInterval(breatheWatchdog))
 
     // ── DRAG: start → непрерывный drag → end ──────────────────
     // Паттерн: unfix только перетаскиваемую ноду, дети сдвигаются
@@ -1015,5 +1032,6 @@ export function useNetwork(containerRef: Ref<HTMLElement | null>) {
     clearDropdownHighlight,
     onSelectNode,
     onClickEmpty,
+    graphReady,
   }
 }

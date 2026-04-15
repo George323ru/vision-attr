@@ -33,6 +33,7 @@ defineExpose({
   clearDropdownHighlight: networkApi.clearDropdownHighlight,
   onSelectNode: networkApi.onSelectNode,
   onClickEmpty: networkApi.onClickEmpty,
+  graphReady: networkApi.graphReady,
 })
 </script>
 

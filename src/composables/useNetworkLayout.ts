@@ -34,9 +34,9 @@ export function computeInitialPositions(attractors: Attractor[]): Record<string,
   }
 
   // L3 — веером наружу от L2 (в направлении от центра)
-  const L3_RADIUS = 380
-  const L3_MIN_SPAN = 0.5  // минимальный угловой размах (рад)
-  const L3_PER_CHILD = 0.18 // доп. размах на каждого ребёнка (рад)
+  const L3_RADIUS = 550
+  const L3_MIN_SPAN = 0.8  // минимальный угловой размах (рад)
+  const L3_PER_CHILD = 0.25 // доп. размах на каждого ребёнка (рад)
   const childrenOfL2: Record<string, Attractor[]> = {}
   attractors.filter(a => a.level === 3 && a.parent).forEach(a => {
     if (!childrenOfL2[a.parent!]) childrenOfL2[a.parent!] = []

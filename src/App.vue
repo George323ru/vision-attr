@@ -101,7 +101,7 @@ onMounted(async () => {
       currentMode.value = 'graph'
       currentStrategy.value = null
       net.clearGraphFocus()
-      net.toggleL1(nodeId)
+      net.expandL1(nodeId)
       currentFocus.value = nodeId
       showAttractorPanel(nodeId)
     } else if (level === 2) {
