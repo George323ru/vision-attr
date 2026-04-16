@@ -8,7 +8,7 @@
 | 2. Scenario view | **DONE** | ProfileSidebar + DemographicsPanel (dispatch) + AttractorPicker + SituationGrid + SituationCard + SituationDetail. Build 112KB чистый. Удалены мёртвые AllSituationsPanel, L3Panel. |
 | 3. D3-граф | **DONE** | D3Graph.vue (SVG + d3-zoom), useGraphLayout.ts, useD3Zoom.ts, useGraphEffects.ts, GraphSidebar.vue, GraphView.vue. AttractorPanel + CorrelationPanel адаптированы на dispatch. Бандл 196KB (d3 вместо vis-network 600KB). |
 | 4. Кросс-навигация | **DONE** | SituationDetail: «Показать на графе →» + GO_BACK. AttractorPanel: OPEN_SITUATION + «← Назад». useStore: буфер pendingEffects для отложенных эффектов при scenarios→graph. Reducer: ANIMATE_EXPAND (не toggle) для NAVIGATE_TO_GRAPH_NODE. |
-| 5. Удаление старого кода | — | — |
+| 5. Удаление старого кода | **DONE** | Удалены 7 файлов: GraphZone, RightPanel, VisualSettingsPanel, NetworkCanvas, useNetwork, useNetworkBreathe, useNetworkLayout. Удалены vis-network + vis-data из package.json. Бандл 212KB. |
 | 6. Полировка | — | — |
 
 ---
