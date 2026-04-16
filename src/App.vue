@@ -3,8 +3,10 @@
   <template v-else>
     <AppHeader />
     <main class="main-content">
-      <ScenarioView v-if="currentView === 'scenarios'" />
-      <GraphView v-else />
+      <Transition name="view-fade" mode="out-in">
+        <ScenarioView v-if="currentView === 'scenarios'" key="scenarios" />
+        <GraphView v-else key="graph" />
+      </Transition>
     </main>
   </template>
 </template>
@@ -44,4 +46,10 @@ onMounted(async () => {
   display: flex;
   overflow: hidden;
 }
+
+/* View transition */
+.view-fade-enter-active { transition: opacity var(--duration-base) var(--ease-out-quad); }
+.view-fade-leave-active { transition: opacity var(--duration-fast) ease-in; }
+.view-fade-enter-from,
+.view-fade-leave-to { opacity: 0; }
 </style>

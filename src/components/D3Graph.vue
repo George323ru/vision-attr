@@ -159,6 +159,7 @@ const positionsMap = computed(() => computeLayout(attractors.value))
 // Zoom
 const d3Zoom = useD3Zoom(svgRef)
 const zoomTransform = computed(() => d3Zoom.transformStr.value)
+const zoomScale = computed(() => d3Zoom.scale.value)
 
 // Effects
 const graphEffects = useGraphEffects(expandedNodes, hoveredNodeId, d3Zoom, positionsMap)
@@ -212,10 +213,14 @@ const visibleNodes = computed<VisibleNode[]>(() => {
   const focused = focusedNodeId.value
   const activeIds = activeAttractorIds.value
 
+  // Semantic zoom: скрывать L3 при отдалении
+  const hideL3 = zoomScale.value < 0.25
+
   for (const a of attractors.value) {
-    // Видимость: L1 всегда, L2 если parent expanded, L3 если parent expanded
+    // Видимость: L1 всегда, L2 если parent expanded, L3 если parent expanded + zoom достаточный
     if (a.level === 2 && (!a.parent || !expanded.has(a.parent))) continue
     if (a.level === 3 && (!a.parent || !expanded.has(a.parent))) continue
+    if (a.level === 3 && hideL3) continue
 
     const pos = positions.get(a.id)
     if (!pos) continue
@@ -421,6 +426,11 @@ watch(attractors, (list) => {
   opacity: 0.80;
   stroke-linecap: round;
   transition: opacity var(--duration-base, 0.25s) var(--ease-out-expo, ease);
+  animation: edge-fade-in 0.5s var(--ease-out-expo, ease) both;
+}
+@keyframes edge-fade-in {
+  from { opacity: 0; }
+  to { opacity: 0.8; }
 }
 .edge-correlation.reinforcing {
   stroke: #0891b2;
@@ -433,6 +443,11 @@ watch(attractors, (list) => {
 .graph-node {
   cursor: pointer;
   transition: opacity var(--duration-slow, 0.4s) var(--ease-out-expo, ease);
+  animation: node-appear 0.4s var(--ease-out-expo, ease) both;
+}
+@keyframes node-appear {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 /* Hover — масштабирование + мягкая тень */

@@ -1,11 +1,18 @@
 <template>
   <aside class="profile-sidebar">
-    <CollapsibleSection title="Demographics" :initial-collapsed="false">
+    <CollapsibleSection title="Демография" :initial-collapsed="false">
       <DemographicsPanel />
     </CollapsibleSection>
-    <CollapsibleSection title="Your values" :initial-collapsed="false">
-      <AttractorPicker />
-    </CollapsibleSection>
+    <div class="sidebar-section-wrap">
+      <CollapsibleSection title="Ваши ценности" :initial-collapsed="false">
+        <AttractorPicker />
+      </CollapsibleSection>
+      <CoachMark
+        id="cm-profile"
+        text="Выберите до 3 ценностей — карточки ситуаций подстроятся под ваш профиль"
+        position="bottom"
+      />
+    </div>
   </aside>
 </template>
 
@@ -13,6 +20,7 @@
 import CollapsibleSection from '@/components/CollapsibleSection.vue'
 import DemographicsPanel from '@/components/DemographicsPanel.vue'
 import AttractorPicker from '@/components/AttractorPicker.vue'
+import CoachMark from '@/components/CoachMark.vue'
 </script>
 
 <style scoped>
@@ -26,5 +34,8 @@ import AttractorPicker from '@/components/AttractorPicker.vue'
   background: var(--right-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+}
+.sidebar-section-wrap {
+  position: relative;
 }
 </style>

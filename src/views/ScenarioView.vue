@@ -29,4 +29,16 @@ import SituationGrid from '@/components/SituationGrid.vue'
     grid-template-columns: 240px 1fr;
   }
 }
+
+@media (max-width: 768px) {
+  .scenario-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 35vh;
+  }
+}
 </style>

@@ -9,7 +9,7 @@
 | 3. D3-граф | **DONE** | D3Graph.vue (SVG + d3-zoom), useGraphLayout.ts, useD3Zoom.ts, useGraphEffects.ts, GraphSidebar.vue, GraphView.vue. AttractorPanel + CorrelationPanel адаптированы на dispatch. Бандл 196KB (d3 вместо vis-network 600KB). |
 | 4. Кросс-навигация | **DONE** | SituationDetail: «Показать на графе →» + GO_BACK. AttractorPanel: OPEN_SITUATION + «← Назад». useStore: буфер pendingEffects для отложенных эффектов при scenarios→graph. Reducer: ANIMATE_EXPAND (не toggle) для NAVIGATE_TO_GRAPH_NODE. |
 | 5. Удаление старого кода | **DONE** | Удалены 7 файлов: GraphZone, RightPanel, VisualSettingsPanel, NetworkCanvas, useNetwork, useNetworkBreathe, useNetworkLayout. Удалены vis-network + vis-data из package.json. Бандл 212KB. |
-| 6. Полировка | — | — |
+| 6. Полировка | **DONE** | 6a: view-fade transition между экранами, node-appear/edge-fade-in анимации. 6b: CoachMarks cm-profile, cm-situation, cm-graph. 6c: responsive <768px (sidebar → top/bottom). 6d: semantic zoom (L3 скрыты при scale<0.25). |
 
 ---
 

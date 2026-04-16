@@ -3,6 +3,12 @@
     <div class="graph-area">
       <D3Graph />
       <GraphLegend />
+      <CoachMark
+        id="cm-graph"
+        text="Кликните на аттрактор для деталей. Двойной клик раскрывает дочерние узлы"
+        position="bottom"
+        class="graph-coach"
+      />
       <div class="graph-mode-toggle">
         <button
           class="gm-btn"
@@ -25,6 +31,7 @@ import { computed } from 'vue'
 import D3Graph from '@/components/D3Graph.vue'
 import GraphSidebar from '@/components/GraphSidebar.vue'
 import GraphLegend from '@/components/GraphLegend.vue'
+import CoachMark from '@/components/CoachMark.vue'
 import { useStore } from '@/composables/state/useStore'
 
 const { viewState, dispatch } = useStore()
@@ -45,6 +52,12 @@ const graphMode = computed(() =>
 .graph-area {
   position: relative;
   overflow: hidden;
+}
+
+.graph-coach {
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .graph-sidebar {
@@ -100,6 +113,21 @@ const graphMode = computed(() =>
 @media (max-width: 1024px) {
   .graph-layout {
     --sidebar-width: 280px;
+  }
+}
+
+@media (max-width: 768px) {
+  .graph-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+  .graph-sidebar {
+    border-left: none;
+    border-top: 1px solid var(--border);
+    max-height: 40vh;
+  }
+  .graph-mode-toggle {
+    top: 8px;
   }
 }
 </style>

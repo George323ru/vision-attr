@@ -12,10 +12,15 @@
       <!-- Grid view -->
       <div v-else class="grid-content">
         <div class="grid-header">
-          <h2 class="grid-title">Life situations</h2>
+          <h2 class="grid-title">Жизненные ситуации</h2>
           <p class="grid-subtitle">
-            {{ situationsWithData }} of {{ totalSituations }} situations have analytical data
+            {{ situationsWithData }} из {{ totalSituations }} ситуаций имеют аналитические данные
           </p>
+          <CoachMark
+            id="cm-situation"
+            text="Карточки с меткой АНАЛИЗ показывают предиктивный анализ стратегий поведения"
+            position="bottom"
+          />
         </div>
 
         <div
@@ -51,6 +56,7 @@ import { useMarkupStore } from '@/composables/useMarkupStore'
 import { useStore } from '@/composables/state/useStore'
 import SituationCard from '@/components/SituationCard.vue'
 import SituationDetail from '@/components/SituationDetail.vue'
+import CoachMark from '@/components/CoachMark.vue'
 
 const { getMarkupForSituation } = useMarkupStore()
 const { profile, situationInfo, activeAttractorIds, dispatch } = useStore()
@@ -94,6 +100,7 @@ const groupedSituations = computed(() => {
 
 .grid-header {
   margin-bottom: 28px;
+  position: relative;
 }
 .grid-title {
   font-family: var(--font-display);
