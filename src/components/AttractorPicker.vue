@@ -5,7 +5,7 @@
       <SearchableCombobox
         :model-value="slotId"
         :groups="groupedL2"
-        placeholder="Выберите ценность"
+        placeholder="Выберите аттрактор"
         @update:model-value="dispatch({ type: 'SET_ATTRACTOR_SLOT', slot: idx, id: $event })"
       />
       <span

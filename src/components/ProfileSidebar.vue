@@ -4,12 +4,12 @@
       <DemographicsPanel />
     </CollapsibleSection>
     <div class="sidebar-section-wrap">
-      <CollapsibleSection title="Ваши ценности" :initial-collapsed="false">
+      <CollapsibleSection title="Ваши аттракторы" :initial-collapsed="false">
         <AttractorPicker />
       </CollapsibleSection>
       <CoachMark
         id="cm-profile"
-        text="Выберите до 3 ценностей — карточки ситуаций подстроятся под ваш профиль"
+        text="Выберите до 3 аттракторов — карточки ситуаций подстроятся под ваш профиль"
         position="bottom"
       />
     </div>

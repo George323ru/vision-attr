@@ -1,10 +1,10 @@
 <template>
   <aside class="graph-sidebar">
-    <!-- Демография + Ценности -->
+    <!-- Демография + Аттракторы -->
     <CollapsibleSection title="Демография" :initial-collapsed="true">
       <DemographicsPanel />
     </CollapsibleSection>
-    <CollapsibleSection title="Ваши ценности" :initial-collapsed="true">
+    <CollapsibleSection title="Ваши аттракторы" :initial-collapsed="true">
       <AttractorPicker />
     </CollapsibleSection>
 
