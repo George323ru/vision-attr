@@ -20,12 +20,15 @@ const props = withDefaults(defineProps<{
   position: 'bottom',
 })
 
+const emit = defineEmits<{ dismissed: [] }>()
+
 const { isDismissed, dismiss } = useCoachMarks()
 
 const visible = computed(() => !isDismissed(props.id))
 
 function onDismiss() {
   dismiss(props.id)
+  emit('dismissed')
 }
 </script>
 

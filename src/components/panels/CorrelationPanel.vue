@@ -21,7 +21,14 @@
         </div>
       </div>
       <div class="cp-age-section">
-        <div class="cp-age-label">Возраст: <b>{{ ageMin }}–{{ ageMax }}</b></div>
+        <div class="cp-age-label">
+          Возраст: <b>{{ ageMin }}–{{ ageMax }}</b>
+          <CoachMark
+            id="ctx-correlation-age"
+            text="Сдвигайте ползунок — сила связей меняется с возрастом. Некоторые корреляции активны только в определённых периодах жизни."
+            position="bottom"
+          />
+        </div>
         <DualRangeSlider
           :min="18"
           :max="75"
@@ -62,6 +69,7 @@ import { useAttractorStore } from '@/composables/useAttractorStore'
 import { getCorrEdgesForNode } from '@/composables/useCorrelations'
 import { CORRELATIONS } from '@/data/correlations'
 import DualRangeSlider from '@/components/DualRangeSlider.vue'
+import CoachMark from '@/components/CoachMark.vue'
 import { flatLabel } from '@/composables/useAttractorDisplay'
 
 const { profile, focusedNodeId, correlationAge, dispatch } = useStore()
@@ -202,6 +210,10 @@ function barWidth(strength: number): string {
   font-size: var(--fs-xs);
   color: var(--text-muted);
   margin-bottom: 6px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .cp-age-label b {
   color: var(--text);

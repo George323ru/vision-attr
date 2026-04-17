@@ -3,12 +3,6 @@
     <div class="graph-area">
       <D3Graph />
       <GraphLegend />
-      <CoachMark
-        id="cm-graph"
-        text="Кликните на аттрактор для деталей. Двойной клик раскрывает дочерние узлы"
-        position="bottom"
-        class="graph-coach"
-      />
       <div class="graph-mode-toggle">
         <button
           class="gm-btn"
@@ -18,8 +12,18 @@
         <button
           class="gm-btn"
           :class="{ active: graphMode === 'correlations' }"
-          @click="dispatch({ type: 'SET_GRAPH_MODE', mode: 'correlations' })"
+          @click="onCorrelationsClick"
         >Корреляции</button>
+      </div>
+
+      <!-- Контекстная подсказка: первый вход в режим корреляций -->
+      <div v-if="showCorrHint" class="ctx-hint-wrap">
+        <CoachMark
+          id="ctx-correlations-mode"
+          text="Кликните по любому L2-аттрактору на графе, чтобы увидеть его связи с другими"
+          position="bottom"
+          @dismissed="showCorrHint = false"
+        />
       </div>
     </div>
     <GraphSidebar class="graph-sidebar" />
@@ -27,18 +31,33 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import D3Graph from '@/components/D3Graph.vue'
 import GraphSidebar from '@/components/GraphSidebar.vue'
 import GraphLegend from '@/components/GraphLegend.vue'
 import CoachMark from '@/components/CoachMark.vue'
 import { useStore } from '@/composables/state/useStore'
+import { useCoachMarks } from '@/composables/useCoachMarks'
 
 const { viewState, dispatch } = useStore()
+const { isDismissed } = useCoachMarks()
 
 const graphMode = computed(() =>
   viewState.value.view === 'graph' ? viewState.value.graphMode : 'explore'
 )
+
+const showCorrHint = ref(false)
+
+function onCorrelationsClick() {
+  dispatch({ type: 'SET_GRAPH_MODE', mode: 'correlations' })
+  if (!isDismissed('ctx-correlations-mode')) {
+    showCorrHint.value = true
+  }
+}
+
+watch(graphMode, (mode) => {
+  if (mode !== 'correlations') showCorrHint.value = false
+})
 </script>
 
 <style scoped>
@@ -52,12 +71,6 @@ const graphMode = computed(() =>
 .graph-area {
   position: relative;
   overflow: hidden;
-}
-
-.graph-coach {
-  top: 60px;
-  left: 50%;
-  transform: translateX(-50%);
 }
 
 .graph-sidebar {
@@ -103,6 +116,14 @@ const graphMode = computed(() =>
   background: var(--accent);
   color: #fff;
   box-shadow: 0 1px 4px rgba(192,138,62,0.25);
+}
+
+.ctx-hint-wrap {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
 }
 
 @media (max-width: 1280px) {

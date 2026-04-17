@@ -17,12 +17,16 @@
         @click="dispatch({ type: 'SWITCH_VIEW', view: 'graph' })"
       >Граф</button>
     </div>
-    <span class="version">v3.0</span>
+    <div class="header-right">
+      <HelpButton />
+      <span class="version">v3.0</span>
+    </div>
   </header>
 </template>
 
 <script setup lang="ts">
 import { useStore } from '@/composables/state/useStore'
+import HelpButton from '@/components/HelpButton.vue'
 
 const { currentView, dispatch } = useStore()
 </script>
@@ -46,6 +50,12 @@ const { currentView, dispatch } = useStore()
   letter-spacing: 6px;
   text-transform: uppercase;
   color: #111;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .version {
@@ -105,8 +115,6 @@ const { currentView, dispatch } = useStore()
   .mode-btn { font-size: 12px; padding: 8px 20px; }
 }
 
-/* Узкие экраны: возврат к компактной кнопке у правого края, чтобы
-   LOGOS не наехал на pill. */
 @media (max-width: 640px) {
   .mode-group {
     position: static;

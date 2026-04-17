@@ -18,10 +18,23 @@
     </div>
 
     <template v-if="predictions.length > 0">
-      <div v-if="predictions[0].totalFiltered < 5" class="small-sample-warn">
-        Малая выборка: результаты могут быть нестабильны
+      <div v-if="predictions[0].totalFiltered < 5" class="small-sample-warn-wrap">
+        <div class="small-sample-warn">
+          Малая выборка: результаты могут быть нестабильны
+        </div>
+        <CoachMark
+          id="ctx-small-sample"
+          text="Выборка меньше 5 человек — расширьте возрастной диапазон или снимите фильтры демографии"
+          position="bottom"
+        />
       </div>
       <div class="strategies-container">
+        <CoachMark
+          v-if="!isDismissed('ctx-first-situation-opened')"
+          id="ctx-first-situation-opened"
+          text="Полосы — прогноз стратегий поведения. Кликните на полосу, чтобы выделить стратегию. Нажмите «?» рядом с Прогноз для деталей методологии."
+          position="top"
+        />
         <StrategyBar
           v-for="(p, i) in predictions"
           :key="p.name"
@@ -39,7 +52,12 @@
         <span class="no-data-hint">Попробуйте расширить настройки демографии.</span>
       </template>
       <template v-else>
-        Данные по этой ситуации ещё не размечены и находятся в работе.
+        <div>Данные по этой ситуации ещё не размечены и находятся в работе.</div>
+        <CoachMark
+          id="ctx-no-markup"
+          text="8 из 33 ситуаций имеют аналитические данные — остальные находятся в обработке"
+          position="top"
+        />
       </template>
     </div>
 
@@ -47,9 +65,17 @@
       <button class="btn-back" @click="goBack()">
         &larr; {{ canGoBack ? 'Назад' : 'Все ситуации' }}
       </button>
-      <button v-if="parentL1" class="btn-graph" @click="navigateToGraph()">
-        Показать на графе &rarr;
-      </button>
+      <div v-if="parentL1" class="btn-graph-wrap">
+        <CoachMark
+          v-if="!isDismissed('ctx-show-on-graph')"
+          id="ctx-show-on-graph"
+          text="Откроет граф и выделит связанный аттрактор"
+          position="top"
+        />
+        <button class="btn-graph" @click="navigateToGraph()">
+          Показать на графе &rarr;
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -61,8 +87,10 @@ import { useAttractorStore } from '@/composables/useAttractorStore'
 import { useMarkupStore } from '@/composables/useMarkupStore'
 import { predictBehavior } from '@/composables/usePrediction'
 import { useStore } from '@/composables/state/useStore'
+import { useCoachMarks } from '@/composables/useCoachMarks'
 import StrategyBar from '@/components/StrategyBar.vue'
 import PanelBreadcrumb from '@/components/PanelBreadcrumb.vue'
+import CoachMark from '@/components/CoachMark.vue'
 import type { BreadcrumbItem } from '@/components/PanelBreadcrumb.vue'
 import { pluralRu } from '@/utils/plural'
 import { flatLabel } from '@/composables/useAttractorDisplay'
@@ -75,6 +103,7 @@ const props = defineProps<{
 const { getAttractor } = useAttractorStore()
 const { getMarkupForSituation } = useMarkupStore()
 const { profile, strategyIdx, canGoBack, dispatch } = useStore()
+const { isDismissed } = useCoachMarks()
 
 const sit = computed(() => SITUATIONS.find(s => s.id === props.sitId))
 const attr = computed(() => getAttractor(props.attrId))
@@ -233,14 +262,23 @@ function barColor(probability: number, maxProb: number): string {
   -webkit-backdrop-filter: blur(12px);
 }
 
+.small-sample-warn-wrap {
+  position: relative;
+  margin-bottom: 8px;
+}
+
 .small-sample-warn {
   font-size: 11px;
   color: #b45309;
   background: rgba(180,83,9,0.06);
   padding: 8px 12px;
   border-radius: var(--radius-sm, 6px);
-  margin-bottom: 8px;
   letter-spacing: 0.01em;
+}
+
+.strategies-container {
+  position: relative;
+  padding-top: 4px;
 }
 
 .no-data {
@@ -261,6 +299,12 @@ function barColor(probability: number, maxProb: number): string {
   display: flex;
   gap: 8px;
   margin-top: 12px;
+  align-items: center;
+}
+
+.btn-graph-wrap {
+  position: relative;
+  margin-left: auto;
 }
 .btn-back,
 .btn-graph {
@@ -288,7 +332,6 @@ function barColor(probability: number, maxProb: number): string {
   background: var(--card-hover);
 }
 .btn-graph {
-  margin-left: auto;
   background: var(--accent);
   border: 1px solid var(--accent);
   color: #fff;

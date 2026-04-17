@@ -8,6 +8,9 @@
         <GraphView v-else key="graph" />
       </Transition>
     </main>
+
+    <WelcomeModal @start-tour="onWelcomeStartTour" @skip="onWelcomeSkip" />
+    <OnboardingTour @tour-ended="onTourEnded" />
   </template>
 </template>
 
@@ -16,13 +19,17 @@ import { ref, onMounted } from 'vue'
 import AppHeader from '@/components/AppHeader.vue'
 import ScenarioView from '@/views/ScenarioView.vue'
 import GraphView from '@/views/GraphView.vue'
+import WelcomeModal from '@/components/WelcomeModal.vue'
+import OnboardingTour from '@/components/OnboardingTour.vue'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 import { useMarkupStore } from '@/composables/useMarkupStore'
 import { useStore } from '@/composables/state/useStore'
+import { useCoachMarks } from '@/composables/useCoachMarks'
 
 const { loadData } = useAttractorStore()
 const { loadMarkupData } = useMarkupStore()
-const { currentView } = useStore()
+const { currentView, dispatch } = useStore()
+const { markWelcomeSeen, startTour, isTourDone } = useCoachMarks()
 
 const loading = ref(true)
 
@@ -30,6 +37,20 @@ onMounted(async () => {
   await Promise.all([loadData(), loadMarkupData()])
   loading.value = false
 })
+
+function onWelcomeStartTour() {
+  markWelcomeSeen()
+  startTour('scenarios')
+}
+
+function onWelcomeSkip() {
+  markWelcomeSeen()
+}
+
+function onTourEnded() {
+  // После тура Анализ — предложить тур Граф автоматически не нужно;
+  // пользователь может запустить его через «?»
+}
 </script>
 
 <style scoped>

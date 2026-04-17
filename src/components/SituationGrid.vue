@@ -16,11 +16,6 @@
           <p class="grid-subtitle">
             {{ situationsWithData }} из {{ totalSituations }} ситуаций имеют аналитические данные
           </p>
-          <CoachMark
-            id="cm-situation"
-            text="Карточки с меткой АНАЛИЗ показывают предиктивный анализ стратегий поведения"
-            position="bottom"
-          />
         </div>
 
         <div
@@ -56,7 +51,6 @@ import { useMarkupStore } from '@/composables/useMarkupStore'
 import { useStore } from '@/composables/state/useStore'
 import SituationCard from '@/components/SituationCard.vue'
 import SituationDetail from '@/components/SituationDetail.vue'
-import CoachMark from '@/components/CoachMark.vue'
 
 const { getMarkupForSituation } = useMarkupStore()
 const { profile, situationInfo, activeAttractorIds, dispatch } = useStore()
