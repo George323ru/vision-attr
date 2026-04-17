@@ -1,6 +1,8 @@
 import type { Prediction, RespondentRecord, MarkupSituation } from '@/types/situation'
 import { useMarkupStore } from './useMarkupStore'
 
+const markupStore = useMarkupStore()
+
 interface DemoFilter {
   ageMin: number
   ageMax: number
@@ -56,12 +58,10 @@ export function predictBehavior(
   filters: DemoFilter,
   selectedAttractors: (string | null)[],
 ): Prediction[] {
-  const { getMarkupForSituation, getRespondents } = useMarkupStore()
-
-  const markup: MarkupSituation | null = getMarkupForSituation(situationId)
+  const markup: MarkupSituation | null = markupStore.getMarkupForSituation(situationId)
   if (!markup) return []
 
-  const allRespondents = getRespondents()
+  const allRespondents = markupStore.getRespondents()
   const markupId = markup.id
   const strategyNames = markup.strategyNames
 

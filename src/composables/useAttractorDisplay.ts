@@ -1,6 +1,11 @@
 import { computed, type Ref } from 'vue'
 import { useAttractorStore } from './useAttractorStore'
 
+/** Превращает многострочный label (с \n для wrap-разбиения) в одну строку. */
+export function flatLabel(label: string | null | undefined): string {
+  return (label ?? '').replace(/\n/g, ' ')
+}
+
 export function useAttractorDisplay(nodeId: Ref<string>) {
   const { getAttractor, domains } = useAttractorStore()
 

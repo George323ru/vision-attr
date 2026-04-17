@@ -5,7 +5,10 @@
     <!-- Инсайты — показываем всегда если есть -->
     <div v-if="attr.insights" class="insights-section">
       <div class="insights-label">Инсайт</div>
-      <div class="insights-text">{{ attr.insights }}</div>
+      <ul v-if="insightItems.length > 1" class="insights-list">
+        <li v-for="(item, i) in insightItems" :key="i">{{ item }}</li>
+      </ul>
+      <div v-else class="insights-text">{{ attr.insights }}</div>
     </div>
 
     <!-- Если есть ситуации — показываем карточки -->
@@ -109,6 +112,16 @@ const childList = computed(() =>
     .filter(a => a.parent === props.nodeId)
     .map(a => ({ id: a.id, label: a.label, level: a.level }))
 )
+
+const insightItems = computed<string[]>(() => {
+  const raw = attr.value?.insights
+  if (!raw) return []
+  // Многострочный insight: \n или маркеры списка («- », «• »)
+  return raw
+    .split(/\r?\n|(?:^|\s)[•\-]\s+/)
+    .map(s => s.trim())
+    .filter(Boolean)
+})
 
 const relatedCorrelations = computed(() => {
   if (attr.value?.level !== 2) return []
@@ -245,6 +258,16 @@ const relatedCorrelations = computed(() => {
   font-size: 12px;
   color: var(--text);
   line-height: 1.55;
+}
+.insights-list {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.55;
+  margin: 0;
+  padding-left: 18px;
+}
+.insights-list li + li {
+  margin-top: 4px;
 }
 .btn-back {
   display: inline-flex;

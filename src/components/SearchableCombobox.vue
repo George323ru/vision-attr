@@ -1,14 +1,26 @@
 <template>
   <div class="sc-wrap" ref="wrapRef">
-    <div
+    <button
+      type="button"
       class="sc-trigger"
       :class="{ open: isOpen }"
+      :id="triggerId"
+      role="combobox"
+      :aria-expanded="isOpen"
+      :aria-controls="listboxId"
+      aria-haspopup="listbox"
+      :aria-activedescendant="isOpen && highlightedId ? optionId(highlightedId) : undefined"
+      :aria-label="ariaLabel"
       @click="toggle"
+      @keydown.enter.prevent="onTriggerKey('open')"
+      @keydown.space.prevent="onTriggerKey('open')"
+      @keydown.down.prevent="onTriggerKey('open')"
+      @keydown.up.prevent="onTriggerKey('open')"
     >
       <span v-if="selectedLabel" class="sc-selected">{{ selectedLabel }}</span>
       <span v-else class="sc-placeholder">{{ placeholder }}</span>
-      <span class="sc-arrow">▼</span>
-    </div>
+      <span class="sc-arrow" aria-hidden="true">▼</span>
+    </button>
     <Teleport to="body">
       <div
         v-if="isOpen"
@@ -16,25 +28,46 @@
         :style="dropdownStyle"
         ref="dropdownRef"
         tabindex="-1"
-        @keydown.escape="close"
+        @keydown.escape.prevent="closeAndFocusTrigger"
         @keydown.enter.prevent="selectHighlighted"
         @keydown.down.prevent="moveHighlight(1)"
         @keydown.up.prevent="moveHighlight(-1)"
+        @keydown.home.prevent="moveHighlightTo('first')"
+        @keydown.end.prevent="moveHighlightTo('last')"
+        @keydown.tab="closeAndFocusTrigger"
       >
         <div v-if="searchable" class="sc-search-wrap">
           <input
             ref="searchRef"
             v-model="query"
             class="sc-search"
+            type="text"
+            :aria-controls="listboxId"
+            :aria-activedescendant="highlightedId ? optionId(highlightedId) : undefined"
+            aria-autocomplete="list"
             placeholder="Поиск…"
           />
         </div>
-        <div class="sc-list" ref="listRef">
+        <div
+          class="sc-list"
+          ref="listRef"
+          :id="listboxId"
+          role="listbox"
+          :aria-label="ariaLabel"
+        >
           <template v-for="group in filteredGroups" :key="group.id">
-            <div v-if="group.name" class="sc-group-label">{{ group.name }}</div>
+            <div
+              v-if="group.name"
+              class="sc-group-label"
+              role="presentation"
+            >{{ group.name }}</div>
             <div
               v-for="item in group.items"
               :key="item.id"
+              :id="optionId(item.id)"
+              role="option"
+              :aria-selected="modelValue === item.id"
+              :aria-disabled="item.disabled || undefined"
               class="sc-item"
               :class="{
                 disabled: item.disabled,
@@ -50,7 +83,7 @@
           <div v-if="flatFiltered.length === 0" class="sc-empty">Ничего не найдено</div>
         </div>
         <div v-if="clearable && modelValue" class="sc-clear-wrap">
-          <button class="sc-clear" @click="select(null)">Очистить выбор</button>
+          <button class="sc-clear" type="button" @click="select(null)">Очистить выбор</button>
         </div>
       </div>
     </Teleport>
@@ -58,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount, useId } from 'vue'
 
 export interface ComboboxItem {
   id: string
@@ -78,10 +111,12 @@ const props = withDefaults(defineProps<{
   placeholder?: string
   searchable?: boolean
   clearable?: boolean
+  ariaLabel?: string
 }>(), {
   placeholder: '— Выберите —',
   searchable: true,
   clearable: true,
+  ariaLabel: 'Выбор значения',
 })
 
 const emit = defineEmits<{
@@ -96,6 +131,13 @@ const dropdownRef = ref<HTMLElement | null>(null)
 const searchRef = ref<HTMLInputElement | null>(null)
 const listRef = ref<HTMLElement | null>(null)
 const dropdownStyle = ref<Record<string, string>>({})
+
+const uid = useId()
+const triggerId = `sc-trigger-${uid}`
+const listboxId = `sc-listbox-${uid}`
+function optionId(id: string) {
+  return `sc-opt-${uid}-${id}`
+}
 
 const selectedLabel = computed(() => {
   for (const g of props.groups) {
@@ -140,10 +182,14 @@ function toggle() {
   }
 }
 
+function onTriggerKey(intent: 'open') {
+  if (intent === 'open') open()
+}
+
 function open() {
   isOpen.value = true
   query.value = ''
-  highlightedId.value = props.modelValue
+  highlightedId.value = props.modelValue ?? flatFiltered.value[0]?.id ?? null
   positionDropdown()
   nextTick(() => {
     if (props.searchable) {
@@ -160,9 +206,17 @@ function close() {
   query.value = ''
 }
 
+function closeAndFocusTrigger() {
+  close()
+  nextTick(() => {
+    const triggerEl = wrapRef.value?.querySelector('.sc-trigger') as HTMLElement | null
+    triggerEl?.focus()
+  })
+}
+
 function select(id: string | null) {
   emit('update:modelValue', id)
-  close()
+  closeAndFocusTrigger()
 }
 
 function selectHighlighted() {
@@ -178,8 +232,17 @@ function moveHighlight(dir: number) {
   const items = flatFiltered.value
   if (items.length === 0) return
   const idx = items.findIndex(i => i.id === highlightedId.value)
-  const next = Math.max(0, Math.min(items.length - 1, idx + dir))
+  const next = idx === -1
+    ? (dir > 0 ? 0 : items.length - 1)
+    : Math.max(0, Math.min(items.length - 1, idx + dir))
   highlightedId.value = items[next].id
+  scrollToHighlighted()
+}
+
+function moveHighlightTo(target: 'first' | 'last') {
+  const items = flatFiltered.value
+  if (items.length === 0) return
+  highlightedId.value = items[target === 'first' ? 0 : items.length - 1].id
   scrollToHighlighted()
 }
 
@@ -228,6 +291,7 @@ watch(() => query.value, () => {
   padding: 6px 10px;
   font-size: 12px;
   font-family: inherit;
+  text-align: left;
   color: var(--text);
   background: var(--card-bg);
   border: 1px solid var(--border);
@@ -240,9 +304,11 @@ watch(() => query.value, () => {
 .sc-trigger:hover {
   border-color: var(--accent);
 }
-.sc-trigger.open {
+.sc-trigger.open,
+.sc-trigger:focus-visible {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-subtle, rgba(192,138,62,0.08));
+  box-shadow: 0 0 0 2px var(--accent-subtle, rgba(192,138,62,0.18));
+  outline: none;
 }
 .sc-selected {
   overflow: hidden;
@@ -306,6 +372,9 @@ watch(() => query.value, () => {
   flex: 1;
   overflow-y: auto;
   padding: 4px 0;
+}
+.sc-list:focus {
+  outline: none;
 }
 .sc-group-label {
   font-size: 9px;

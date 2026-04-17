@@ -7,10 +7,12 @@
     <div class="section-header">
       <div class="section-header-left">
         <span class="section-title">Прогноз</span>
-        <span
+        <button
+          type="button"
           class="help-icon"
-          data-tooltip="Прогноз рассчитан по данным интервью с учётом выбранных демографических фильтров и аттракторов. Один респондент мог выбрать несколько стратегий, поэтому сумма может превышать 100%."
-        >?</span>
+          aria-label="Как рассчитан прогноз"
+          :data-tooltip="helpTooltip"
+        >?</button>
       </div>
       <span v-if="predictions.length > 0" class="section-meta">{{ predictions[0].totalFiltered }} {{ respondentWord }}</span>
     </div>
@@ -63,6 +65,7 @@ import StrategyBar from '@/components/StrategyBar.vue'
 import PanelBreadcrumb from '@/components/PanelBreadcrumb.vue'
 import type { BreadcrumbItem } from '@/components/PanelBreadcrumb.vue'
 import { pluralRu } from '@/utils/plural'
+import { flatLabel } from '@/composables/useAttractorDisplay'
 
 const props = defineProps<{
   sitId: string
@@ -120,7 +123,7 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => {
     { label: 'Ситуации', action: () => dispatch({ type: 'CLOSE_SITUATION' }) },
   ]
   if (attr.value) {
-    crumbs.push({ label: attr.value.label.replace(/\n/g, ' ') })
+    crumbs.push({ label: flatLabel(attr.value.label) })
   }
   if (sit.value) {
     crumbs.push({ label: sit.value.title })
@@ -133,6 +136,8 @@ const respondentWord = computed(() =>
     ? pluralRu(predictions.value[0].totalFiltered, ['респондент', 'респондента', 'респондентов'])
     : ''
 )
+
+const helpTooltip = 'Прогноз рассчитан по данным интервью с учётом выбранных демографических фильтров и аттракторов. Один респондент мог выбрать несколько стратегий, поэтому сумма может превышать 100%.'
 
 function barColor(probability: number, maxProb: number): string {
   const ratio = maxProb > 0 ? probability / maxProb : 0
@@ -185,14 +190,28 @@ function barColor(probability: number, maxProb: number): string {
   font-size: 9px;
   font-weight: 700;
   color: var(--text-dim);
+  background: transparent;
   border: 1px solid var(--text-dim);
   border-radius: 50%;
   cursor: help;
   position: relative;
   flex-shrink: 0;
+  padding: 0;
+  font-family: inherit;
+  line-height: 1;
+  transition: color var(--duration-fast) var(--ease-out-quad),
+              border-color var(--duration-fast),
+              box-shadow var(--duration-fast);
 }
-.help-icon:hover { color: var(--accent); border-color: var(--accent); }
-.help-icon:hover::after {
+.help-icon:hover,
+.help-icon:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-subtle, rgba(192,138,62,0.18));
+}
+.help-icon:hover::after,
+.help-icon:focus-visible::after {
   content: attr(data-tooltip);
   position: absolute;
   top: calc(100% + 8px);

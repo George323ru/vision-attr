@@ -62,6 +62,7 @@ import { useAttractorStore } from '@/composables/useAttractorStore'
 import { getCorrEdgesForNode } from '@/composables/useCorrelations'
 import { CORRELATIONS } from '@/data/correlations'
 import DualRangeSlider from '@/components/DualRangeSlider.vue'
+import { flatLabel } from '@/composables/useAttractorDisplay'
 
 const { profile, focusedNodeId, correlationAge, dispatch } = useStore()
 const { getAttractor } = useAttractorStore()
@@ -73,7 +74,7 @@ const corrAge = computed((): number => correlationAge.value ?? 42)
 const focusedName = computed(() => {
   if (!focusedNodeId.value) return ''
   const attr = getAttractor(focusedNodeId.value)
-  return attr?.label?.replace(/\n/g, ' ') ?? ''
+  return flatLabel(attr?.label)
 })
 
 interface CorrItem {
@@ -95,7 +96,7 @@ const correlationList = computed((): CorrItem[] => {
       return {
         id: ce.corrId,
         otherId,
-        otherName: otherAttr?.label?.replace(/\n/g, ' ') ?? otherId,
+        otherName: otherAttr?.label ? flatLabel(otherAttr.label) : otherId,
         type: ce.type as 'reinforcing' | 'conflicting',
         strength: ce.strength,
       }

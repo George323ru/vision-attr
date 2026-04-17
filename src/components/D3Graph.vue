@@ -74,8 +74,17 @@
             'corr-target': corrTargetIds.has(node.id),
           },
         ]"
+        tabindex="0"
+        role="button"
+        :aria-label="nodeAriaLabel(node)"
+        :aria-pressed="node.id === focusedNodeId"
         @click.stop="onNodeClick(node)"
         @dblclick.stop="dispatch({ type: 'DBLCLICK_NODE', nodeId: node.id })"
+        @keydown.enter.prevent="onNodeClick(node)"
+        @keydown.space.prevent="onNodeClick(node)"
+        @keydown.exact.alt.enter.prevent="dispatch({ type: 'DBLCLICK_NODE', nodeId: node.id })"
+        @focus="hoveredNodeId = node.id"
+        @blur="hoveredNodeId = null"
         @mouseenter="hoveredNodeId = node.id"
         @mouseleave="hoveredNodeId = null"
       >
@@ -390,6 +399,11 @@ function onNodeClick(node: VisibleNode) {
   dispatch({ type: 'CLICK_NODE', nodeId: node.id, level: node.level })
 }
 
+function nodeAriaLabel(node: VisibleNode): string {
+  const flat = node.labelLines.join(' ')
+  return `Уровень ${node.level}: ${flat}`
+}
+
 // Автоматически раскрыть L1 при первом рендере
 watch(attractors, (list) => {
   if (list.length > 0 && expandedNodes.value.size === 0) {
@@ -446,6 +460,12 @@ watch(attractors, (list) => {
   cursor: pointer;
   transition: opacity var(--duration-slow, 0.4s) var(--ease-out-expo, ease);
   animation: node-appear 0.4s var(--ease-out-expo, ease) both;
+  outline: none;
+}
+.graph-node:focus-visible circle {
+  stroke: var(--accent, #c08a3e);
+  stroke-width: 4;
+  filter: drop-shadow(0 0 6px rgba(192,138,62,0.55));
 }
 @keyframes node-appear {
   from { opacity: 0; }

@@ -5,6 +5,7 @@
       <SearchableCombobox
         :model-value="slotId"
         :groups="groupedL2"
+        :aria-label="`Аттрактор ${idx + 1}`"
         placeholder="Выберите аттрактор"
         @update:model-value="dispatch({ type: 'SET_ATTRACTOR_SLOT', slot: idx, id: $event })"
       />
@@ -28,6 +29,7 @@ import SearchableCombobox from '@/components/SearchableCombobox.vue'
 import { useStore } from '@/composables/state/useStore'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 import { domainColor } from '@/utils/colors'
+import { flatLabel } from '@/composables/useAttractorDisplay'
 
 const { profile, dispatch } = useStore()
 const { attractors, domains } = useAttractorStore()
@@ -39,7 +41,7 @@ const groupedL2 = computed(() => {
     const d = domains.value[a.domain]
     const groupName = d?.name ?? a.domain
     if (!map[a.domain]) map[a.domain] = { id: a.domain, name: groupName, items: [] }
-    map[a.domain].items.push({ id: a.id, label: a.label.replace(/\n/g, ' ') })
+    map[a.domain].items.push({ id: a.id, label: flatLabel(a.label) })
   }
   return Object.values(map)
 })

@@ -21,6 +21,22 @@ interface SimLink {
   target: string
 }
 
+// ── Memo cache ──
+// computeLayout детерминирован по идентификаторам/уровням/parent: пока набор
+// аттракторов не меняется, симуляция возвращает те же позиции. Простой кэш
+// (один прошлый ключ + результат) исключает повторный 300-tick прогон при
+// каждом доступе computed-инвалидаций.
+let cacheKey: string | null = null
+let cacheValue: Map<string, NodePosition> | null = null
+
+function buildCacheKey(attractors: readonly Attractor[]): string {
+  const parts: string[] = []
+  for (const a of attractors) {
+    parts.push(`${a.id}:${a.level}:${a.parent ?? ''}`)
+  }
+  return parts.join('|')
+}
+
 /**
  * Расчёт позиций нод через d3-force simulation.
  *
@@ -31,6 +47,10 @@ interface SimLink {
  * Simulation запускается синхронно (~300 ticks) и возвращает финальные позиции.
  */
 export function computeLayout(attractors: readonly Attractor[]): Map<string, NodePosition> {
+  const key = buildCacheKey(attractors)
+  if (cacheKey === key && cacheValue !== null) return cacheValue
+
+
   const nodes: SimNode[] = []
   const links: SimLink[] = []
 
@@ -148,6 +168,8 @@ export function computeLayout(attractors: readonly Attractor[]): Map<string, Nod
     positions.set(node.id, { x: node.x, y: node.y })
   }
 
+  cacheKey = key
+  cacheValue = positions
   return positions
 }
 

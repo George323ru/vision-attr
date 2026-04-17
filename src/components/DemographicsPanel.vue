@@ -26,6 +26,7 @@
         :groups="genderGroups"
         :searchable="false"
         :clearable="false"
+        aria-label="Пол"
         placeholder="Любой"
         @update:model-value="onGender"
       />
@@ -39,6 +40,7 @@
         :groups="maritalGroups"
         :searchable="false"
         :clearable="false"
+        aria-label="Семейное положение"
         placeholder="Любое"
         @update:model-value="onMarital"
       />
@@ -52,6 +54,7 @@
         :groups="childrenGroups"
         :searchable="false"
         :clearable="false"
+        aria-label="Количество детей"
         placeholder="Не важно"
         @update:model-value="onChildren"
       />

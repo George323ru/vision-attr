@@ -3,7 +3,7 @@
     <div class="cs-header-wrap">
       <button class="cs-header" :aria-expanded="!isCollapsed" @click="onToggle">
         <span class="cs-title">{{ title }}</span>
-        <span class="cs-chevron">{{ isCollapsed ? '▼' : '▲' }}</span>
+        <span class="cs-chevron" aria-hidden="true">{{ isCollapsed ? '▼' : '▲' }}</span>
       </button>
       <CoachMark v-if="coachMarkId && showCoachOnExpand" :id="coachMarkId" :text="coachMarkText" position="bottom" />
     </div>
@@ -71,6 +71,10 @@ function onToggle() {
 }
 .cs-header:hover {
   background: var(--card-hover);
+}
+.cs-header:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 .cs-title {
   font-size: 10px;

@@ -44,6 +44,21 @@ def normalize(s):
     return s.lower()
 
 
+def clean_text(s: str) -> str:
+    """Нормализация отображаемого текста (label/description/insights):
+    - убираем пробелы перед знаками пунктуации
+    - схлопываем повторные пробелы
+    - срезаем лидирующее «- » / «– » / «— » (артефакт списков из CSV)
+    """
+    if not s:
+        return s
+    s = s.strip()
+    s = re.sub(r'^[-–—]\s+', '', s)
+    s = re.sub(r'\s+([,.;:!?])', r'\1', s)
+    s = re.sub(r'[ \t]{2,}', ' ', s)
+    return s
+
+
 def hsl_to_hex(h, s, l):
     """HSL (0-360, 0-100, 0-100) → hex-цвет"""
     s /= 100
@@ -90,11 +105,11 @@ def main():
             while len(row) < 5:
                 row.append('')
 
-            col1 = row[0].strip()
-            col2 = row[1].strip()
-            col3 = row[2].strip()
-            col4 = row[3].strip()
-            col5 = row[4].strip()
+            col1 = clean_text(row[0])
+            col2 = clean_text(row[1])
+            col3 = clean_text(row[2])
+            col4 = clean_text(row[3])
+            col5 = clean_text(row[4])
 
             # ── L1 ──────────────────────────────────────────────
             if col1 and not col2 and not col3:

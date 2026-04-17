@@ -1,11 +1,16 @@
 import type { Correlation, CorrelationAtAge } from '@/types/correlation'
 import { CORRELATIONS } from '@/data/correlations'
 
+/** Ширина возрастного «фейда» (в годах) у границы диапазона корреляции. */
+const FADE_WIDTH = 3
+/** Минимальная доля от базовой strength: даже на границе диапазона не падаем ниже этого множителя. */
+const MIN_STRENGTH_FLOOR = 0.3
+
 export function getCorrelationAtAge(corr: Correlation, age: number): CorrelationAtAge | null {
   for (const r of corr.ageRanges) {
     if (age >= r.min && age <= r.max) {
-      const fade = Math.min((age - r.min) / 3, (r.max - age) / 3, 1)
-      return { strength: r.strength * Math.max(fade, 0.3), type: r.type }
+      const fade = Math.min((age - r.min) / FADE_WIDTH, (r.max - age) / FADE_WIDTH, 1)
+      return { strength: r.strength * Math.max(fade, MIN_STRENGTH_FLOOR), type: r.type }
     }
   }
   return null

@@ -2,9 +2,34 @@ import type { AppState, Action, ReducerResult, ViewState, Effect, ProfileState }
 
 const MAX_HISTORY = 10
 
+function viewStateEquals(a: ViewState, b: ViewState): boolean {
+  if (a.view !== b.view) return false
+  if (a.view === 'scenarios' && b.view === 'scenarios') {
+    if (a.focus.type !== b.focus.type) return false
+    if (a.focus.type === 'detail' && b.focus.type === 'detail') {
+      return a.focus.sitId === b.focus.sitId
+        && a.focus.attrId === b.focus.attrId
+        && a.focus.strategyIdx === b.focus.strategyIdx
+    }
+    return true
+  }
+  if (a.view === 'graph' && b.view === 'graph') {
+    if (a.graphMode !== b.graphMode) return false
+    if (a.focus.type !== b.focus.type) return false
+    if (a.focus.type === 'node' && b.focus.type === 'node') {
+      return a.focus.nodeId === b.focus.nodeId && a.focus.level === b.focus.level
+    }
+    if (a.focus.type === 'correlations' && b.focus.type === 'correlations') {
+      return a.focus.nodeId === b.focus.nodeId
+    }
+    return true
+  }
+  return false
+}
+
 function pushNav(history: readonly ViewState[], current: ViewState): readonly ViewState[] {
   const last = history[history.length - 1]
-  if (last && JSON.stringify(last) === JSON.stringify(current)) return history
+  if (last && viewStateEquals(last, current)) return history
   return [...history.slice(-(MAX_HISTORY - 1)), current]
 }
 

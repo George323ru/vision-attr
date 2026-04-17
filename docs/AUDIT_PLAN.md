@@ -50,28 +50,33 @@
 - [x] 3.5 **Удалить «нейтральную»** — строка убрана из `GraphLegend.vue`.
 - [x] 3.6 **Карточки без данных** — `SituationCard.vue`: `disabled`, cursor:not-allowed, opacity 0.55, tooltip «Данные в обработке», бейдж «в обработке» вместо «АНАЛИЗ».
 
-## Фаза 4 — Accessibility (Medium)
+## Фаза 4 — Accessibility (Medium) ✅
 
-- [ ] 4.1 **SearchableCombobox ARIA** — `role="combobox"/listbox/option"`, `aria-expanded`, `aria-controls`, `aria-haspopup`, `aria-activedescendant`. Keyboard open (Enter/Space на trigger). Focus trap + return focus.
-- [ ] 4.2 **Help-icon** в `SituationDetail.vue` — `<button>`, `aria-label`, `:focus-visible::after` для tooltip.
-- [ ] 4.3 **CollapsibleSection** — `aria-hidden="true"` на chevron.
-- [ ] 4.4 **Keyboard nav на узлах графа** — `.graph-node` с `tabindex="0"` + `@keydown.enter/space`.
-- [ ] 4.5 **Контрасты** — прогнать светлую тему через axe-core, проверить `--text-muted-soft`, `--text-dim`.
+- [x] 4.1 **SearchableCombobox ARIA** — trigger `<button role="combobox">` с `aria-expanded`, `aria-controls`, `aria-haspopup="listbox"`, `aria-activedescendant`. Listbox `role="listbox"` + `id`. Items `role="option"` + `aria-selected`. Открытие по Enter/Space/↑/↓ на trigger. Home/End навигация. Esc/Tab возвращают фокус на trigger. Все три SearchableCombobox в DemographicsPanel и AttractorPicker получили `aria-label`.
+- [x] 4.2 **Help-icon** в `SituationDetail.vue` — `<button type="button">` с `aria-label`, `:focus-visible` open tooltip + accent ring.
+- [x] 4.3 **CollapsibleSection** — `aria-hidden="true"` на chevron + focus-visible outline на header.
+- [x] 4.4 **Keyboard nav на узлах графа** — `.graph-node` с `tabindex="0"`, `role="button"`, `aria-label` («Уровень N: …»), `aria-pressed`, Enter/Space → CLICK_NODE, focus-visible — accent ring + drop-shadow.
+- [ ] 4.5 **Контрасты axe-core** — пропущено (требует подключения axe-core и браузерного прогона).
 
-## Фаза 5 — Code quality (Low)
+## Фаза 5 — Code quality (Low) ✅
 
-- [ ] 5.1 **usePrediction** — не вызывать `useMarkupStore()` внутри функции, поднять в модульный scope или принять параметром.
-- [ ] 5.2 **Reducer equality** — убрать `JSON.stringify`, сравнивать по дискриминанту.
-- [ ] 5.3 **Константы в useCorrelations** — `FADE_WIDTH=3`, `MIN_STRENGTH_FLOOR=0.3` с JSDoc.
-- [ ] 5.4 **Единая утилита `flatLabel`** в `useAttractorDisplay.ts` — убрать 3+ дубля `.replace(/\n/g, ' ')`.
-- [ ] 5.5 **computeLayout memo** — `shallowRef` + кэш по set-of-ids.
+- [x] 5.1 **usePrediction** — `useMarkupStore()` поднят в модульный scope (`const markupStore = useMarkupStore()`), `predictBehavior` обращается к `markupStore.getMarkupForSituation/getRespondents`.
+- [x] 5.2 **Reducer equality** — `JSON.stringify` заменён на `viewStateEquals(a, b)` с pattern-matching по discriminant.
+- [x] 5.3 **Константы в useCorrelations** — `FADE_WIDTH=3`, `MIN_STRENGTH_FLOOR=0.3` вынесены в module-level const с JSDoc.
+- [x] 5.4 **`flatLabel(label)`** — экспортирован из `useAttractorDisplay.ts`. Заменены 4 вхождения `.replace(/\n/g, ' ')` (SituationDetail, AttractorPicker, CorrelationPanel ×2).
+- [x] 5.5 **computeLayout memo** — module-level кэш (`cacheKey`/`cacheValue`) по строке `id:level:parent` для всех аттракторов; повторные computed-инвалидации возвращают тот же Map без 300-tick прогона.
 
-## Фаза 6 — Data/текст (Low)
+## Фаза 6 — Data/текст (Low) ✅
 
-- [ ] 6.1 **Нормализация пробелов** в `scripts/parse_csv.py`: `re.sub(r'\s+([,.;:!?])', r'\1', s)`; collapse double spaces; strip `- ` prefix.
-- [ ] 6.2 Перегенерировать `data/attractors.json`.
-- [ ] 6.3 Проверить `src/data/situations.ts`, `strategies.ts` — нет ли таких же артефактов.
-- [ ] 6.4 Если инсайт многострочный — рендер `<ul>` в `AttractorPanel.vue`.
+- [x] 6.1 **Нормализация пробелов** в `scripts/parse_csv.py` — `clean_text()` с `re.sub(r'\s+([,.;:!?])', r'\1', s)`, collapse double spaces, strip leading `- / – / —` prefix; вызывается на col1–col5.
+- [x] 6.2 Перегенерировать `data/attractors.json` — выполнено; артефактов в JSON уже не было (нормализация работает как защита от регрессии при обновлении CSV).
+- [x] 6.3 `src/data/situations.ts` проверен — артефактов нет (двойные пробелы только в выравнивании исходного кода). `src/data/strategies.ts` отсутствует.
+- [x] 6.4 `AttractorPanel.vue` — `insightItems` (split по `\n` и маркерам списка `• -`); если >1 пункта — рендер `<ul class="insights-list">`, иначе плоский `<div>`. На текущих данных все insights однострочные.
+
+## Финальная проверка ✅
+
+- [x] `npx vue-tsc --noEmit` — без ошибок.
+- [x] `npm run build` — 656 modules transformed, 1.81s, dist/index 216.77 kB (gzip 72.97).
 
 ---
 
