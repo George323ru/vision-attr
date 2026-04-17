@@ -58,7 +58,7 @@ export function useD3Zoom(svgRef: Ref<SVGSVGElement | null>): D3ZoomApi {
       .call(zoomBehavior.transform, t)
   }
 
-  function zoomTo(positions: NodePosition[], padding = 300) {
+  function zoomTo(positions: NodePosition[], padding = 600) {
     const svg = svgRef.value
     if (!svg || !zoomBehavior || positions.length === 0) return
     const { width, height } = svg.getBoundingClientRect()
@@ -72,17 +72,22 @@ export function useD3Zoom(svgRef: Ref<SVGSVGElement | null>): D3ZoomApi {
       maxY = Math.max(maxY, p.y)
     }
 
-    minX -= padding
-    minY -= padding
-    maxX += padding
-    maxY += padding
+    // Для одиночного узла padding должен вмещать радиус L1 (~120) + соседние L2 + их лейблы.
+    // Тогда при фокусе на L1 соседние L2-лейблы не выползают за viewport.
+    const effectivePad = positions.length === 1 ? Math.max(padding, 900) : padding
+    minX -= effectivePad
+    minY -= effectivePad
+    maxX += effectivePad
+    maxY += effectivePad
 
     const boxW = maxX - minX
     const boxH = maxY - minY
     const cx = (minX + maxX) / 2
     const cy = (minY + maxY) / 2
 
-    const k = Math.min(width / boxW, height / boxH, 1.5)
+    // Max k = 0.8 — предотвращает чрезмерное увеличение одиночного узла,
+    // из-за которого L1-лейбл и соседние L2 выходили за границы SVG.
+    const k = Math.min(width / boxW, height / boxH, 0.8)
     const tx = width / 2 - cx * k
     const ty = height / 2 - cy * k
     const t = zoomIdentity.translate(tx, ty).scale(k)

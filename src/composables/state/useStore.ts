@@ -63,7 +63,7 @@ export function useStore() {
   const chrome = computed(() => state.value.chrome)
   const panelRoute = computed(() => derivePanelRoute(state.value.viewState))
   const focusedNodeId = computed(() => deriveFocusedNodeId(state.value.viewState))
-  const correlationAge = computed(() => deriveCorrelationAge(state.value.viewState))
+  const correlationAge = computed(() => deriveCorrelationAge(state.value))
   const strategyIdx = computed(() => deriveStrategyIdx(state.value.viewState))
   const situationInfo = computed(() => deriveSituationInfo(state.value.viewState))
   const midAge = computed(() => deriveMidAge(state.value.profile))

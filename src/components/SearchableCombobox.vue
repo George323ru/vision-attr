@@ -15,22 +15,23 @@
         class="sc-dropdown"
         :style="dropdownStyle"
         ref="dropdownRef"
+        tabindex="-1"
+        @keydown.escape="close"
+        @keydown.enter.prevent="selectHighlighted"
+        @keydown.down.prevent="moveHighlight(1)"
+        @keydown.up.prevent="moveHighlight(-1)"
       >
-        <div class="sc-search-wrap">
+        <div v-if="searchable" class="sc-search-wrap">
           <input
             ref="searchRef"
             v-model="query"
             class="sc-search"
             placeholder="Поиск…"
-            @keydown.escape="close"
-            @keydown.enter="selectHighlighted"
-            @keydown.down.prevent="moveHighlight(1)"
-            @keydown.up.prevent="moveHighlight(-1)"
           />
         </div>
         <div class="sc-list" ref="listRef">
           <template v-for="group in filteredGroups" :key="group.id">
-            <div class="sc-group-label">{{ group.name }}</div>
+            <div v-if="group.name" class="sc-group-label">{{ group.name }}</div>
             <div
               v-for="item in group.items"
               :key="item.id"
@@ -48,7 +49,7 @@
           </template>
           <div v-if="flatFiltered.length === 0" class="sc-empty">Ничего не найдено</div>
         </div>
-        <div v-if="modelValue" class="sc-clear-wrap">
+        <div v-if="clearable && modelValue" class="sc-clear-wrap">
           <button class="sc-clear" @click="select(null)">Очистить выбор</button>
         </div>
       </div>
@@ -75,8 +76,12 @@ const props = withDefaults(defineProps<{
   modelValue: string | null
   groups: ComboboxGroup[]
   placeholder?: string
+  searchable?: boolean
+  clearable?: boolean
 }>(), {
   placeholder: '— Выберите —',
+  searchable: true,
+  clearable: true,
 })
 
 const emit = defineEmits<{
@@ -141,7 +146,11 @@ function open() {
   highlightedId.value = props.modelValue
   positionDropdown()
   nextTick(() => {
-    searchRef.value?.focus()
+    if (props.searchable) {
+      searchRef.value?.focus()
+    } else {
+      dropdownRef.value?.focus()
+    }
     scrollToHighlighted()
   })
 }

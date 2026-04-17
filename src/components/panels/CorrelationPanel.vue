@@ -21,23 +21,21 @@
         </div>
       </div>
       <div class="cp-age-section">
-        <div class="cp-age-label">Возраст: <b>{{ corrAge }}</b></div>
-        <input
-          type="range"
-          :value="corrAge"
-          @input="dispatch({ type: 'SET_CORR_AGE', age: Number(($event.target as HTMLInputElement).value) })"
-          min="18"
-          max="75"
-          class="cp-age-slider"
-          aria-label="Возраст для расчёта корреляций"
+        <div class="cp-age-label">Возраст: <b>{{ ageMin }}–{{ ageMax }}</b></div>
+        <DualRangeSlider
+          :min="18"
+          :max="75"
+          :model-min="ageMin"
+          :model-max="ageMax"
+          :ticks="[18, 25, 35, 45, 55, 65, 75]"
+          aria-label-min="Минимальный возраст"
+          aria-label-max="Максимальный возраст"
+          @update:model-min="(v: number) => dispatch({ type: 'SET_AGE_RANGE', min: v, max: ageMax })"
+          @update:model-max="(v: number) => dispatch({ type: 'SET_AGE_RANGE', min: ageMin, max: v })"
         />
-        <div class="cp-age-range">
-          <span>18</span>
-          <span>75</span>
-        </div>
       </div>
       <div v-if="correlationList.length === 0" class="cp-no-corr">
-        Нет корреляций для возраста {{ corrAge }}
+        Нет корреляций для возраста {{ ageMin }}–{{ ageMax }}
       </div>
       <div v-else class="cp-list">
         <div v-for="item in correlationList" :key="item.id" class="cp-item">
@@ -63,10 +61,13 @@ import { useStore } from '@/composables/state/useStore'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 import { getCorrEdgesForNode } from '@/composables/useCorrelations'
 import { CORRELATIONS } from '@/data/correlations'
+import DualRangeSlider from '@/components/DualRangeSlider.vue'
 
-const { focusedNodeId, correlationAge, dispatch } = useStore()
+const { profile, focusedNodeId, correlationAge, dispatch } = useStore()
 const { getAttractor } = useAttractorStore()
 
+const ageMin = computed(() => profile.value.demographics.ageMin)
+const ageMax = computed(() => profile.value.demographics.ageMax)
 const corrAge = computed((): number => correlationAge.value ?? 42)
 
 const focusedName = computed(() => {
@@ -177,9 +178,11 @@ function barWidth(strength: number): string {
   font-weight: 600;
   color: var(--accent);
   min-width: 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .cp-node-count {
   font-size: var(--fs-xs);
@@ -202,19 +205,6 @@ function barWidth(strength: number): string {
 .cp-age-label b {
   color: var(--text);
   font-weight: 600;
-}
-.cp-age-slider {
-  width: 100%;
-  height: 4px;
-  accent-color: var(--accent);
-  cursor: pointer;
-  margin-bottom: 4px;
-}
-.cp-age-range {
-  display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  color: var(--text-muted-soft);
 }
 
 /* Пустой список корреляций */

@@ -6,18 +6,18 @@
 
     <div class="section-header">
       <div class="section-header-left">
-        <span class="section-title">Prediction</span>
+        <span class="section-title">Прогноз</span>
         <span
           class="help-icon"
-          data-tooltip="Prediction based on interview data, taking into account selected demographic filters and attractors. A respondent could select multiple strategies, so the sum may exceed 100%."
+          data-tooltip="Прогноз рассчитан по данным интервью с учётом выбранных демографических фильтров и аттракторов. Один респондент мог выбрать несколько стратегий, поэтому сумма может превышать 100%."
         >?</span>
       </div>
-      <span v-if="predictions.length > 0" class="section-meta">{{ predictions[0].totalFiltered }} respondents</span>
+      <span v-if="predictions.length > 0" class="section-meta">{{ predictions[0].totalFiltered }} {{ respondentWord }}</span>
     </div>
 
     <template v-if="predictions.length > 0">
       <div v-if="predictions[0].totalFiltered < 5" class="small-sample-warn">
-        Small sample size results may be unstable
+        Малая выборка: результаты могут быть нестабильны
       </div>
       <div class="strategies-container">
         <StrategyBar
@@ -33,11 +33,11 @@
     </template>
     <div v-else class="no-data">
       <template v-if="hasMarkupData">
-        No respondents for selected filters.
-        <span class="no-data-hint">Try broader demographic settings.</span>
+        Нет респондентов для выбранных фильтров.
+        <span class="no-data-hint">Попробуйте расширить настройки демографии.</span>
       </template>
       <template v-else>
-        Data for this situation is not yet available and is in progress.
+        Данные по этой ситуации ещё не размечены и находятся в работе.
       </template>
     </div>
 
@@ -62,6 +62,7 @@ import { useStore } from '@/composables/state/useStore'
 import StrategyBar from '@/components/StrategyBar.vue'
 import PanelBreadcrumb from '@/components/PanelBreadcrumb.vue'
 import type { BreadcrumbItem } from '@/components/PanelBreadcrumb.vue'
+import { pluralRu } from '@/utils/plural'
 
 const props = defineProps<{
   sitId: string
@@ -116,7 +117,7 @@ const predictions = computed(() => {
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => {
   const crumbs: BreadcrumbItem[] = [
-    { label: 'Situations', action: () => dispatch({ type: 'CLOSE_SITUATION' }) },
+    { label: 'Ситуации', action: () => dispatch({ type: 'CLOSE_SITUATION' }) },
   ]
   if (attr.value) {
     crumbs.push({ label: attr.value.label.replace(/\n/g, ' ') })
@@ -126,6 +127,12 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => {
   }
   return crumbs
 })
+
+const respondentWord = computed(() =>
+  predictions.value.length > 0
+    ? pluralRu(predictions.value[0].totalFiltered, ['респондент', 'респондента', 'респондентов'])
+    : ''
+)
 
 function barColor(probability: number, maxProb: number): string {
   const ratio = maxProb > 0 ? probability / maxProb : 0
@@ -244,20 +251,37 @@ function barColor(probability: number, maxProb: number): string {
   padding: 7px 14px;
   font-size: 11px;
   font-weight: 500;
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
   border-radius: var(--radius-sm, 6px);
   cursor: pointer;
   letter-spacing: 0.02em;
   transition: background var(--duration-fast) var(--ease-out-quad),
               border-color var(--duration-fast),
-              box-shadow var(--duration-fast);
+              box-shadow var(--duration-fast),
+              transform var(--duration-fast);
 }
-.btn-back { color: var(--accent); }
-.btn-graph { color: var(--text-muted); margin-left: auto; }
-.btn-back:hover,
-.btn-graph:hover {
+.btn-back {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+}
+.btn-back:hover {
+  color: var(--text);
   background: var(--card-hover);
-  box-shadow: var(--shadow-sm);
+}
+.btn-graph {
+  margin-left: auto;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(192,138,62,0.25);
+}
+.btn-graph:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 2px 8px rgba(192,138,62,0.35);
+  transform: translateY(-1px);
+}
+.btn-graph:active {
+  transform: translateY(0);
 }
 </style>

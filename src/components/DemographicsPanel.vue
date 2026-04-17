@@ -21,53 +21,40 @@
     <!-- Gender -->
     <div class="demo-section">
       <div class="demo-label">Пол</div>
-      <select
-        :value="gender"
-        class="demo-select"
-        aria-label="Выберите пол"
-        @change="dispatch({ type: 'SET_GENDER', value: ($event.target as HTMLSelectElement).value as 'male' | 'female' | 'any' })"
-      >
-        <option value="any">Любой</option>
-        <option value="male">Мужской</option>
-        <option value="female">Женский</option>
-      </select>
+      <SearchableCombobox
+        :model-value="gender"
+        :groups="genderGroups"
+        :searchable="false"
+        :clearable="false"
+        placeholder="Любой"
+        @update:model-value="onGender"
+      />
     </div>
 
     <!-- Marital status -->
     <div class="demo-section">
       <div class="demo-label">Семейное положение</div>
-      <select
-        :value="maritalStatus"
-        class="demo-select"
-        aria-label="Семейное положение"
-        @change="dispatch({ type: 'SET_MARITAL', value: ($event.target as HTMLSelectElement).value as 'married' | 'not_married' | 'divorced' | 'widowed' | 'civil_union' | 'any' })"
-      >
-        <option value="any">Любое</option>
-        <option value="married">В браке</option>
-        <option value="not_married">Не в браке</option>
-        <option value="divorced">Разведён(а)</option>
-        <option value="widowed">Вдовец/вдова</option>
-        <option value="civil_union">Гражданский брак</option>
-      </select>
+      <SearchableCombobox
+        :model-value="maritalStatus"
+        :groups="maritalGroups"
+        :searchable="false"
+        :clearable="false"
+        placeholder="Любое"
+        @update:model-value="onMarital"
+      />
     </div>
 
     <!-- Children -->
     <div class="demo-section">
       <div class="demo-label">Дети</div>
-      <select
-        :value="childrenCount"
-        class="demo-select"
-        aria-label="Количество детей"
-        @change="dispatch({ type: 'SET_CHILDREN', value: ($event.target as HTMLSelectElement).value })"
-      >
-        <option value="any">Не важно</option>
-        <option value="0">Нет детей</option>
-        <option value="1">1 ребёнок</option>
-        <option value="2">2 ребёнка</option>
-        <option value="3">3 ребёнка</option>
-        <option value="4">4 ребёнка</option>
-        <option value="5+">5 и более</option>
-      </select>
+      <SearchableCombobox
+        :model-value="childrenCount"
+        :groups="childrenGroups"
+        :searchable="false"
+        :clearable="false"
+        placeholder="Не важно"
+        @update:model-value="onChildren"
+      />
     </div>
   </div>
 </template>
@@ -76,6 +63,8 @@
 import { computed } from 'vue'
 import { useStore } from '@/composables/state/useStore'
 import DualRangeSlider from './DualRangeSlider.vue'
+import SearchableCombobox from './SearchableCombobox.vue'
+import type { ComboboxGroup } from './SearchableCombobox.vue'
 
 const { profile, dispatch } = useStore()
 
@@ -84,6 +73,59 @@ const ageMax = computed(() => profile.value.demographics.ageMax)
 const gender = computed(() => profile.value.demographics.gender)
 const childrenCount = computed(() => profile.value.demographics.childrenCount)
 const maritalStatus = computed(() => profile.value.demographics.maritalStatus)
+
+const genderGroups: ComboboxGroup[] = [{
+  id: 'gender',
+  name: '',
+  items: [
+    { id: 'any', label: 'Любой' },
+    { id: 'male', label: 'Мужской' },
+    { id: 'female', label: 'Женский' },
+  ],
+}]
+
+const maritalGroups: ComboboxGroup[] = [{
+  id: 'marital',
+  name: '',
+  items: [
+    { id: 'any', label: 'Любое' },
+    { id: 'married', label: 'В браке' },
+    { id: 'not_married', label: 'Не в браке' },
+    { id: 'divorced', label: 'Разведён(а)' },
+    { id: 'widowed', label: 'Вдовец/вдова' },
+    { id: 'civil_union', label: 'Гражданский брак' },
+  ],
+}]
+
+const childrenGroups: ComboboxGroup[] = [{
+  id: 'children',
+  name: '',
+  items: [
+    { id: 'any', label: 'Не важно' },
+    { id: '0', label: 'Нет детей' },
+    { id: '1', label: '1 ребёнок' },
+    { id: '2', label: '2 ребёнка' },
+    { id: '3', label: '3 ребёнка' },
+    { id: '4', label: '4 ребёнка' },
+    { id: '5+', label: '5 и более' },
+  ],
+}]
+
+function onGender(value: string | null) {
+  if (value === null) return
+  dispatch({ type: 'SET_GENDER', value: value as 'male' | 'female' | 'any' })
+}
+function onMarital(value: string | null) {
+  if (value === null) return
+  dispatch({
+    type: 'SET_MARITAL',
+    value: value as 'married' | 'not_married' | 'divorced' | 'widowed' | 'civil_union' | 'any',
+  })
+}
+function onChildren(value: string | null) {
+  if (value === null) return
+  dispatch({ type: 'SET_CHILDREN', value })
+}
 </script>
 
 <style scoped>
@@ -111,36 +153,5 @@ const maritalStatus = computed(() => profile.value.demographics.maritalStatus)
   font-size: 12px;
   letter-spacing: 0;
   font-feature-settings: 'tnum' 1;
-}
-
-/* ── Select dropdown ── */
-.demo-select {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  padding: 6px 28px 6px 10px;
-  font-size: 12px;
-  font-family: inherit;
-  color: var(--text);
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  cursor: pointer;
-  outline: none;
-  transition: border-color var(--duration-fast), background var(--duration-fast), box-shadow var(--duration-fast);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-}
-.demo-select:hover {
-  border-color: var(--accent);
-}
-.demo-select:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-subtle);
-}
-.demo-select option {
-  background: var(--bg);
-  color: var(--text);
 }
 </style>

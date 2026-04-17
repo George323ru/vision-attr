@@ -1,5 +1,5 @@
 <template>
-  <div v-if="loading" class="app-loading">Loading data...</div>
+  <div v-if="loading" class="app-loading">Загрузка данных…</div>
   <template v-else>
     <AppHeader />
     <main class="main-content">

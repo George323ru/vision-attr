@@ -19,9 +19,10 @@ export function deriveFocusedNodeId(vs: ViewState): string | null {
   }
 }
 
-export function deriveCorrelationAge(vs: ViewState): number | null {
+export function deriveCorrelationAge(state: AppState): number | null {
+  const vs = state.viewState
   if (vs.view === 'graph' && vs.focus.type === 'correlations') {
-    return vs.focus.age
+    return deriveMidAge(state.profile)
   }
   return null
 }

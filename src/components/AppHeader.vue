@@ -7,12 +7,12 @@
           class="mode-btn"
           :class="{ active: currentView === 'scenarios' }"
           @click="dispatch({ type: 'SWITCH_VIEW', view: 'scenarios' })"
-        >Analyse</button>
+        >Анализ</button>
         <button
           class="mode-btn"
           :class="{ active: currentView === 'graph' }"
           @click="dispatch({ type: 'SWITCH_VIEW', view: 'graph' })"
-        >Graph</button>
+        >Граф</button>
       </div>
       <span class="version">v3.0</span>
     </div>

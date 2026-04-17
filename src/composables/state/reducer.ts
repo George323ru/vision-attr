@@ -98,17 +98,17 @@ export function reduce(state: AppState, action: Action): ReducerResult {
     case 'CLICK_NODE': {
       if (state.viewState.view !== 'graph') return { state, effects: [] }
 
+      // Для L1 не зумим: single-node focus на крупный узел делает лейбл
+      // доминирующим поверх соседних L2. Overview сохраняет контекст.
       const effects: Effect[] = [
         { type: 'HIGHLIGHT_NODE', nodeId: action.nodeId },
-        { type: 'ZOOM_TO_FIT', nodeIds: [action.nodeId] },
+        ...(action.level === 1 ? [] : [{ type: 'ZOOM_TO_FIT' as const, nodeIds: [action.nodeId] }]),
       ]
 
       // В режиме корреляций клик по L2 переключает фокус корреляций
       if (state.viewState.graphMode === 'correlations' && action.level === 2) {
         const currentId = state.viewState.focus.type === 'correlations'
           ? state.viewState.focus.nodeId : null
-        const currentAge = state.viewState.focus.type === 'correlations'
-          ? state.viewState.focus.age : 42
 
         // Toggle: повторный клик снимает фокус
         if (currentId === action.nodeId) {
@@ -126,12 +126,12 @@ export function reduce(state: AppState, action: Action): ReducerResult {
             ...state,
             viewState: {
               ...state.viewState,
-              focus: { type: 'correlations', nodeId: action.nodeId, age: currentAge },
+              focus: { type: 'correlations', nodeId: action.nodeId },
             },
           },
           effects: [
             ...effects,
-            { type: 'SHOW_CORRELATIONS', nodeId: action.nodeId, age: currentAge },
+            { type: 'SHOW_CORRELATIONS', nodeId: action.nodeId },
           ],
         }
       }
@@ -184,23 +184,6 @@ export function reduce(state: AppState, action: Action): ReducerResult {
           },
         },
         effects: [{ type: 'CLEAR_HIGHLIGHT' }, { type: 'HIDE_CORRELATIONS' }],
-      }
-    }
-
-    case 'SET_CORR_AGE': {
-      if (state.viewState.view !== 'graph' || state.viewState.focus.type !== 'correlations') {
-        return { state, effects: [] }
-      }
-      const nodeId = state.viewState.focus.nodeId
-      return {
-        state: {
-          ...state,
-          viewState: {
-            ...state.viewState,
-            focus: { ...state.viewState.focus, age: action.age },
-          },
-        },
-        effects: [{ type: 'SHOW_CORRELATIONS', nodeId, age: action.age }],
       }
     }
 

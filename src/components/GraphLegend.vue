@@ -21,10 +21,6 @@
       <span class="leg-line" style="width:20px;background:#dc2626"></span>
       <span>конфликтующая корреляция</span>
     </div>
-    <div class="leg-row">
-      <span class="leg-line" style="width:20px;background:#7070a0"></span>
-      <span>нейтральная</span>
-    </div>
   </div>
 </template>
 

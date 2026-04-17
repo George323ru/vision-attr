@@ -80,17 +80,20 @@ const { attr, domainColor } = useAttractorDisplay(toRef(props, 'nodeId'))
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => {
   if (!attr.value) return []
-  const crumbs: BreadcrumbItem[] = []
   const domainName = domains.value[attr.value.domain]?.name ?? attr.value.domain
-  crumbs.push({ label: domainName })
+  const raw: BreadcrumbItem[] = [{ label: domainName }]
   if (attr.value.parent) {
     const parent = getAttractor(attr.value.parent)
     if (parent) {
-      crumbs.push({ label: parent.label, action: () => { dispatch({ type: 'CLICK_NODE', nodeId: parent.id, level: parent.level as 1 | 2 | 3 }) } })
+      raw.push({
+        label: parent.label,
+        action: () => { dispatch({ type: 'CLICK_NODE', nodeId: parent.id, level: parent.level as 1 | 2 | 3 }) },
+      })
     }
   }
-  crumbs.push({ label: attr.value.label })
-  return crumbs
+  raw.push({ label: attr.value.label })
+  // Убираем дубликаты подряд: для L1 domain.name == attr.label → «Независимость › Независимость».
+  return raw.filter((c, i, arr) => i === 0 || c.label !== arr[i - 1].label)
 })
 
 function selectChild(child: { id: string; level: number }) {

@@ -1,12 +1,16 @@
 <template>
   <button
     class="situation-card"
-    :class="{ relevant, 'has-data': hasMarkup }"
-    @click="$emit('open')"
+    :class="{ relevant, 'has-data': hasMarkup, 'no-data': !hasMarkup }"
+    :disabled="!hasMarkup"
+    :title="!hasMarkup ? 'Данные в обработке' : undefined"
+    :aria-label="!hasMarkup ? `${situation.title} — данные в обработке` : undefined"
+    @click="hasMarkup && $emit('open')"
   >
     <div class="card-top">
       <span class="card-title">{{ situation.title }}</span>
-      <span v-if="hasMarkup" class="card-badge">ANALYSE</span>
+      <span v-if="hasMarkup" class="card-badge">АНАЛИЗ</span>
+      <span v-else class="card-badge-muted" aria-hidden="true">в обработке</span>
     </div>
     <p class="card-desc">{{ situation.description }}</p>
     <div class="card-meta">
@@ -78,6 +82,20 @@ const domainColorValue = computed(() => {
 .situation-card.has-data {
   background: var(--bg-surface2);
 }
+.situation-card.no-data {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.situation-card.no-data:hover {
+  background: var(--card-bg);
+  border-color: var(--card-border);
+  box-shadow: none;
+  transform: none;
+}
+.situation-card.no-data:active {
+  transform: none;
+  box-shadow: none;
+}
 
 .card-top {
   display: flex;
@@ -100,6 +118,16 @@ const domainColorValue = computed(() => {
   border-radius: 4px;
   background: var(--accent-subtle);
   color: var(--accent);
+}
+.card-badge-muted {
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.6px;
+  padding: 3px 7px;
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-style: italic;
 }
 
 .card-desc {

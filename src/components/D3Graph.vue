@@ -2,6 +2,7 @@
   <svg
     ref="svgRef"
     class="d3-graph"
+    preserveAspectRatio="xMidYMid meet"
   >
     <defs>
       <!-- Radial gradient для каждого L1 домена -->
@@ -264,7 +265,7 @@ const corrTargetIds = computed<Set<string>>(() => {
   if (vs.focus.type !== 'correlations') return new Set()
 
   const nodeId = vs.focus.nodeId
-  const age = vs.focus.age
+  const age = correlationAge.value ?? 42
   const ids = new Set<string>()
 
   for (const corr of CORRELATIONS) {
@@ -345,7 +346,7 @@ const visibleCorrEdges = computed<CorrEdge[]>(() => {
   if (vs.focus.type !== 'correlations') return []
 
   const nodeId = vs.focus.nodeId
-  const age = vs.focus.age
+  const age = correlationAge.value ?? 42
   const positions = positionsMap.value
   const visibleSet = new Set(visibleNodes.value.map(n => n.id))
   const edges: CorrEdge[] = []
@@ -405,6 +406,7 @@ watch(attractors, (list) => {
   height: 100%;
   cursor: grab;
   background: var(--bg, #fafafa);
+  overflow: hidden;
 }
 .d3-graph:active {
   cursor: grabbing;
@@ -446,8 +448,8 @@ watch(attractors, (list) => {
   animation: node-appear 0.4s var(--ease-out-expo, ease) both;
 }
 @keyframes node-appear {
-  from { opacity: 0; transform: scale(0.6); }
-  to { opacity: 1; transform: scale(1); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* Hover — масштабирование + мягкая тень */

@@ -21,7 +21,9 @@ export type ScenarioFocus =
 export type GraphFocus =
   | { readonly type: 'none' }
   | { readonly type: 'node'; readonly nodeId: string; readonly level: 1 | 2 | 3 }
-  | { readonly type: 'correlations'; readonly nodeId: string; readonly age: number }
+  // Возраст корреляций — midpoint ProfileState.demographics.ageMin/ageMax,
+  // изменяется тем же SET_AGE_RANGE action.
+  | { readonly type: 'correlations'; readonly nodeId: string }
 
 export type GraphMode = 'explore' | 'correlations'
 
@@ -82,7 +84,6 @@ export type Action =
   | { readonly type: 'DBLCLICK_NODE'; readonly nodeId: string }
   | { readonly type: 'CLICK_EMPTY' }
   | { readonly type: 'SET_GRAPH_MODE'; readonly mode: GraphMode }
-  | { readonly type: 'SET_CORR_AGE'; readonly age: number }
 
   // Hover (визуальный, без навигации)
   | { readonly type: 'HOVER_NODE'; readonly nodeId: string | null }
@@ -115,7 +116,7 @@ export type Effect =
   | { readonly type: 'COLLAPSE_NODE'; readonly nodeId: string }
   | { readonly type: 'HIGHLIGHT_NODE'; readonly nodeId: string }
   | { readonly type: 'CLEAR_HIGHLIGHT' }
-  | { readonly type: 'SHOW_CORRELATIONS'; readonly nodeId: string; readonly age: number }
+  | { readonly type: 'SHOW_CORRELATIONS'; readonly nodeId: string }
   | { readonly type: 'HIDE_CORRELATIONS' }
   | { readonly type: 'ZOOM_TO_FIT'; readonly nodeIds: string[] }
   | { readonly type: 'HOVER_VISUAL'; readonly nodeId: string | null }
