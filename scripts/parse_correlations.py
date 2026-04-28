@@ -10,14 +10,14 @@
   2. Игнорирует не-L2 переменные (Возраст, Дети_Количество, Сиблинги_Количество).
   3. Дедупицирует симметричные пары: для каждой неупорядоченной пары {A,B}
      берётся первая встретившаяся строка (полные дубликаты тоже свёртываются).
-  4. strength = |r| / max(|r|) — нормировка на максимум по выборке (шкала 0..1).
+  4. strength = |r| — сила корреляции в шкале коэффициента Пирсона (0..1).
   5. type: r ≥ 0 → 'reinforcing', r < 0 → 'conflicting'.
 
 Формат вывода:
   { "maxAbsR": 0.51,
     "correlations": [
       { "id": "c0001", "from": "l2_xxx", "to": "l2_yyy",
-        "type": "reinforcing", "r": 0.49, "strength": 0.96 }, ... ] }
+        "type": "reinforcing", "r": 0.49, "strength": 0.49 }, ... ] }
 """
 from __future__ import annotations
 
@@ -135,7 +135,7 @@ def main() -> int:
     correlations = []
     for i, (from_id, to_id, r, p) in enumerate(sorted(seen.values()), start=1):
         ctype = "reinforcing" if r >= 0 else "conflicting"
-        strength = abs(r) / max_abs_r if max_abs_r > 0 else 0.0
+        strength = abs(r)
         correlations.append(
             {
                 "id": f"c{i:04d}",

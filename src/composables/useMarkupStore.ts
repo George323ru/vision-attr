@@ -23,11 +23,7 @@ async function loadMarkupData(): Promise<void> {
 }
 
 function getMarkupForSituation(situationId: string): MarkupSituation | null {
-  return markupSituations.value.find(m => m.linkedSituationId === situationId) ?? null
-}
-
-function getMarkupById(markupId: string): MarkupSituation | null {
-  return markupSituations.value.find(m => m.id === markupId) ?? null
+  return markupSituations.value.find(m => m.id === situationId) ?? null
 }
 
 function getMarkupForAttractor(attractorL2: string): MarkupSituation[] {
@@ -45,7 +41,6 @@ export function useMarkupStore() {
     loaded: readonly(loaded),
     loadMarkupData,
     getMarkupForSituation,
-    getMarkupById,
     getMarkupForAttractor,
     getRespondents,
   }

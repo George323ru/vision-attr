@@ -82,9 +82,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { SITUATIONS } from '@/data/situations'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 import { useMarkupStore } from '@/composables/useMarkupStore'
+import { useSituationStore } from '@/composables/useSituationStore'
 import { predictBehavior } from '@/composables/usePrediction'
 import { useStore } from '@/composables/state/useStore'
 import { useCoachMarks } from '@/composables/useCoachMarks'
@@ -102,10 +102,11 @@ const props = defineProps<{
 
 const { getAttractor } = useAttractorStore()
 const { getMarkupForSituation } = useMarkupStore()
+const { getSituationById } = useSituationStore()
 const { profile, strategyIdx, canGoBack, dispatch } = useStore()
 const { isDismissed } = useCoachMarks()
 
-const sit = computed(() => SITUATIONS.find(s => s.id === props.sitId))
+const sit = computed(() => getSituationById(props.sitId))
 const attr = computed(() => getAttractor(props.attrId))
 const hasMarkupData = computed(() => getMarkupForSituation(props.sitId) !== null)
 

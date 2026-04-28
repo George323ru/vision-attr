@@ -45,20 +45,21 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { SITUATIONS, SITUATION_CATEGORIES } from '@/data/situations'
 import type { Situation } from '@/types/situation'
 import { useMarkupStore } from '@/composables/useMarkupStore'
+import { useSituationStore } from '@/composables/useSituationStore'
 import { useStore } from '@/composables/state/useStore'
 import SituationCard from '@/components/SituationCard.vue'
 import SituationDetail from '@/components/SituationDetail.vue'
 
 const { getMarkupForSituation } = useMarkupStore()
+const { situations, categories } = useSituationStore()
 const { profile, situationInfo, activeAttractorIds, dispatch } = useStore()
 
-const totalSituations = SITUATIONS.length
+const totalSituations = computed(() => situations.value.length)
 
 const situationsWithData = computed(() =>
-  SITUATIONS.filter(s => getMarkupForSituation(s.id) !== null).length
+  situations.value.filter(s => getMarkupForSituation(s.id) !== null).length
 )
 
 function hasMarkup(sitId: string): boolean {
@@ -70,8 +71,8 @@ function isRelevant(sit: Situation): boolean {
 }
 
 const groupedSituations = computed(() => {
-  return SITUATION_CATEGORIES.map(cat => {
-    const catSituations = SITUATIONS.filter(s => s.category === cat.id)
+  return categories.value.map(cat => {
+    const catSituations = situations.value.filter(s => s.category === cat.id)
     // Ситуации с данными и релевантные — наверх
     const sorted = [...catSituations].sort((a, b) => {
       const aData = hasMarkup(a.id) ? 1 : 0

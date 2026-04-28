@@ -7,12 +7,12 @@ export interface Correlation {
   type: CorrelationType
   /** Оригинальный коэффициент Пирсона (со знаком). */
   r: number
-  /** Нормированная сила: |r| / max(|r|), диапазон 0..1. */
+  /** Сила корреляции: |r| в шкале коэффициента Пирсона, диапазон 0..1. */
   strength: number
 }
 
 export interface CorrelationData {
-  /** Максимум |r| по выборке (для нормировки). */
+  /** Максимум |r| по выборке (метаданные для аудита датасета). */
   maxAbsR: number
   correlations: Correlation[]
 }

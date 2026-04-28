@@ -49,10 +49,10 @@ export interface MarkupSituation {
   id: string
   title: string
   attractorL2: string
+  category: string
   strategyNames: string[]
   strategies: MarkupStrategy[]
   totalRespondents: number
-  linkedSituationId?: string
   demographics?: SituationDemographics
   attractorProfile?: Record<string, number>
 }

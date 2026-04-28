@@ -1,24 +1,31 @@
 #!/usr/bin/env python3
-"""
-Парсер CSV разметки + демографии + аттракторов → public/data/markup.json
+"""Парсер CSV разметки + демографии + аттракторов → public/data/markup.json.
 
 Читает три CSV:
   .data/markup_dataset.csv    — поведенческие ответы (ситуации × стратегии, 0/1)
-  .data/demographics.csv      — демография респондентов (пол, возраст, семья и т.д.)
+  .data/demographics.csv      — демография респондентов
   .data/attractor_scores.csv  — оценки L2-аттракторов (0–3) каждого респондента
 
-Маппит респондентов по ID и генерирует JSON с агрегированной демографией
-и средними оценками аттракторов по каждой стратегии.
+Маппинг CSV-ситуаций на стабильные id ведётся через
+``public/data/situations_registry.json`` — единый source of truth.
+Все названия ситуаций в CSV должны иметь `csvAliases` в registry,
+иначе парсер падает с понятной ошибкой.
 
 ⚠️  Исходные CSV содержат индивидуальные данные. Выходной JSON содержит
     только агрегаты и анонимизированные записи — точный возраст заменяется
     на возрастную группу, ID обезличены (P001, P002, …).
 """
 
+from __future__ import annotations
+
 import csv
 import json
 import os
+import sys
 from dataclasses import dataclass, field
+
+# Импорт работает при запуске из корня проекта (sys.path добавлен в main).
+from lib.registry import Registry, RegistryError, load_registry
 
 
 @dataclass
@@ -42,52 +49,17 @@ class StrategyData:
 @dataclass
 class SituationData:
     name: str
+    sit_id: str  # id из registry
     strategies: list[StrategyData] = field(default_factory=list)
     respondent_ids: list[str] = field(default_factory=list)
 
-
-# Маппинг CSV-ситуаций на существующие ID в situations.ts и attractorL2
-SITUATION_MAP: dict[str, dict[str, str]] = {
-    'Рождение ребенка': {
-        'linked_id': 's19',
-        'attractor_l2': 'l2_semya_03',
-    },
-    'Смена места работы/выход на новое место работы': {
-        'linked_id': 's32',
-        'attractor_l2': 'l2_rabota_01',
-    },
-    'Переезд в другой город или регион внутри страны': {
-        'linked_id': 's31',
-        'attractor_l2': 'l2_byt_02',
-    },
-    'Официальная регистрация брака / свадьба / венчание': {
-        'linked_id': 's21',
-        'attractor_l2': 'l2_semya_02',
-    },
-    'Развод': {
-        'linked_id': 's01',
-        'attractor_l2': 'l2_semya_02',
-    },
-    'Появление повода/необходимости обратиться к врачу (какие-либо симптомы, направление, плановый осмотр)': {
-        'linked_id': 's09',
-        'attractor_l2': 'l2_telo_02',
-    },
-    'Поступление в ВУЗ / ССУЗ': {
-        'linked_id': 's04',
-        'attractor_l2': 'l2_samorazv_01',
-    },
-    'Поиск романтических отношений': {
-        'linked_id': 's33',
-        'attractor_l2': 'l2_semya_01',
-    },
-}
 
 # Fuzzy-маппинг ID (Разметка → Лист7) для нестандартных форматов
 FUZZY_ID_MAP: dict[str, str] = {
     'П_Таня_Диана_06_10.2025': 'П_Таня_06.окт.2025_Диана',
 }
 
-AGE_GROUPS = [
+AGE_GROUPS: list[tuple[str, int, int]] = [
     ('18-25', 18, 25),
     ('26-35', 26, 35),
     ('36-45', 36, 45),
@@ -105,7 +77,7 @@ ATTRACTOR_COLUMN_FIX: dict[str, str] = {
 def load_demographics(csv_path: str) -> dict[str, Demographics]:
     """Загружает демографию из CSV → dict[respondent_id → Demographics]."""
     result: dict[str, Demographics] = {}
-    with open(csv_path, 'r', encoding='utf-8') as f:
+    with open(csv_path, encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
             resp_id = row.get('Респондент', '').strip()
@@ -144,8 +116,7 @@ def load_attractor_scores(
     csv_path: str, attractors_json_path: str
 ) -> dict[str, dict[str, int]]:
     """Загружает оценки L2-аттракторов → dict[respondent_id → {l2_id: score}]."""
-    # Загрузка L2 label → id маппинга
-    with open(attractors_json_path, 'r', encoding='utf-8') as f:
+    with open(attractors_json_path, encoding='utf-8') as f:
         data = json.load(f)
     l2_label_map: dict[str, str] = {}
     for a in data['attractors']:
@@ -153,12 +124,11 @@ def load_attractor_scores(
             l2_label_map[a['label'].strip().lower()] = a['id']
 
     result: dict[str, dict[str, int]] = {}
-    with open(csv_path, 'r', encoding='utf-8') as f:
+    with open(csv_path, encoding='utf-8') as f:
         reader = csv.reader(f)
         header = next(reader)
         raw_cols = [h.strip() for h in header[1:]]
 
-        # Маппим колонки → L2 ID
         l2_cols: list[str] = []
         for col in raw_cols:
             if col in ATTRACTOR_COLUMN_FIX:
@@ -187,10 +157,7 @@ def build_attractor_profile(
     attr_map: dict[str, dict[str, int]],
     top_n: int = 10,
 ) -> dict[str, float] | None:
-    """Считает средние оценки L2-аттракторов для группы респондентов.
-
-    Возвращает top_n аттракторов с наибольшей средней оценкой.
-    """
+    """Считает средние оценки L2-аттракторов для группы респондентов."""
     sums: dict[str, float] = {}
     counts: dict[str, int] = {}
 
@@ -214,36 +181,64 @@ def build_attractor_profile(
         if counts[l2_id] > 0
     }
 
-    # Топ-N по средней оценке
     sorted_items = sorted(averages.items(), key=lambda x: x[1], reverse=True)
     return dict(sorted_items[:top_n])
 
 
-def parse_markup_csv(csv_path: str) -> list[SituationData]:
-    """Парсит CSV разметки и возвращает ситуации с ID респондентов."""
-    with open(csv_path, 'r', encoding='utf-8') as f:
+def parse_markup_csv(
+    csv_path: str, registry: Registry
+) -> list[SituationData]:
+    """Парсит CSV разметки и сопоставляет ситуации с registry.
+
+    Падает с RegistryError, если в CSV есть название ситуации без алиаса
+    в registry — это требует сознательного решения, что мапить.
+    """
+    with open(csv_path, encoding='utf-8') as f:
         reader = csv.reader(f)
         row_situations = next(reader)
         row_strategies = next(reader)
 
         situations: list[SituationData] = []
-        current_name: str | None = None
+        unknown: dict[str, list[str]] = {}
+        current_csv_name: str | None = None
+        current_sit: SituationData | None = None
 
         for i in range(1, len(row_situations)):
-            sit_name = row_situations[i].strip()
+            csv_name = row_situations[i].strip()
             strat_name = row_strategies[i].strip() if i < len(row_strategies) else ''
 
-            if not strat_name:
+            if not strat_name or not csv_name:
                 continue
 
-            if sit_name != current_name:
-                current_name = sit_name
-                situations.append(SituationData(name=sit_name))
+            if csv_name != current_csv_name:
+                current_csv_name = csv_name
+                sit_id = registry.find_by_alias(csv_name)
+                if sit_id is None:
+                    unknown.setdefault(csv_name, [])
+                    current_sit = None
+                else:
+                    current_sit = SituationData(name=csv_name, sit_id=sit_id)
+                    situations.append(current_sit)
 
-            situations[-1].strategies.append(
-                StrategyData(name=strat_name, col_index=i)
+            if current_sit is not None:
+                current_sit.strategies.append(
+                    StrategyData(name=strat_name, col_index=i)
+                )
+            elif current_csv_name is not None:
+                unknown[current_csv_name].append(strat_name)
+
+        if unknown:
+            details = '\n'.join(
+                f'  • «{name}» ({len(strats)} стратегий)'
+                for name, strats in unknown.items()
+            )
+            raise RegistryError(
+                'В CSV есть ситуации без csvAlias в registry — '
+                'добавьте записи в public/data/situations_registry.json '
+                'или допишите алиас:\n' + details
             )
 
+        # Считываем ответы
         for row in reader:
             resp_id = row[0].strip() if row else ''
             if not resp_id:
@@ -254,26 +249,25 @@ def parse_markup_csv(csv_path: str) -> list[SituationData]:
                     s.col_index < len(row) and row[s.col_index] in ('0', '1')
                     for s in sit.strategies
                 )
-                if has_any:
-                    sit.respondent_ids.append(resp_id)
-                    for s in sit.strategies:
-                        val = row[s.col_index] if s.col_index < len(row) else ''
-                        if val in ('0', '1'):
-                            s.total += 1
-                            if val == '1':
-                                s.count += 1
-                                s.respondent_ids.append(resp_id)
+                if not has_any:
+                    continue
+                sit.respondent_ids.append(resp_id)
+                for s in sit.strategies:
+                    val = row[s.col_index] if s.col_index < len(row) else ''
+                    if val in ('0', '1'):
+                        s.total += 1
+                        if val == '1':
+                            s.count += 1
+                            s.respondent_ids.append(resp_id)
 
     return situations
 
 
 def resolve_id(resp_id: str) -> str:
-    """Применяет fuzzy-маппинг к ID респондента."""
     return FUZZY_ID_MAP.get(resp_id, resp_id)
 
 
 def calc_age_group(age: int) -> str | None:
-    """Определяет возрастную группу."""
     for label, lo, hi in AGE_GROUPS:
         if lo <= age <= hi:
             return label
@@ -284,7 +278,6 @@ def build_strategy_demographics(
     resp_ids: list[str],
     demo_map: dict[str, Demographics],
 ) -> dict | None:
-    """Считает агрегированную демографию для списка респондентов."""
     ages: list[int] = []
     genders: dict[str, int] = {}
     age_groups: dict[str, int] = {label: 0 for label, _, _ in AGE_GROUPS}
@@ -329,7 +322,6 @@ def build_situation_demographics(
     resp_ids: list[str],
     demo_map: dict[str, Demographics],
 ) -> dict | None:
-    """Считает демографию на уровне ситуации."""
     ages: list[int] = []
     genders: dict[str, int] = {}
     matched = 0
@@ -380,38 +372,25 @@ def build_respondents(
     demo_map: dict[str, Demographics],
     attr_map: dict[str, dict[str, int]] | None,
 ) -> list[dict]:
-    """Строит массив респондентов с демографией, аттракторами и стратегиями."""
-    # Собираем маппинг ситуация → markup_id + порядок стратегий
-    sit_meta: dict[str, tuple[str, list[str]]] = {}  # sit.name → (markup_id, [strat_names])
-    counter = 0
-    for sit in situations:
-        mapping = SITUATION_MAP.get(sit.name, {})
-        if not mapping.get('linked_id'):
-            continue
-        counter += 1
-        markup_id = f'mk{counter:02d}'
-        strat_names = [s.name for s in sit.strategies]
-        sit_meta[sit.name] = (markup_id, strat_names)
+    """Строит массив респондентов с демографией, аттракторами и стратегиями.
 
-    # Собираем все уникальные ID респондентов
+    Респондент попадает в выборку ситуации только если у него хоть одна
+    непустая клетка по этой ситуации (см. parse_markup_csv).
+    """
     all_resp_ids: set[str] = set()
     for sit in situations:
-        if sit.name in sit_meta:
-            all_resp_ids.update(sit.respondent_ids)
+        all_resp_ids.update(sit.respondent_ids)
 
-    # Для каждого респондента — собираем его ответы по всем ситуациям
     resp_strategies: dict[str, dict[str, list[int]]] = {}
     for sit in situations:
-        if sit.name not in sit_meta:
-            continue
-        markup_id, _ = sit_meta[sit.name]
         for resp_id in sit.respondent_ids:
             if resp_id not in resp_strategies:
                 resp_strategies[resp_id] = {}
-            answers: list[int] = []
-            for s in sit.strategies:
-                answers.append(1 if resp_id in s.respondent_ids else 0)
-            resp_strategies[resp_id][markup_id] = answers
+            answers: list[int] = [
+                1 if resp_id in s.respondent_ids else 0
+                for s in sit.strategies
+            ]
+            resp_strategies[resp_id][sit.sit_id] = answers
 
     result: list[dict] = []
     seq = 0
@@ -427,7 +406,6 @@ def build_respondents(
 
         marital = MARITAL_MAP.get(demo.marital_status, '')
 
-        # Аттракторы (sparse, только ненулевые)
         attractors: dict[str, int] = {}
         if attr_map:
             scores = attr_map.get(resolved, {})
@@ -440,7 +418,6 @@ def build_respondents(
         if not strats:
             continue
 
-        # Анонимизация: возраст → возрастная группа
         age_group = ''
         if demo.age is not None:
             age_group = calc_age_group(demo.age) or ''
@@ -461,21 +438,20 @@ def build_respondents(
 
 def build_json(
     situations: list[SituationData],
+    registry: Registry,
     demo_map: dict[str, Demographics],
     attr_map: dict[str, dict[str, int]] | None = None,
 ) -> dict:
     """Конвертирует данные в JSON-формат с ситуациями и респондентами."""
     sit_list: list[dict] = []
+    by_id: dict[str, SituationData] = {sit.sit_id: sit for sit in situations}
 
-    counter = 0
-    for sit in situations:
-        mapping = SITUATION_MAP.get(sit.name, {})
-        if not mapping.get('linked_id'):
+    # Идём в порядке registry, чтобы сериализация была стабильной
+    for entry in registry.situations_with_aliases:
+        sit = by_id.get(entry.id)
+        if sit is None:
             continue
-        counter += 1
-        markup_id = f'mk{counter:02d}'
 
-        # Список имён стратегий (порядок = индексы в respondent.strategies)
         strategy_names = [s.name for s in sit.strategies]
 
         strategies_json = []
@@ -493,9 +469,7 @@ def build_json(
                 strat_entry['demographics'] = strat_demo
 
             if attr_map:
-                attr_profile = build_attractor_profile(
-                    s.respondent_ids, attr_map
-                )
+                attr_profile = build_attractor_profile(s.respondent_ids, attr_map)
                 if attr_profile:
                     strat_entry['attractorProfile'] = attr_profile
 
@@ -503,10 +477,11 @@ def build_json(
 
         strategies_json.sort(key=lambda x: x['frequency'], reverse=True)
 
-        entry: dict = {
-            'id': markup_id,
-            'title': sit.name,
-            'attractorL2': mapping.get('attractor_l2', ''),
+        out: dict = {
+            'id': entry.id,
+            'title': entry.title,
+            'attractorL2': entry.attractor_l2,
+            'category': entry.category,
             'strategyNames': strategy_names,
             'strategies': strategies_json,
             'totalRespondents': max(
@@ -514,20 +489,16 @@ def build_json(
             ),
         }
 
-        linked = mapping.get('linked_id', '')
-        if linked:
-            entry['linkedSituationId'] = linked
-
         sit_demo = build_situation_demographics(sit.respondent_ids, demo_map)
         if sit_demo:
-            entry['demographics'] = sit_demo
+            out['demographics'] = sit_demo
 
         if attr_map:
             sit_attr = build_attractor_profile(sit.respondent_ids, attr_map)
             if sit_attr:
-                entry['attractorProfile'] = sit_attr
+                out['attractorProfile'] = sit_attr
 
-        sit_list.append(entry)
+        sit_list.append(out)
 
     respondents = build_respondents(situations, demo_map, attr_map)
 
@@ -540,6 +511,7 @@ def build_json(
 def main() -> None:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_dir = os.path.dirname(script_dir)
+    sys.path.insert(0, script_dir)
 
     markup_path = os.path.join(project_dir, '.data', 'markup_dataset.csv')
     demo_path = os.path.join(project_dir, '.data', 'demographics.csv')
@@ -550,7 +522,16 @@ def main() -> None:
 
     os.makedirs(output_dir, exist_ok=True)
 
-    # Загрузка демографии
+    try:
+        registry = load_registry(project_dir)
+    except RegistryError as e:
+        print(f'❌ {e}', file=sys.stderr)
+        sys.exit(1)
+    print(
+        f'✓ Registry: {len(registry.situations)} ситуаций, '
+        f'{len(registry.situations_with_aliases)} с алиасами'
+    )
+
     demo_map: dict[str, Demographics] = {}
     if os.path.exists(demo_path):
         demo_map = load_demographics(demo_path)
@@ -558,7 +539,6 @@ def main() -> None:
     else:
         print(f'⚠ Файл демографии не найден: {demo_path}')
 
-    # Загрузка аттракторов
     attr_map: dict[str, dict[str, int]] | None = None
     if os.path.exists(attr_path) and os.path.exists(attractors_json):
         attr_map = load_attractor_scores(attr_path, attractors_json)
@@ -566,20 +546,26 @@ def main() -> None:
     else:
         print(f'⚠ Аттракторы не найдены: {attr_path}')
 
-    # Парсинг разметки
-    situations = parse_markup_csv(markup_path)
+    try:
+        situations = parse_markup_csv(markup_path, registry)
+    except RegistryError as e:
+        print(f'❌ {e}', file=sys.stderr)
+        sys.exit(1)
 
-    # Статистика маппинга
     if demo_map:
         all_markup_ids: set[str] = set()
         for sit in situations:
             all_markup_ids.update(sit.respondent_ids)
-        matched = sum(1 for rid in all_markup_ids if resolve_id(rid) in demo_map)
-        print(f'  Маппинг: {matched}/{len(all_markup_ids)} респондентов '
-              f'({round(matched / len(all_markup_ids) * 100, 1)}%)')
+        if all_markup_ids:
+            matched = sum(
+                1 for rid in all_markup_ids if resolve_id(rid) in demo_map
+            )
+            print(
+                f'  Маппинг: {matched}/{len(all_markup_ids)} респондентов '
+                f'({round(matched / len(all_markup_ids) * 100, 1)}%)'
+            )
 
-    # Генерация JSON
-    json_data = build_json(situations, demo_map, attr_map)
+    json_data = build_json(situations, registry, demo_map, attr_map)
 
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(json_data, f, ensure_ascii=False, indent=2)
@@ -589,28 +575,17 @@ def main() -> None:
     print(f'\n✓ Записано в {output_path}')
     print(f'  Ситуаций: {len(sit_list)}, Респондентов: {resp_count}')
     for entry in sit_list:
-        linked = entry.get('linkedSituationId', '—')
         demo = entry.get('demographics', {})
         avg_age = demo.get('avgAge', '—')
         gender = demo.get('genderSplit', {})
-        gender_str = ', '.join(f'{g}:{round(p*100)}%' for g, p in gender.items())
+        gender_str = ', '.join(
+            f'{g}:{round(p * 100)}%' for g, p in gender.items()
+        )
         print(
             f'  {entry["id"]}: {entry["title"][:45]:<45s} '
-            f'→ {linked}  n={entry["totalRespondents"]}  '
+            f'n={entry["totalRespondents"]}  '
             f'age={avg_age}  {gender_str}'
         )
-        # Аттракторный профиль ситуации (top-5)
-        sit_attr = entry.get('attractorProfile', {})
-        if sit_attr:
-            top5 = list(sit_attr.items())[:5]
-            attr_str = ', '.join(f'{k}={v}' for k, v in top5)
-            print(f'    top attractors: {attr_str}')
-        for s in entry['strategies']:
-            pct = round(s['frequency'] * 100, 1)
-            s_demo = s.get('demographics', {})
-            s_age = s_demo.get('avgAge', '')
-            print(f'    {pct:5.1f}%  {s["name"]}'
-                  + (f'  (avg_age={s_age})' if s_age else ''))
 
 
 if __name__ == '__main__':

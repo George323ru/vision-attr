@@ -59,12 +59,12 @@
 
 <script setup lang="ts">
 import { computed, toRef } from 'vue'
-import { SITUATIONS } from '@/data/situations'
 import { useCorrelationStore } from '@/composables/useCorrelationStore'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 import { useAttractorDisplay } from '@/composables/useAttractorDisplay'
 import { useStore } from '@/composables/state/useStore'
 import { useMarkupStore } from '@/composables/useMarkupStore'
+import { useSituationStore } from '@/composables/useSituationStore'
 import SituationCard from '@/components/SituationCard.vue'
 import PanelBreadcrumb from '@/components/PanelBreadcrumb.vue'
 import type { BreadcrumbItem } from '@/components/PanelBreadcrumb.vue'
@@ -74,6 +74,7 @@ const props = defineProps<{ nodeId: string }>()
 const { attractors, domains, getAttractor } = useAttractorStore()
 const { canGoBack, dispatch } = useStore()
 const { getMarkupForSituation } = useMarkupStore()
+const { getSituationsByAttractor } = useSituationStore()
 const { getCorrEdgesForNode } = useCorrelationStore()
 
 function hasMarkup(sitId: string): boolean {
@@ -103,9 +104,7 @@ function selectChild(child: { id: string; level: number }) {
   dispatch({ type: 'CLICK_NODE', nodeId: child.id, level: child.level as 1 | 2 | 3 })
 }
 
-const situations = computed(() =>
-  SITUATIONS.filter(s => s.attractorL2 === props.nodeId)
-)
+const situations = computed(() => getSituationsByAttractor(props.nodeId))
 
 const childList = computed(() =>
   attractors.value

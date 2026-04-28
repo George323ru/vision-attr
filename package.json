@@ -6,7 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "data:validate": "python3 scripts/lib/registry.py",
+    "data:markup": "python3 scripts/parse_markup_csv.py",
+    "data:attractors": "python3 scripts/parse_csv.py",
+    "data:correlations": "python3 scripts/parse_correlations.py",
+    "data:rebuild": "npm run data:validate && npm run data:markup"
   },
   "dependencies": {
     "d3": "^7.9.0",
