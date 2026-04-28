@@ -1,129 +1,164 @@
 #!/usr/bin/env python3
-"""
-Парсер CSV → src/data/correlations.ts
-Читает .data/corr_attractor_map.csv и генерирует TypeScript-файл с корреляциями.
+"""Парсит CSV корреляций → public/data/correlations.json.
 
-Маппинг названий L2 → id берётся из public/data/attractors.json.
-Отрицательные значения → conflicting, положительные → reinforcing.
+Формат CSV: колонки `category,variable,r,p`.
+Источник по умолчанию: ~/Downloads/correlations_p005.csv (можно передать аргументом).
+
+Логика:
+  1. Маппит названия CSV на label L2-аттракторов из data/attractors.json.
+     Нормализация: ё→е, '/' → ',', нижний регистр, схлопывание пробелов.
+  2. Игнорирует не-L2 переменные (Возраст, Дети_Количество, Сиблинги_Количество).
+  3. Дедупицирует симметричные пары: для каждой неупорядоченной пары {A,B}
+     берётся первая встретившаяся строка (полные дубликаты тоже свёртываются).
+  4. strength = |r| / max(|r|) — нормировка на максимум по выборке (шкала 0..1).
+  5. type: r ≥ 0 → 'reinforcing', r < 0 → 'conflicting'.
+
+Формат вывода:
+  { "maxAbsR": 0.51,
+    "correlations": [
+      { "id": "c0001", "from": "l2_xxx", "to": "l2_yyy",
+        "type": "reinforcing", "r": 0.49, "strength": 0.96 }, ... ] }
 """
+from __future__ import annotations
 
 import csv
 import json
-import os
+import sys
+from pathlib import Path
 
-def main():
-    script_dir  = os.path.dirname(os.path.abspath(__file__))
-    project_dir = os.path.dirname(script_dir)
-    csv_path    = os.path.join(project_dir, '.data', 'corr_attractor_map.csv')
-    json_path   = os.path.join(project_dir, 'public', 'data', 'attractors.json')
-    output_path = os.path.join(project_dir, 'src', 'data', 'correlations.ts')
+ROOT = Path(__file__).resolve().parent.parent
+ATTRACTORS_JSON = ROOT / "data" / "attractors.json"
+OUTPUT_JSON = ROOT / "public" / "data" / "correlations.json"
+DEFAULT_CSV = Path.home() / "Downloads" / "correlations_p005.csv"
 
-    # Загрузить L2-аттракторы и построить маппинг label → id
-    with open(json_path, 'r', encoding='utf-8') as f:
+# Имена переменных, которые НЕ являются L2-аттракторами.
+NON_L2_VARIABLES = {
+    "Возраст",
+    "Дети_Количество",
+    "Дети\\_Количество",
+    "Сиблинги_Количество",
+    "Сиблинги\\_Количество",
+}
+
+
+def normalize(name: str) -> str:
+    """Нормализация для сравнения: ё→е, '/'→',', пробелы вокруг ',' убираем, lowercase."""
+    s = name.strip()
+    s = s.replace("ё", "е").replace("Ё", "Е")
+    s = s.replace("/", ",")
+    s = " ".join(s.split())
+    # схлопываем пробелы вокруг запятой: "X, Y" и "X,Y" → один и тот же ключ
+    s = ",".join(part.strip() for part in s.split(","))
+    return s.lower()
+
+
+def load_l2_index() -> dict[str, str]:
+    """{normalized_label: l2_id} по data/attractors.json."""
+    with ATTRACTORS_JSON.open(encoding="utf-8") as f:
         data = json.load(f)
+    index: dict[str, str] = {}
+    for a in data.get("attractors", []):
+        if a.get("level") != 2:
+            continue
+        label = a.get("label", "")
+        index[normalize(label)] = a["id"]
+    return index
 
-    label_to_id = {}
-    for a in data['attractors']:
-        if a.get('level') == 2:
-            key = a['label'].lower().replace('ё', 'е')
-            label_to_id[key] = a['id']
 
-    # Прочитать CSV и сгенерировать корреляции
+def main() -> int:
+    csv_path = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_CSV
+    if not csv_path.exists():
+        print(f"CSV не найден: {csv_path}", file=sys.stderr)
+        return 1
+
+    l2_index = load_l2_index()
+    print(f"L2 attractors: {len(l2_index)}")
+
+    with csv_path.open(encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        header = next(reader)
+        if [c.strip().lower() for c in header[:4]] != ["category", "variable", "r", "p"]:
+            print(f"Неожиданный заголовок CSV: {header}", file=sys.stderr)
+            return 1
+        rows = list(reader)
+
+    print(f"CSV строк: {len(rows)}")
+
+    skipped_non_l2 = 0
+    skipped_unknown = 0
+    parsed: list[tuple[str, str, float, float]] = []
+    unknown_names: set[str] = set()
+
+    for row in rows:
+        if len(row) < 4:
+            continue
+        cat, var, r_str, p_str = row[0], row[1], row[2], row[3]
+        if cat in NON_L2_VARIABLES or var in NON_L2_VARIABLES:
+            skipped_non_l2 += 1
+            continue
+        from_id = l2_index.get(normalize(cat))
+        to_id = l2_index.get(normalize(var))
+        if not from_id:
+            unknown_names.add(cat)
+        if not to_id:
+            unknown_names.add(var)
+        if not from_id or not to_id:
+            skipped_unknown += 1
+            continue
+        if from_id == to_id:
+            continue
+        try:
+            r = float(r_str)
+            p = float(p_str)
+        except ValueError:
+            continue
+        parsed.append((from_id, to_id, r, p))
+
+    print(f"  не-L2 строк пропущено: {skipped_non_l2}")
+    print(f"  не сопоставлено имён: {skipped_unknown}")
+    if unknown_names:
+        print(f"  unknown labels: {sorted(unknown_names)}")
+
+    # Дедуп симметричных пар по неориентированному ключу.
+    seen: dict[frozenset[str], tuple[str, str, float, float]] = {}
+    for from_id, to_id, r, p in parsed:
+        key = frozenset({from_id, to_id})
+        if key in seen:
+            continue
+        seen[key] = (from_id, to_id, r, p)
+
+    print(f"Уникальных неориентированных пар: {len(seen)}")
+
+    max_abs_r = max((abs(rec[2]) for rec in seen.values()), default=1.0)
+    print(f"max|r| = {max_abs_r}")
+
     correlations = []
-    skipped = []
-
-    with open(csv_path, 'r', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            label1 = row['Величина 1'].strip()
-            label2 = row['Величина 2'].strip()
-            value  = float(row['Значение корреляции'])
-
-            key1 = label1.lower().replace('ё', 'е')
-            key2 = label2.lower().replace('ё', 'е')
-
-            id1 = label_to_id.get(key1)
-            id2 = label_to_id.get(key2)
-
-            if not id1:
-                skipped.append(f'  L2 не найден: {label1!r}')
-                continue
-            if not id2:
-                skipped.append(f'  L2 не найден: {label2!r}')
-                continue
-
-            corr_type = 'conflicting' if value < 0 else 'reinforcing'
-            strength = round(abs(value), 2)
-
-            correlations.append({
-                'from': id1,
-                'to': id2,
-                'baseType': corr_type,
-                'strength': strength,
-                'type': corr_type,
-            })
-
-    # Проверка дубликатов пар
-    seen_pairs = set()
-    duplicates = []
-    for c in correlations:
-        pair = tuple(sorted([c['from'], c['to']]))
-        if pair in seen_pairs:
-            duplicates.append(pair)
-        seen_pairs.add(pair)
-
-    # Генерация TypeScript
-    lines = ["import type { Correlation } from '@/types/correlation'", '', 'export const CORRELATIONS: Correlation[] = [']
-
-    reinforcing = [c for c in correlations if c['baseType'] == 'reinforcing']
-    conflicting = [c for c in correlations if c['baseType'] == 'conflicting']
-
-    idx = 0
-    lines.append('  // ── УСИЛЕНИЕ ──────────────────────────────────────────────')
-    for c in reinforcing:
-        idx += 1
-        cid = f'c{idx:02d}' if idx < 100 else f'c{idx}'
-        lines.append(
-            f"  {{ id: '{cid}', from: '{c['from']}', to: '{c['to']}', "
-            f"baseType: 'reinforcing', "
-            f"ageRanges: [{{ min: 18, max: 75, strength: {c['strength']}, type: 'reinforcing' }}] }},"
+    for i, (from_id, to_id, r, p) in enumerate(sorted(seen.values()), start=1):
+        ctype = "reinforcing" if r >= 0 else "conflicting"
+        strength = abs(r) / max_abs_r if max_abs_r > 0 else 0.0
+        correlations.append(
+            {
+                "id": f"c{i:04d}",
+                "from": from_id,
+                "to": to_id,
+                "type": ctype,
+                "r": round(r, 4),
+                "strength": round(strength, 4),
+            }
         )
 
-    lines.append('  // ── КОНФЛИКТ ──────────────────────────────────────────────')
-    for c in conflicting:
-        idx += 1
-        cid = f'c{idx:02d}' if idx < 100 else f'c{idx}'
-        lines.append(
-            f"  {{ id: '{cid}', from: '{c['from']}', to: '{c['to']}', "
-            f"baseType: 'conflicting', "
-            f"ageRanges: [{{ min: 18, max: 75, strength: {c['strength']}, type: 'conflicting' }}] }},"
+    OUTPUT_JSON.parent.mkdir(parents=True, exist_ok=True)
+    with OUTPUT_JSON.open("w", encoding="utf-8") as f:
+        json.dump(
+            {"maxAbsR": max_abs_r, "correlations": correlations},
+            f,
+            ensure_ascii=False,
+            indent=2,
         )
 
-    lines.append(']')
-    lines.append('')
-
-    with open(output_path, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(lines))
-
-    # Отчёт
-    print(f'\n✓ Записано в {output_path}')
-    print(f'  Усиление (reinforcing): {len(reinforcing)}')
-    print(f'  Конфликт (conflicting): {len(conflicting)}')
-    print(f'  Всего корреляций:       {idx}')
-
-    if skipped:
-        print(f'\n⚠ Пропущено ({len(skipped)}):')
-        for s in skipped:
-            print(s)
-
-    if duplicates:
-        print(f'\n⚠ Дубликаты пар ({len(duplicates)}):')
-        for d in duplicates:
-            print(f'  {d[0]} ↔ {d[1]}')
-
-    assert idx == len(correlations), f'Несовпадение: {idx} != {len(correlations)}'
-    assert len(skipped) == 0, f'Есть пропущенные строки: {skipped}'
+    print(f"Записано: {OUTPUT_JSON.relative_to(ROOT)} ({len(correlations)} рёбер)")
+    return 0
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    sys.exit(main())

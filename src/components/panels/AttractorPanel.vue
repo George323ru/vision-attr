@@ -60,8 +60,7 @@
 <script setup lang="ts">
 import { computed, toRef } from 'vue'
 import { SITUATIONS } from '@/data/situations'
-import { CORRELATIONS } from '@/data/correlations'
-import { getCorrelationAtAge } from '@/composables/useCorrelations'
+import { useCorrelationStore } from '@/composables/useCorrelationStore'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 import { useAttractorDisplay } from '@/composables/useAttractorDisplay'
 import { useStore } from '@/composables/state/useStore'
@@ -73,8 +72,9 @@ import type { BreadcrumbItem } from '@/components/PanelBreadcrumb.vue'
 const props = defineProps<{ nodeId: string }>()
 
 const { attractors, domains, getAttractor } = useAttractorStore()
-const { midAge, canGoBack, dispatch } = useStore()
+const { canGoBack, dispatch } = useStore()
 const { getMarkupForSituation } = useMarkupStore()
+const { getCorrEdgesForNode } = useCorrelationStore()
 
 function hasMarkup(sitId: string): boolean {
   return getMarkupForSituation(sitId) !== null
@@ -127,18 +127,15 @@ const relatedCorrelations = computed(() => {
   if (attr.value?.level !== 2) return []
   const id = props.nodeId
   const result: { id: string; otherId: string; otherLabel: string; type: string; strength: number }[] = []
-  for (const corr of CORRELATIONS) {
-    if (corr.from !== id && corr.to !== id) continue
-    const atAge = getCorrelationAtAge(corr, midAge.value)
-    if (!atAge || atAge.strength <= 0) continue
+  for (const corr of getCorrEdgesForNode(id)) {
     const otherId = corr.from === id ? corr.to : corr.from
     const other = getAttractor(otherId)
     result.push({
       id: corr.id,
       otherId,
       otherLabel: other?.label ?? otherId,
-      type: atAge.type,
-      strength: atAge.strength,
+      type: corr.type,
+      strength: corr.strength,
     })
   }
   return result.sort((a, b) => b.strength - a.strength).slice(0, 8)

@@ -153,10 +153,10 @@ import { useD3Zoom } from '@/composables/useD3Zoom'
 import { useGraphEffects } from '@/composables/useGraphEffects'
 import { domainColor, domainBorder, domainGradientCenter, domainFontColor } from '@/utils/colors'
 import { wrapLabel } from '@/utils/nodeStyles'
-import { CORRELATIONS } from '@/data/correlations'
-import { getCorrelationAtAge } from '@/composables/useCorrelations'
+import { useCorrelationStore } from '@/composables/useCorrelationStore'
 
-const { dispatch, viewState, focusedNodeId, correlationAge, activeAttractorIds, setEffectHandler, clearEffectHandler } = useStore()
+const { dispatch, viewState, focusedNodeId, activeAttractorIds, setEffectHandler, clearEffectHandler } = useStore()
+const { correlations } = useCorrelationStore()
 const { attractors, domains } = useAttractorStore()
 
 const svgRef = ref<SVGSVGElement | null>(null)
@@ -274,13 +274,10 @@ const corrTargetIds = computed<Set<string>>(() => {
   if (vs.focus.type !== 'correlations') return new Set()
 
   const nodeId = vs.focus.nodeId
-  const age = correlationAge.value ?? 42
   const ids = new Set<string>()
 
-  for (const corr of CORRELATIONS) {
+  for (const corr of correlations.value) {
     if (corr.from !== nodeId && corr.to !== nodeId) continue
-    const atAge = getCorrelationAtAge(corr, age)
-    if (!atAge) continue
     ids.add(corr.from === nodeId ? corr.to : corr.from)
   }
 
@@ -355,16 +352,11 @@ const visibleCorrEdges = computed<CorrEdge[]>(() => {
   if (vs.focus.type !== 'correlations') return []
 
   const nodeId = vs.focus.nodeId
-  const age = correlationAge.value ?? 42
   const positions = positionsMap.value
-  const visibleSet = new Set(visibleNodes.value.map(n => n.id))
   const edges: CorrEdge[] = []
 
-  for (const corr of CORRELATIONS) {
+  for (const corr of correlations.value) {
     if (corr.from !== nodeId && corr.to !== nodeId) continue
-
-    const atAge = getCorrelationAtAge(corr, age)
-    if (!atAge) continue
 
     const otherId = corr.from === nodeId ? corr.to : corr.from
     // Рёбро видимо даже если другой узел скрыт — просто до его позиции
@@ -385,8 +377,8 @@ const visibleCorrEdges = computed<CorrEdge[]>(() => {
     edges.push({
       id: `corr-${corr.id}`,
       path: `M ${fromPos.x},${fromPos.y} Q ${cx},${cy} ${toPos.x},${toPos.y}`,
-      type: atAge.type as 'reinforcing' | 'conflicting',
-      strength: atAge.strength,
+      type: corr.type,
+      strength: corr.strength,
     })
   }
 

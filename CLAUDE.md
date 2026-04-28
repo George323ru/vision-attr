@@ -6,9 +6,10 @@
 npm run dev          # http://localhost:5173
 npm run build        # vue-tsc + vite → dist/
 npx vue-tsc --noEmit # type-check без сборки
-python3 scripts/parse_csv.py         # CSV → data/attractors.json
-python3 scripts/parse_markup_csv.py  # разметка + демография + аттракторы → public/data/markup.json
-python3 scripts/merge_all.py         # 3 CSV → .data/merged_respondents.csv (единая таблица)
+python3 scripts/parse_csv.py            # CSV → data/attractors.json
+python3 scripts/parse_markup_csv.py     # разметка + демография + аттракторы → public/data/markup.json
+python3 scripts/parse_correlations.py   # ~/Downloads/correlations_p005.csv → public/data/correlations.json
+python3 scripts/merge_all.py            # 3 CSV → .data/merged_respondents.csv (единая таблица)
 ```
 
 ## Что такое этот проект
@@ -219,10 +220,11 @@ docker build -t vision-attractor .
 ### Файлы на сетевом диске
 ```
 /app/data/
-├── attractors.json    ← data/attractors.json
-└── markup.json        ← public/data/markup.json
+├── attractors.json     ← data/attractors.json
+├── markup.json         ← public/data/markup.json
+└── correlations.json   ← public/data/correlations.json
 ```
-nginx: `/data/` → `/app/data/`. Приложение загружает оба через `fetch()`.
+nginx: `/data/` → `/app/data/`. Приложение загружает все три через `fetch()`.
 
 ## Working Style
 

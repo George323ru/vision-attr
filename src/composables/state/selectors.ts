@@ -19,14 +19,6 @@ export function deriveFocusedNodeId(vs: ViewState): string | null {
   }
 }
 
-export function deriveCorrelationAge(state: AppState): number | null {
-  const vs = state.viewState
-  if (vs.view === 'graph' && vs.focus.type === 'correlations') {
-    return deriveMidAge(state.profile)
-  }
-  return null
-}
-
 export function deriveStrategyIdx(vs: ViewState): number | null {
   if (vs.view === 'scenarios' && vs.focus.type === 'detail') {
     return vs.focus.strategyIdx
@@ -39,10 +31,6 @@ export function deriveSituationInfo(vs: ViewState): { sitId: string; attrId: str
     return { sitId: vs.focus.sitId, attrId: vs.focus.attrId }
   }
   return null
-}
-
-export function deriveMidAge(profile: ProfileState): number {
-  return Math.round((profile.demographics.ageMin + profile.demographics.ageMax) / 2)
 }
 
 export function deriveActiveAttractorIds(profile: ProfileState): Set<string> {

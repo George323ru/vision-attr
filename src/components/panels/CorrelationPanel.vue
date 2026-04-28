@@ -20,29 +20,8 @@
           <button class="cp-reset-btn" @click="dispatch({ type: 'CLICK_EMPTY' })" title="Снять выделение" aria-label="Снять выделение">×</button>
         </div>
       </div>
-      <div class="cp-age-section">
-        <div class="cp-age-label">
-          Возраст: <b>{{ ageMin }}–{{ ageMax }}</b>
-          <CoachMark
-            id="ctx-correlation-age"
-            text="Сдвигайте ползунок — сила связей меняется с возрастом. Некоторые корреляции активны только в определённых периодах жизни."
-            position="bottom"
-          />
-        </div>
-        <DualRangeSlider
-          :min="18"
-          :max="75"
-          :model-min="ageMin"
-          :model-max="ageMax"
-          :ticks="[18, 25, 35, 45, 55, 65, 75]"
-          aria-label-min="Минимальный возраст"
-          aria-label-max="Максимальный возраст"
-          @update:model-min="(v: number) => dispatch({ type: 'SET_AGE_RANGE', min: v, max: ageMax })"
-          @update:model-max="(v: number) => dispatch({ type: 'SET_AGE_RANGE', min: ageMin, max: v })"
-        />
-      </div>
       <div v-if="correlationList.length === 0" class="cp-no-corr">
-        Нет корреляций для возраста {{ ageMin }}–{{ ageMax }}
+        Нет корреляций для этого аттрактора
       </div>
       <div v-else class="cp-list">
         <div v-for="item in correlationList" :key="item.id" class="cp-item">
@@ -66,18 +45,12 @@
 import { computed } from 'vue'
 import { useStore } from '@/composables/state/useStore'
 import { useAttractorStore } from '@/composables/useAttractorStore'
-import { getCorrEdgesForNode } from '@/composables/useCorrelations'
-import { CORRELATIONS } from '@/data/correlations'
-import DualRangeSlider from '@/components/DualRangeSlider.vue'
-import CoachMark from '@/components/CoachMark.vue'
+import { useCorrelationStore } from '@/composables/useCorrelationStore'
 import { flatLabel } from '@/composables/useAttractorDisplay'
 
-const { profile, focusedNodeId, correlationAge, dispatch } = useStore()
+const { focusedNodeId, dispatch } = useStore()
 const { getAttractor } = useAttractorStore()
-
-const ageMin = computed(() => profile.value.demographics.ageMin)
-const ageMax = computed(() => profile.value.demographics.ageMax)
-const corrAge = computed((): number => correlationAge.value ?? 42)
+const { getCorrEdgesForNode } = useCorrelationStore()
 
 const focusedName = computed(() => {
   if (!focusedNodeId.value) return ''
@@ -94,22 +67,20 @@ interface CorrItem {
 }
 
 const correlationList = computed((): CorrItem[] => {
-  if (!focusedNodeId.value) return []
-  return getCorrEdgesForNode(focusedNodeId.value, corrAge.value)
-    .map(ce => {
-      const corr = CORRELATIONS.find(c => c.id === ce.corrId)
-      if (!corr) return null
-      const otherId = corr.from === focusedNodeId.value ? corr.to : corr.from
+  const id = focusedNodeId.value
+  if (!id) return []
+  return getCorrEdgesForNode(id)
+    .map((corr): CorrItem => {
+      const otherId = corr.from === id ? corr.to : corr.from
       const otherAttr = getAttractor(otherId)
       return {
-        id: ce.corrId,
+        id: corr.id,
         otherId,
         otherName: otherAttr?.label ? flatLabel(otherAttr.label) : otherId,
-        type: ce.type as 'reinforcing' | 'conflicting',
-        strength: ce.strength,
+        type: corr.type,
+        strength: corr.strength,
       }
     })
-    .filter((item): item is CorrItem => item !== null)
     .sort((a, b) => b.strength - a.strength)
 })
 
@@ -198,26 +169,6 @@ function barWidth(strength: number): string {
   color: var(--text-muted);
   white-space: nowrap;
   flex-shrink: 0;
-}
-
-/* Слайдер возраста */
-.cp-age-section {
-  padding: 8px 0 12px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 4px;
-}
-.cp-age-label {
-  font-size: var(--fs-xs);
-  color: var(--text-muted);
-  margin-bottom: 6px;
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.cp-age-label b {
-  color: var(--text);
-  font-weight: 600;
 }
 
 /* Пустой список корреляций */

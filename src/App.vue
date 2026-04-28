@@ -23,18 +23,20 @@ import WelcomeModal from '@/components/WelcomeModal.vue'
 import OnboardingTour from '@/components/OnboardingTour.vue'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 import { useMarkupStore } from '@/composables/useMarkupStore'
+import { useCorrelationStore } from '@/composables/useCorrelationStore'
 import { useStore } from '@/composables/state/useStore'
 import { useCoachMarks } from '@/composables/useCoachMarks'
 
 const { loadData } = useAttractorStore()
 const { loadMarkupData } = useMarkupStore()
+const { loadCorrelations } = useCorrelationStore()
 const { currentView, dispatch } = useStore()
 const { markWelcomeSeen, startTour, isTourDone } = useCoachMarks()
 
 const loading = ref(true)
 
 onMounted(async () => {
-  await Promise.all([loadData(), loadMarkupData()])
+  await Promise.all([loadData(), loadMarkupData(), loadCorrelations()])
   loading.value = false
 })
 

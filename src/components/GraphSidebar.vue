@@ -1,13 +1,5 @@
 <template>
   <aside class="graph-sidebar">
-    <!-- Демография + Аттракторы -->
-    <CollapsibleSection title="Демография" :initial-collapsed="true">
-      <DemographicsPanel />
-    </CollapsibleSection>
-    <CollapsibleSection title="Ваши аттракторы" :initial-collapsed="true">
-      <AttractorPicker />
-    </CollapsibleSection>
-
     <!-- Контент зависит от panelRoute -->
     <div class="sidebar-panel">
       <Transition name="slide-fade" mode="out-in">
@@ -46,9 +38,6 @@
 
 <script setup lang="ts">
 import { useStore } from '@/composables/state/useStore'
-import CollapsibleSection from '@/components/CollapsibleSection.vue'
-import DemographicsPanel from '@/components/DemographicsPanel.vue'
-import AttractorPicker from '@/components/AttractorPicker.vue'
 import AttractorPanel from '@/components/panels/AttractorPanel.vue'
 import CorrelationPanel from '@/components/panels/CorrelationPanel.vue'
 

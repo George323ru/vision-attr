@@ -51,7 +51,7 @@ export function reduce(state: AppState, action: Action): ReducerResult {
       if (action.view === state.viewState.view) return { state, effects: [] }
       const newView: ViewState = action.view === 'scenarios'
         ? { view: 'scenarios', focus: { type: 'grid' } }
-        : { view: 'graph', focus: { type: 'none' }, graphMode: 'explore' }
+        : { view: 'graph', focus: { type: 'none' }, graphMode: 'correlations' }
       return {
         state: {
           ...state,
@@ -237,7 +237,7 @@ export function reduce(state: AppState, action: Action): ReducerResult {
           viewState: {
             view: 'graph',
             focus: { type: 'node', nodeId: action.nodeId, level: action.level },
-            graphMode: 'explore',
+            graphMode: 'correlations',
           },
           navHistory: pushNav(state.navHistory, state.viewState),
         },

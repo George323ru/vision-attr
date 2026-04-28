@@ -2,8 +2,8 @@ import { ref, computed } from 'vue'
 import type { AppState, Action, Effect } from './types'
 import { reduce } from './reducer'
 import {
-  derivePanelRoute, deriveFocusedNodeId, deriveCorrelationAge,
-  deriveStrategyIdx, deriveSituationInfo, deriveMidAge,
+  derivePanelRoute, deriveFocusedNodeId,
+  deriveStrategyIdx, deriveSituationInfo,
   deriveActiveAttractorIds, deriveCanGoBack,
 } from './selectors'
 
@@ -63,10 +63,8 @@ export function useStore() {
   const chrome = computed(() => state.value.chrome)
   const panelRoute = computed(() => derivePanelRoute(state.value.viewState))
   const focusedNodeId = computed(() => deriveFocusedNodeId(state.value.viewState))
-  const correlationAge = computed(() => deriveCorrelationAge(state.value))
   const strategyIdx = computed(() => deriveStrategyIdx(state.value.viewState))
   const situationInfo = computed(() => deriveSituationInfo(state.value.viewState))
-  const midAge = computed(() => deriveMidAge(state.value.profile))
   const activeAttractorIds = computed(() => deriveActiveAttractorIds(state.value.profile))
   const canGoBack = computed(() => deriveCanGoBack(state.value))
   const currentView = computed(() => state.value.viewState.view)
@@ -84,10 +82,8 @@ export function useStore() {
     // Derived
     panelRoute,
     focusedNodeId,
-    correlationAge,
     strategyIdx,
     situationInfo,
-    midAge,
     activeAttractorIds,
     canGoBack,
     currentView,
