@@ -156,6 +156,7 @@ export function reduce(state: AppState, action: Action): ReducerResult {
           },
           effects: [
             ...effects,
+            { type: 'ANIMATE_EXPAND', parentId: action.nodeId, childIds: [] },
             { type: 'SHOW_CORRELATIONS', nodeId: action.nodeId },
           ],
         }
