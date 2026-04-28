@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "data:validate": "python3 scripts/lib/registry.py",
     "data:markup": "python3 scripts/parse_markup_csv.py",
-    "data:attractors": "python3 scripts/parse_csv.py",
+    "data:attractors": "python3 scripts/parse_csv.py && python3 scripts/enrich_attractor_insights.py",
+    "data:insights": "python3 scripts/enrich_attractor_insights.py",
     "data:correlations": "python3 scripts/parse_correlations.py",
     "data:rebuild": "npm run data:validate && npm run data:markup"
   },
