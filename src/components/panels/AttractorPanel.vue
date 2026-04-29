@@ -2,6 +2,8 @@
   <div v-if="attr">
     <PanelBreadcrumb :crumbs="breadcrumbs" />
 
+    <div v-if="attr.description" class="rp-description">{{ attr.description }}</div>
+
     <!-- Инсайты — показываем всегда если есть -->
     <div v-if="attr.insights" class="insights-section">
       <div class="insights-label">Инсайт</div>
@@ -23,10 +25,8 @@
       />
     </template>
 
-    <!-- Если нет ситуаций — описание + корреляции + список детей -->
+    <!-- Если нет ситуаций — корреляции + список детей -->
     <template v-else>
-      <div v-if="attr.description" class="rp-description">{{ attr.description }}</div>
-
       <div v-if="relatedCorrelations.length > 0" class="corr-section">
         <div class="corr-section-title">Корреляции</div>
         <div
@@ -46,7 +46,7 @@
         <div v-for="child in childList" :key="child.id" class="l3-item clickable" @click="selectChild(child)">{{ child.label }}</div>
       </div>
 
-      <div v-if="!attr.description && relatedCorrelations.length === 0 && childList.length === 0" class="rp-empty">
+      <div v-if="!attr.description && !attr.insights && relatedCorrelations.length === 0 && childList.length === 0" class="rp-empty">
         Нет данных для этой категории
       </div>
     </template>

@@ -18,7 +18,7 @@ python3 scripts/merge_all.py  # 3 CSV → .data/merged_respondents.csv (ABT дл
 
 ## Что такое этот проект
 
-**Vision Attractor** (брендовое имя UI — **LOGOS v3.0**) — BI-дашборд для анализа жизненных аттракторов. Два экрана: **«Сценарии»** (карточки 33 жизненных ситуаций с прогнозами поведения) и **«Граф»** (интерактивная D3-визуализация иерархии аттракторов с корреляционным анализом). Демография и выбранные аттракторы — общий профиль, ортогональный обоим экранам.
+**Vision Attractor** (брендовое имя UI — **LOGOS v3.0**) — BI-дашборд для анализа жизненных аттракторов. Два экрана: **«Сценарии»** (карточки 41 жизненной ситуации с прогнозами поведения) и **«Граф»** (интерактивная D3-визуализация иерархии аттракторов с корреляционным анализом). Демография и выбранные аттракторы настраиваются в режиме «Сценарии».
 
 ## Архитектура — state machine
 
@@ -69,8 +69,8 @@ src/
 │   ├── AppHeader.vue              # LOGOS + pill Analyse/Graph + v3.0
 │   ├── D3Graph.vue                # SVG + zoom/pan + L1/L2/L3 + рёбра иерархии и корреляций
 │   ├── GraphLegend.vue            # левая нижняя легенда (L1/L2/L3 + цвета корреляций)
-│   ├── GraphSidebar.vue           # правая панель GraphView: Демография + Аттракторы + panel route
-│   ├── ProfileSidebar.vue         # левая панель ScenarioView: Демография + Аттракторы
+│   ├── GraphSidebar.vue           # правая панель GraphView: детали аттрактора / корреляции
+│   ├── ProfileSidebar.vue         # правая панель ScenarioView: Демография + Аттракторы
 │   ├── DemographicsPanel.vue      # DualRangeSlider + 3 select (пол/семья/дети)
 │   ├── DualRangeSlider.vue        # двойной слайдер с тиками и тултипом
 │   ├── SearchableCombobox.vue     # кастомный combobox с поиском и Teleport
@@ -125,7 +125,9 @@ scripts/
 
 ## Экран 1: ScenarioView («Сценарии», pill «Analyse»)
 
-- Левый сайдбар — `ProfileSidebar`: Демография + Ваши аттракторы (общие на оба экрана).
+- Правый сайдбар — `ProfileSidebar`: Демография + Аттракторы.
+- Фильтры профиля по умолчанию максимально широкие: возраст 18–75, пол «Любой», семейное положение «Любое», дети «Не важно», аттракторы не выбраны.
+- В фильтре «Дети» есть обобщающая опция «Есть дети» — любой респондент с количеством детей больше нуля.
 - Основная зона — `SituationGrid`: 41 карточка, сгруппированные по 6 категориям таксономии (экзистенциальные, реляционные, материальные, …).
 - Клик по карточке → action `OPEN_SITUATION` → state переходит в `focus: { type: 'detail' }` → overlay `SituationDetail` с breadcrumb + Prediction-барами.
 - Если у ситуации нет markup-данных (23 из 41 размечены) — деталь показывает «Data for this situation is not yet available».
@@ -135,12 +137,12 @@ scripts/
 - Сверху канваса pill-переключатель **Обзор / Корреляции** (`graphMode: 'explore' | 'correlations'`).
 - Канвас — `D3Graph.vue`: SVG с зум/пан, L1-узлы c radial-gradient, L2/L3 — плоские круги. Иерархические рёбра curved, корреляционные — с glow-filter.
 - Легенда — слева внизу (`GraphLegend.vue`).
-- Правый сайдбар — `GraphSidebar`: Демография + Аттракторы + панель роутинга (EmptyPanel / AttractorPanel / CorrelationPanel).
+- Правый сайдбар — `GraphSidebar`: только панель роутинга (EmptyPanel / AttractorPanel / CorrelationPanel), без демографии и выбора аттракторов.
 
 ### Режим explore
 - Клик по узлу любого уровня → `CLICK_NODE` → focus: `{ type: 'node' }` → highlight + zoom-to-fit.
 - Двойной клик → `DBLCLICK_NODE` → effect `EXPAND_NODE` (toggle expand/collapse).
-- `AttractorPanel` показывает breadcrumb + инсайт + ситуации L2 или детей/корреляции.
+- `AttractorPanel` показывает breadcrumb + описание + все инсайты + ситуации L2 или детей/корреляции.
 
 ### Режим correlations
 - Клик по L2 → focus: `{ type: 'correlations', nodeId, age }` → рисуются рёбра до всех коррелирующих L2. Повторный клик — снимает.
@@ -252,8 +254,13 @@ getRespondents()                      // 670 анонимизированных 
 
 `useCoachMarks.ts` — localStorage-based. При первом взаимодействии появляются подсказки:
 - `cm-graph` — в GraphView.
-- `cm-demographics`, `cm-attractors` — в ProfileSidebar/GraphSidebar.
+- `cm-demographics`, `cm-attractors` — в ProfileSidebar.
 - `cm-situation` — над сеткой ситуаций.
+
+## Agent docs
+
+- Актуальные инструкции для агентов лежат в `AGENTS.md` и `AGENTS-graph.md`.
+- Старые `CLAUDE.md` и `CLAUDE-graph.md` лежат в `docs/archive/` и не обновляются.
 
 ## Деплой
 

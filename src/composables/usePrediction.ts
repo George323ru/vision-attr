@@ -30,7 +30,9 @@ function matchesFilter(r: RespondentRecord, f: DemoFilter): boolean {
   if (f.gender !== 'any' && r.gender !== f.gender) return false
   if (f.maritalStatus !== 'any' && r.maritalStatus !== f.maritalStatus) return false
   if (f.childrenCount !== 'any') {
-    if (f.childrenCount === '5+') {
+    if (f.childrenCount === 'has_children') {
+      if (r.childrenCount <= 0) return false
+    } else if (f.childrenCount === '5+') {
       if (r.childrenCount < 5) return false
     } else {
       if (r.childrenCount !== parseInt(f.childrenCount)) return false

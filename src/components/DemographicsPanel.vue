@@ -106,6 +106,7 @@ const childrenGroups: ComboboxGroup[] = [{
   items: [
     { id: 'any', label: 'Не важно' },
     { id: '0', label: 'Нет детей' },
+    { id: 'has_children', label: 'Есть дети' },
     { id: '1', label: '1 ребёнок' },
     { id: '2', label: '2 ребёнка' },
     { id: '3', label: '3 ребёнка' },

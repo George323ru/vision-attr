@@ -1,7 +1,7 @@
 <template>
   <div class="scenario-layout">
-    <ProfileSidebar class="sidebar" />
     <SituationGrid class="content" />
+    <ProfileSidebar class="sidebar" />
   </div>
 </template>
 
@@ -14,7 +14,7 @@ import SituationGrid from '@/components/SituationGrid.vue'
 .scenario-layout {
   flex: 1;
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 1fr 280px;
   overflow: hidden;
 }
 .sidebar {
@@ -26,18 +26,18 @@ import SituationGrid from '@/components/SituationGrid.vue'
 
 @media (max-width: 1024px) {
   .scenario-layout {
-    grid-template-columns: 240px 1fr;
+    grid-template-columns: 1fr 240px;
   }
 }
 
 @media (max-width: 768px) {
   .scenario-layout {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: 1fr auto;
   }
   .sidebar {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
+    border-left: none;
+    border-top: 1px solid var(--border);
     max-height: 35vh;
   }
 }

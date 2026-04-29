@@ -16,13 +16,13 @@ export const SCENARIOS_STEPS: TourStep[] = [
     targetSelector: '.mode-group',
     placement: 'bottom',
     title: 'Два режима работы',
-    text: 'Анализ — 33 жизненные ситуации с предиктивными прогнозами. Граф — визуальная иерархия аттракторов с корреляциями.',
+    text: 'Анализ — 41 жизненная ситуация с предиктивными прогнозами. Граф — визуальная иерархия аттракторов с корреляциями.',
   },
   {
     id: 'tour-demographics',
     flow: 'scenarios',
     targetSelector: '.profile-sidebar .collapsible-section:first-child',
-    placement: 'right',
+    placement: 'left',
     title: 'Демография',
     text: 'Настройте возраст, пол и семейное положение. Прогнозы пересчитываются только по этой группе респондентов.',
   },
@@ -30,8 +30,8 @@ export const SCENARIOS_STEPS: TourStep[] = [
     id: 'tour-attractors',
     flow: 'scenarios',
     targetSelector: '.profile-sidebar .collapsible-section:nth-child(2)',
-    placement: 'right',
-    title: 'Ваши аттракторы',
+    placement: 'left',
+    title: 'Аттракторы',
     text: 'Выберите до 3 аттракторов — жизненных ценностей. Ситуации, связанные с ними, выходят на первый план в сетке.',
   },
   {
@@ -40,7 +40,7 @@ export const SCENARIOS_STEPS: TourStep[] = [
     targetSelector: '.grid-header',
     placement: 'bottom',
     title: 'Жизненные ситуации',
-    text: '33 ситуации в 6 категориях (экзистенциальные, реляционные, материальные и др.). Первыми идут ситуации с аналитическими данными и релевантные вашему профилю.',
+    text: '41 ситуация в 6 категориях (экзистенциальные, реляционные, материальные и др.). Первыми идут ситуации с аналитическими данными и релевантные вашему профилю.',
   },
   {
     id: 'tour-analysis-badge',
@@ -91,7 +91,7 @@ export const GRAPH_STEPS: TourStep[] = [
     targetSelector: '.graph-sidebar',
     placement: 'left',
     title: 'Панель деталей',
-    text: 'После клика на узел здесь появляются: инсайт, связанные ситуации, дочерние аттракторы. В режиме Корреляции — список связей со слайдером возраста.',
+    text: 'После клика на узел здесь появляются: описание, инсайты, связанные ситуации, дочерние аттракторы. В режиме Корреляции — список связей со слайдером возраста.',
   },
 ]
 

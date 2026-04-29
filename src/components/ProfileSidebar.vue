@@ -3,7 +3,7 @@
     <CollapsibleSection title="Демография" :initial-collapsed="false">
       <DemographicsPanel />
     </CollapsibleSection>
-    <CollapsibleSection title="Ваши аттракторы" :initial-collapsed="false">
+    <CollapsibleSection title="Аттракторы" :initial-collapsed="false">
       <AttractorPicker />
     </CollapsibleSection>
   </aside>
@@ -21,7 +21,7 @@ import AttractorPicker from '@/components/AttractorPicker.vue'
   flex-direction: column;
   gap: 2px;
   padding: 16px 18px;
-  border-right: 1px solid var(--border);
+  border-left: 1px solid var(--border);
   overflow-y: auto;
   background: var(--right-bg);
   backdrop-filter: blur(12px);

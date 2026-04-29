@@ -11,11 +11,11 @@ const INITIAL_STATE: AppState = {
   viewState: { view: 'scenarios', focus: { type: 'grid' } },
   profile: {
     demographics: {
-      ageMin: 30,
-      ageMax: 44,
-      gender: 'female',
-      maritalStatus: 'married',
-      childrenCount: '1',
+      ageMin: 18,
+      ageMax: 75,
+      gender: 'any',
+      maritalStatus: 'any',
+      childrenCount: 'any',
     },
     selectedAttractors: [null, null, null],
     highlightedIdx: null,
