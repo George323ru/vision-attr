@@ -19,7 +19,8 @@ function saveDismissed(set: Set<string>) {
 
 const dismissed = ref(loadDismissed())
 
-const welcomeSeen = ref(localStorage.getItem(WELCOME_KEY) === 'true')
+// Onboarding is opt-in: new users should not see the welcome flow automatically.
+const welcomeSeen = ref(localStorage.getItem(WELCOME_KEY) !== 'false')
 
 const tourActive = ref(false)
 const tourStep = ref(0)
@@ -38,9 +39,9 @@ export function useCoachMarks() {
   function resetAll() {
     dismissed.value = new Set()
     localStorage.removeItem(STORAGE_KEY)
-    localStorage.removeItem(WELCOME_KEY)
     localStorage.removeItem(TOUR_KEY)
-    welcomeSeen.value = false
+    welcomeSeen.value = true
+    localStorage.setItem(WELCOME_KEY, 'true')
   }
 
   const allDismissed = computed(() => dismissed.value.size > 0)

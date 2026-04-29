@@ -9,7 +9,6 @@
       </Transition>
     </main>
 
-    <WelcomeModal @start-tour="onWelcomeStartTour" @skip="onWelcomeSkip" />
     <OnboardingTour @tour-ended="onTourEnded" />
   </template>
 </template>
@@ -19,21 +18,18 @@ import { ref, onMounted } from 'vue'
 import AppHeader from '@/components/AppHeader.vue'
 import ScenarioView from '@/views/ScenarioView.vue'
 import GraphView from '@/views/GraphView.vue'
-import WelcomeModal from '@/components/WelcomeModal.vue'
 import OnboardingTour from '@/components/OnboardingTour.vue'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 import { useMarkupStore } from '@/composables/useMarkupStore'
 import { useCorrelationStore } from '@/composables/useCorrelationStore'
 import { useSituationStore } from '@/composables/useSituationStore'
 import { useStore } from '@/composables/state/useStore'
-import { useCoachMarks } from '@/composables/useCoachMarks'
 
 const { loadData } = useAttractorStore()
 const { loadMarkupData } = useMarkupStore()
 const { loadCorrelations } = useCorrelationStore()
 const { loadRegistry } = useSituationStore()
-const { currentView, dispatch } = useStore()
-const { markWelcomeSeen, startTour, isTourDone } = useCoachMarks()
+const { currentView } = useStore()
 
 const loading = ref(true)
 
@@ -41,15 +37,6 @@ onMounted(async () => {
   await Promise.all([loadData(), loadMarkupData(), loadCorrelations(), loadRegistry()])
   loading.value = false
 })
-
-function onWelcomeStartTour() {
-  markWelcomeSeen()
-  startTour('scenarios')
-}
-
-function onWelcomeSkip() {
-  markWelcomeSeen()
-}
 
 function onTourEnded() {
   // После тура Анализ — предложить тур Граф автоматически не нужно;
