@@ -6,6 +6,16 @@
 
       <div class="graph-quick-controls">
         <button
+          v-if="hasGraphFocus"
+          class="deselect-btn"
+          type="button"
+          aria-label="Снять выбор узла и вернуться к обзору графа"
+          title="Снять выбор узла и вернуться к обзору графа"
+          @click="dispatch({ type: 'CLICK_EMPTY' })"
+        >
+          Снять выбор
+        </button>
+        <button
           class="corr-layer-btn"
           type="button"
           :class="{ active: showAllCorrelationLayer }"
@@ -41,10 +51,14 @@ import GraphLegend from '@/components/GraphLegend.vue'
 import { useStore } from '@/composables/state/useStore'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 
-const { dispatch } = useStore()
+const { dispatch, viewState } = useStore()
 const { attractors } = useAttractorStore()
 
 const showAllCorrelationLayer = ref(true)
+
+const hasGraphFocus = computed(() =>
+  viewState.value.view === 'graph' && viewState.value.focus.type !== 'none'
+)
 
 const expandableNodeIds = computed(() =>
   attractors.value
@@ -93,6 +107,7 @@ function toggleAllL3() {
   gap: 8px;
   z-index: 10;
 }
+.deselect-btn,
 .corr-layer-btn {
   height: 30px;
   padding: 0 12px;
@@ -113,6 +128,10 @@ function toggleAllL3() {
               color var(--duration-fast),
               border-color var(--duration-fast);
 }
+.deselect-btn {
+  color: var(--accent);
+}
+.deselect-btn:hover,
 .corr-layer-btn:hover {
   background: var(--card-hover);
   color: var(--text);
@@ -184,6 +203,17 @@ function toggleAllL3() {
     padding: 0;
     overflow: hidden;
     font-size: 0;
+  }
+  .deselect-btn {
+    width: 34px;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+  }
+  .deselect-btn::before {
+    content: '×';
+    font-size: 18px;
+    line-height: 1;
   }
   .corr-layer-btn::before {
     content: '↔';
