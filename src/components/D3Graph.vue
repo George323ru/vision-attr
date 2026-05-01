@@ -461,12 +461,15 @@ function nodeAriaLabel(node: VisibleNode): string {
   return `Уровень ${node.level}: ${flat}`
 }
 
-// Автоматически раскрыть L1 при первом рендере
+// Автоматически раскрыть L1/L2 при первом рендере, чтобы новые пользователи
+// сразу видели L3-детализацию.
 watch(attractors, (list) => {
   if (list.length > 0 && expandedNodes.value.size === 0) {
-    // Раскрыть все L1 сразу при инициализации
-    const l1Ids = list.filter(a => a.level === 1).map(a => a.id)
-    expandedNodes.value = new Set(l1Ids)
+    expandedNodes.value = new Set(
+      list
+        .filter(a => a.level === 1 || a.level === 2)
+        .map(a => a.id)
+    )
   }
 }, { immediate: true })
 
