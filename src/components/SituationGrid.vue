@@ -53,10 +53,8 @@ import SituationCard from '@/components/SituationCard.vue'
 import SituationDetail from '@/components/SituationDetail.vue'
 
 const { getMarkupForSituation } = useMarkupStore()
-const { situations, categories } = useSituationStore()
+const { situations, categories, totalSituations } = useSituationStore()
 const { profile, situationInfo, activeAttractorIds, dispatch } = useStore()
-
-const totalSituations = computed(() => situations.value.length)
 
 const situationsWithData = computed(() =>
   situations.value.filter(s => getMarkupForSituation(s.id) !== null).length
