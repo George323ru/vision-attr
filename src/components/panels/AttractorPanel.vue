@@ -93,29 +93,14 @@
       </section>
     </div>
 
-    <!-- Ситуации показываем только для L2: L3 в графе не должен открывать сценарный список -->
-    <template v-if="situations.length > 0">
-      <SituationCard
-        v-for="s in situations"
-        :key="s.id"
-        :situation="s"
-        :has-markup="hasMarkup(s.id)"
-        :relevant="false"
-        @open="dispatch({ type: 'OPEN_SITUATION', sitId: s.id, attrId: nodeId })"
-      />
-    </template>
+    <div v-if="childList.length" class="l3-section">
+      <div class="l3-title">{{ attr.level === 1 ? 'Аттракторы 2 уровня:' : 'Аттракторы 3 уровня:' }}</div>
+      <div v-for="child in childList" :key="child.id" class="l3-item clickable" @click="selectChild(child)">{{ child.label }}</div>
+    </div>
 
-    <!-- Если нет ситуаций — показываем список дочерних аттракторов -->
-    <template v-else>
-      <div v-if="childList.length" class="l3-section">
-        <div class="l3-title">{{ attr.level === 1 ? 'Аттракторы 2 уровня:' : 'Аттракторы 3 уровня:' }}</div>
-        <div v-for="child in childList" :key="child.id" class="l3-item clickable" @click="selectChild(child)">{{ child.label }}</div>
-      </div>
-
-      <div v-if="!attr.description && !attr.insights && relatedCorrelationGroups.length === 0 && childList.length === 0" class="rp-empty">
-        Нет данных для этой категории
-      </div>
-    </template>
+    <div v-if="!attr.description && !attr.insights && relatedCorrelationGroups.length === 0 && childList.length === 0" class="rp-empty">
+      Нет данных для этой категории
+    </div>
 
     <button v-if="canGoBack" class="btn-back" @click="dispatch({ type: 'GO_BACK' })">
       &larr; Назад
@@ -129,9 +114,6 @@ import { useCorrelationStore } from '@/composables/useCorrelationStore'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 import { flatLabel, useAttractorDisplay } from '@/composables/useAttractorDisplay'
 import { useStore } from '@/composables/state/useStore'
-import { useMarkupStore } from '@/composables/useMarkupStore'
-import { useSituationStore } from '@/composables/useSituationStore'
-import SituationCard from '@/components/SituationCard.vue'
 import PanelBreadcrumb from '@/components/PanelBreadcrumb.vue'
 import type { BreadcrumbItem } from '@/components/PanelBreadcrumb.vue'
 
@@ -140,13 +122,8 @@ const VISIBLE_PER_GROUP = 6
 
 const { attractors, domains, getAttractor } = useAttractorStore()
 const { canGoBack, dispatch, viewState } = useStore()
-const { getMarkupForSituation } = useMarkupStore()
-const { getSituationsByAttractor } = useSituationStore()
 const { getCorrEdgesForNode } = useCorrelationStore()
 
-function hasMarkup(sitId: string): boolean {
-  return getMarkupForSituation(sitId) !== null
-}
 const { attr, domainColor } = useAttractorDisplay(toRef(props, 'nodeId'))
 const quotesExpanded = ref(false)
 const expandedGroups = ref<Record<CorrType, boolean>>({
@@ -207,11 +184,6 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => {
 function selectChild(child: { id: string; level: number }) {
   dispatch({ type: 'CLICK_NODE', nodeId: child.id, level: child.level as 1 | 2 | 3 })
 }
-
-const situations = computed(() => {
-  if (attr.value?.level !== 2) return []
-  return getSituationsByAttractor(props.nodeId)
-})
 
 const childList = computed(() =>
   attractors.value

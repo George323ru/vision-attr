@@ -83,7 +83,7 @@ src/
 │   ├── SituationDetail.vue        # раскрытая ситуация: breadcrumb + Prediction bars + CTA
 │   ├── StrategyBar.vue            # горизонтальная полоса стратегии с процентом
 │   └── panels/
-│       ├── AttractorPanel.vue     # аттрактор в graph-sidebar: breadcrumb + описание/инсайт + ситуации/дети + связи L2
+│       ├── AttractorPanel.vue     # аттрактор в graph-sidebar: breadcrumb + описание/инсайт + дочерние аттракторы + связи L2
 │       └── CorrelationPanel.vue   # legacy: не подключать в новый graph-sidebar без отдельного решения
 ├── data/
 │   ├── correlations.ts            # ~137 корреляций между L2 с возрастными диапазонами
@@ -142,7 +142,7 @@ scripts/
 ### Гибридная модель графа
 - Клик по узлу любого уровня → `CLICK_NODE` → focus: `{ type: 'node' }` → highlight + zoom-to-fit.
 - Двойной клик → `DBLCLICK_NODE` → effect `EXPAND_NODE` (toggle expand/collapse).
-- `AttractorPanel` показывает breadcrumb + описание + инсайты + ситуации L2 или детей. Для L2 дополнительно показывает связи, сгруппированные как «Усиливающие связи» и «Конфликтующие связи».
+- `AttractorPanel` показывает breadcrumb + описание + инсайты + дочерние аттракторы. Для L2 дополнительно показывает связи, сгруппированные как «Усиливающие связи» и «Конфликтующие связи». Ситуации остаются в ScenarioView и не рендерятся в graph-sidebar.
 - `SHOW_NODE_CORRELATIONS` переводит L2 в focus `{ type: 'correlations', nodeId }`, подсвечивает цветные корреляционные рёбра и оставляет в сайдбаре тот же `AttractorPanel`.
 - Для L3 `AttractorPanel` показывает описание и сворачиваемые типовые цитаты; кнопка «Смотреть связи родительского L2» фокусирует корреляции родительского L2.
 
