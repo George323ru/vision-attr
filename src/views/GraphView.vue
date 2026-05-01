@@ -16,6 +16,9 @@
             @click="onCorrelationsClick"
           >Корреляции</button>
         </div>
+      </div>
+
+      <div class="graph-quick-controls">
         <button
           class="corr-layer-btn"
           type="button"
@@ -27,18 +30,17 @@
         >
           Связи
         </button>
+        <button
+          class="show-l3-btn"
+          type="button"
+          aria-label="Показать или скрыть все L3-узлы"
+          title="Показать или скрыть все L3-узлы"
+          :disabled="expandableNodeIds.length === 0"
+          @click="toggleAllL3"
+        >
+          L3
+        </button>
       </div>
-
-      <button
-        class="show-l3-btn"
-        type="button"
-        aria-label="Показать или скрыть все L3-узлы"
-        title="Показать или скрыть все L3-узлы"
-        :disabled="expandableNodeIds.length === 0"
-        @click="toggleAllL3"
-      >
-        L3
-      </button>
 
       <!-- Контекстная подсказка: первый вход в режим корреляций -->
       <div v-if="showCorrHint" class="ctx-hint-wrap">
@@ -135,6 +137,15 @@ watch(graphMode, (mode) => {
   gap: 8px;
   z-index: 10;
 }
+.graph-quick-controls {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 10;
+}
 .graph-mode-toggle {
   display: flex;
   gap: 3px;
@@ -194,15 +205,13 @@ watch(graphMode, (mode) => {
   color: var(--text);
 }
 .corr-layer-btn.active {
-  border-color: rgba(var(--accent-rgb),0.42);
-  background: rgba(var(--accent-rgb),0.12);
-  color: var(--accent);
+  border-color: rgba(var(--control-active-rgb),0.22);
+  background: var(--control-active);
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(var(--control-active-rgb),0.16);
 }
 
 .show-l3-btn {
-  position: absolute;
-  top: 14px;
-  right: 18px;
   width: 34px;
   height: 34px;
   border-radius: 999px;
@@ -217,7 +226,6 @@ watch(graphMode, (mode) => {
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0;
-  z-index: 10;
   transition: background var(--duration-fast) var(--ease-out-expo),
               color var(--duration-fast),
               border-color var(--duration-fast);
@@ -265,6 +273,11 @@ watch(graphMode, (mode) => {
     top: 8px;
     gap: 6px;
   }
+  .graph-quick-controls {
+    top: 8px;
+    right: 10px;
+    gap: 6px;
+  }
   .corr-layer-btn {
     width: 34px;
     padding: 0;
@@ -275,10 +288,6 @@ watch(graphMode, (mode) => {
     content: '↔';
     font-size: 14px;
     line-height: 1;
-  }
-  .show-l3-btn {
-    top: 8px;
-    right: 10px;
   }
 }
 </style>

@@ -13,7 +13,7 @@
       <div v-else class="insights-text">{{ attr.insights }}</div>
     </div>
 
-    <!-- Если есть ситуации — показываем карточки -->
+    <!-- Ситуации показываем только для L2: L3 в графе не должен открывать сценарный список -->
     <template v-if="situations.length > 0">
       <SituationCard
         v-for="s in situations"
@@ -104,7 +104,10 @@ function selectChild(child: { id: string; level: number }) {
   dispatch({ type: 'CLICK_NODE', nodeId: child.id, level: child.level as 1 | 2 | 3 })
 }
 
-const situations = computed(() => getSituationsByAttractor(props.nodeId))
+const situations = computed(() => {
+  if (attr.value?.level !== 2) return []
+  return getSituationsByAttractor(props.nodeId)
+})
 
 const childList = computed(() =>
   attractors.value
