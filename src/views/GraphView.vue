@@ -75,7 +75,7 @@ const graphMode = computed(() =>
 )
 
 const showCorrHint = ref(false)
-const showAllCorrelationLayer = ref(false)
+const showAllCorrelationLayer = ref(true)
 
 const expandableNodeIds = computed(() =>
   attractors.value
