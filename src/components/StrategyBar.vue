@@ -1,7 +1,9 @@
 <template>
-  <div
+  <button
+    type="button"
     class="strategy-item"
     :class="{ selected }"
+    :aria-pressed="selected"
     @click="$emit('select')"
   >
     <div class="strategy-label">
@@ -14,7 +16,7 @@
         :style="{ background: barColor, width: probability + '%' }"
       ></div>
     </div>
-  </div>
+  </button>
 </template>
 
 <script setup lang="ts">
@@ -30,11 +32,21 @@ defineEmits<{ select: [] }>()
 
 <style scoped>
 .strategy-item {
+  display: block;
+  width: 100%;
   margin-bottom: 6px;
   border-radius: var(--radius-md);
   padding: 8px 10px;
+  border: 0;
+  text-align: left;
+  font: inherit;
+  background: transparent;
   cursor: pointer;
   transition: background var(--duration-fast) var(--ease-out-quad);
+}
+.strategy-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 .strategy-item:hover {
   background: var(--card-bg);
