@@ -1,8 +1,11 @@
 <template>
   <div class="graph-layout">
     <div class="graph-area">
-      <D3Graph :show-all-correlations="showAllCorrelationLayer" />
-      <GraphLegend :show-all-correlations="showAllCorrelationLayer" />
+      <D3Graph
+        :show-all-correlations="effectiveShowAllCorrelationLayer"
+        :layout-mode="layoutMode"
+      />
+      <GraphLegend :show-all-correlations="effectiveShowAllCorrelationLayer" />
 
       <div class="graph-quick-controls">
         <button
@@ -18,13 +21,25 @@
         <button
           class="corr-layer-btn"
           type="button"
-          :class="{ active: showAllCorrelationLayer }"
-          :aria-pressed="showAllCorrelationLayer"
+          :class="{ active: effectiveShowAllCorrelationLayer }"
+          :aria-pressed="effectiveShowAllCorrelationLayer"
           aria-label="Показать или скрыть все корреляционные связи"
-          title="Показать или скрыть все корреляционные связи"
+          :title="isProximityLayout ? 'В режиме близости фоновые линии скрыты' : 'Показать или скрыть все корреляционные связи'"
+          :disabled="isProximityLayout"
           @click="showAllCorrelationLayer = !showAllCorrelationLayer"
         >
           Связи
+        </button>
+        <button
+          class="layout-mode-btn"
+          type="button"
+          :class="{ active: isProximityLayout }"
+          :aria-pressed="isProximityLayout"
+          aria-label="Переключить раскладку графа по корреляционной близости"
+          title="Переключить раскладку графа по корреляционной близости"
+          @click="toggleProximityLayout"
+        >
+          Близость
         </button>
         <button
           class="show-l3-btn"
@@ -50,11 +65,17 @@ import GraphSidebar from '@/components/GraphSidebar.vue'
 import GraphLegend from '@/components/GraphLegend.vue'
 import { useStore } from '@/composables/state/useStore'
 import { useAttractorStore } from '@/composables/useAttractorStore'
+import type { GraphLayoutMode } from '@/composables/useGraphLayout'
 
 const { dispatch, viewState } = useStore()
 const { attractors } = useAttractorStore()
 
 const showAllCorrelationLayer = ref(true)
+const layoutMode = ref<GraphLayoutMode>('hierarchy')
+const isProximityLayout = computed(() => layoutMode.value === 'proximity')
+const effectiveShowAllCorrelationLayer = computed(() =>
+  showAllCorrelationLayer.value && !isProximityLayout.value
+)
 
 const hasGraphFocus = computed(() =>
   viewState.value.view === 'graph' && viewState.value.focus.type !== 'none'
@@ -78,6 +99,10 @@ function toggleAllL3() {
     expandNodeIds: expandableNodeIds.value,
     collapseNodeIds: l2NodeIds.value,
   })
+}
+
+function toggleProximityLayout() {
+  layoutMode.value = isProximityLayout.value ? 'hierarchy' : 'proximity'
 }
 </script>
 
@@ -108,7 +133,8 @@ function toggleAllL3() {
   z-index: 10;
 }
 .deselect-btn,
-.corr-layer-btn {
+.corr-layer-btn,
+.layout-mode-btn {
   height: 30px;
   padding: 0 12px;
   border-radius: 999px;
@@ -132,15 +158,21 @@ function toggleAllL3() {
   color: var(--accent);
 }
 .deselect-btn:hover,
-.corr-layer-btn:hover {
+.corr-layer-btn:hover:not(:disabled),
+.layout-mode-btn:hover {
   background: var(--card-hover);
   color: var(--text);
 }
-.corr-layer-btn.active {
+.corr-layer-btn.active,
+.layout-mode-btn.active {
   border-color: rgba(var(--control-active-rgb),0.22);
   background: var(--control-active);
   color: #fff;
   box-shadow: 0 1px 4px rgba(var(--control-active-rgb),0.16);
+}
+.corr-layer-btn:disabled {
+  cursor: default;
+  opacity: 0.45;
 }
 
 .show-l3-btn {
@@ -198,7 +230,8 @@ function toggleAllL3() {
     right: 10px;
     gap: 6px;
   }
-  .corr-layer-btn {
+  .corr-layer-btn,
+  .layout-mode-btn {
     width: 34px;
     padding: 0;
     overflow: hidden;
@@ -218,6 +251,11 @@ function toggleAllL3() {
   .corr-layer-btn::before {
     content: '↔';
     font-size: 14px;
+    line-height: 1;
+  }
+  .layout-mode-btn::before {
+    content: '◎';
+    font-size: 15px;
     line-height: 1;
   }
 }
