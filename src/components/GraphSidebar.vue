@@ -3,15 +3,9 @@
     <!-- Контент зависит от panelRoute -->
     <div class="sidebar-panel">
       <Transition name="slide-fade" mode="out-in">
-        <!-- Режим корреляций -->
-        <CorrelationPanel
-          v-if="panelRoute === 'graph-correlations'"
-          key="correlations"
-        />
-
         <!-- Фокус на узле -->
         <AttractorPanel
-          v-else-if="panelRoute === 'graph-attractor' && focusedNodeId"
+          v-if="panelRoute === 'graph-attractor' && focusedNodeId"
           :key="focusedNodeId"
           :node-id="focusedNodeId"
         />
@@ -39,7 +33,6 @@
 <script setup lang="ts">
 import { useStore } from '@/composables/state/useStore'
 import AttractorPanel from '@/components/panels/AttractorPanel.vue'
-import CorrelationPanel from '@/components/panels/CorrelationPanel.vue'
 
 const { panelRoute, focusedNodeId } = useStore()
 </script>

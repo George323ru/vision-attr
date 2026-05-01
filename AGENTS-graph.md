@@ -68,7 +68,8 @@ L3: если expandedNodes.has(parent) AND zoomScale >= 0.25 (semantic zoom).
 ## Рёбра
 
 - **Иерархические** (`visibleHierarchyEdges`): curved quad-bezier с перпендикулярным сдвигом `len × 0.06`. Stroke-width: L1→L2 = 3, L2→L3 = 1.5. При фокусе — fade 0.04 для нерелевантных.
-- **Корреляционные** (`visibleCorrEdges`): только при `focus.type === 'correlations'`. Quad-bezier сдвиг `len × 0.15`. Stroke-width `1.5 + strength × 3.5`. Glow-filter `#glow-teal` / `#glow-red`.
+- **Фоновые корреляционные** (`backgroundCorrEdges`): только когда `D3Graph.showAllCorrelations=true` от quick control **Связи**. Лёгкий некликабельный слой всех видимых L2↔L2 связей.
+- **Фокусные корреляционные** (`visibleCorrEdges`): только при `focus.type === 'correlations'`. Quad-bezier сдвиг `len × 0.15`. Stroke-width `1.5 + strength × 3.5`, плюс цветная halo-подложка.
 
 ## Цвета и шрифты
 
@@ -89,7 +90,7 @@ L3: если expandedNodes.has(parent) AND zoomScale >= 0.25 (semantic zoom).
 - `.focused.level-1 circle` — accent-обводка 5px.
 - `.focused.level-2 circle` — accent-обводка 3.5px + scale 1.06.
 - `.faded` — opacity 0.15 (0.5 на hover).
-- `.corr-target` — stroke-width 3 (подсвечивается при режиме корреляций).
+- `.corr-target` — stroke-width 3 (подсвечивается при `focus.type === 'correlations'`).
 
 ## Производительность
 

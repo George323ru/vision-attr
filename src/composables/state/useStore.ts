@@ -8,7 +8,7 @@ import {
 } from './selectors'
 
 const INITIAL_STATE: AppState = {
-  viewState: { view: 'graph', focus: { type: 'none' }, graphMode: 'correlations' },
+  viewState: { view: 'graph', focus: { type: 'none' } },
   profile: {
     demographics: {
       ageMin: 18,

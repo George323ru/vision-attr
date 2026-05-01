@@ -387,9 +387,7 @@ function curvedPath(from: { x: number; y: number }, to: { x: number; y: number }
 }
 
 const backgroundCorrEdges = computed<BackgroundCorrEdge[]>(() => {
-  const vs = viewState.value
   if (!props.showAllCorrelations) return []
-  if (vs.view !== 'graph' || vs.graphMode !== 'correlations') return []
 
   const visibleL2Ids = new Set(
     visibleNodes.value
