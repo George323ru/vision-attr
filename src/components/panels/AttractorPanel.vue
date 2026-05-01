@@ -31,7 +31,7 @@
       <ul v-if="insightItems.length > 1" class="insights-list">
         <li v-for="(item, i) in insightItems" :key="i">{{ item }}</li>
       </ul>
-      <div v-else class="insights-text">{{ attr.insights }}</div>
+      <div v-else class="insights-text">{{ insightItems[0] ?? attr.insights }}</div>
     </div>
 
     <button
@@ -228,10 +228,10 @@ const parentL2 = computed(() => {
 const insightItems = computed<string[]>(() => {
   const raw = attr.value?.insights
   if (!raw) return []
-  // Многострочный insight: \n или маркеры списка («- », «• »)
+  // Многострочный insight: каждая строка может уже начинаться с маркера списка.
   return raw
-    .split(/\r?\n|(?:^|\s)[•\-]\s+/)
-    .map(s => s.trim())
+    .split(/\r?\n/)
+    .map(s => s.replace(/^\s*[•-]\s+/, '').trim())
     .filter(Boolean)
 })
 
