@@ -14,12 +14,15 @@ interface RegistryEntry {
 interface RegistryFile {
   version: string
   generatedAt: string
+  totalSituations?: number
   categories: SituationCategory[]
   situations: RegistryEntry[]
 }
 
 const situations = ref<Situation[]>([])
 const categories = ref<SituationCategory[]>([])
+const CATALOG_TOTAL_SITUATIONS = 100
+const totalSituations = ref(CATALOG_TOTAL_SITUATIONS)
 const loaded = ref(false)
 
 async function loadRegistry(): Promise<void> {
@@ -32,6 +35,7 @@ async function loadRegistry(): Promise<void> {
     }
     const data: RegistryFile = await resp.json()
     categories.value = data.categories
+    totalSituations.value = data.totalSituations ?? CATALOG_TOTAL_SITUATIONS
     situations.value = data.situations
       .filter(s => s.active)
       .map(s => ({
@@ -59,6 +63,7 @@ export function useSituationStore() {
   return {
     situations: readonly(situations),
     categories: readonly(categories),
+    totalSituations: readonly(totalSituations),
     loaded: readonly(loaded),
     loadRegistry,
     getSituationById,

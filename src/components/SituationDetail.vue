@@ -68,7 +68,7 @@
         <div>Данные по этой ситуации ещё не размечены и находятся в работе.</div>
         <CoachMark
           id="ctx-no-markup"
-          text="8 из 33 ситуаций имеют аналитические данные — остальные находятся в обработке"
+          :text="noMarkupHint"
           position="top"
         />
       </template>
@@ -103,14 +103,17 @@ const props = defineProps<{
 }>()
 
 const { getAttractor } = useAttractorStore()
-const { getMarkupForSituation } = useMarkupStore()
-const { getSituationById } = useSituationStore()
+const { getMarkupForSituation, markupSituations } = useMarkupStore()
+const { getSituationById, totalSituations } = useSituationStore()
 const { profile, strategyIdx, canGoBack, dispatch } = useStore()
 const { isDismissed } = useCoachMarks()
 
 const sit = computed(() => getSituationById(props.sitId))
 const attr = computed(() => getAttractor(props.attrId))
 const hasMarkupData = computed(() => getMarkupForSituation(props.sitId) !== null)
+const noMarkupHint = computed(() =>
+  `${markupSituations.value.length} из ${totalSituations.value} ситуаций имеют аналитические данные — остальные находятся в обработке`
+)
 
 function goBack() {
   if (canGoBack.value) {
