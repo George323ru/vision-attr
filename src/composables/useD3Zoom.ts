@@ -9,8 +9,8 @@ export interface D3ZoomApi {
   resetZoom(): void
 }
 
-const L3_HIDE_SCALE = 0.22
-const L3_SHOW_SCALE = 0.28
+const L3_HIDE_SCALE = 0.10
+const L3_SHOW_SCALE = 0.14
 
 export function useD3Zoom(
   svgRef: Ref<SVGSVGElement | null>,
