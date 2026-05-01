@@ -212,16 +212,16 @@ export function reduce(state: AppState, action: Action): ReducerResult {
 
     case 'SET_GRAPH_MODE': {
       if (state.viewState.view !== 'graph') return { state, effects: [] }
+      if (state.viewState.graphMode === action.mode) return { state, effects: [] }
       return {
         state: {
           ...state,
           viewState: {
             ...state.viewState,
             graphMode: action.mode,
-            focus: { type: 'none' },
           },
         },
-        effects: [{ type: 'CLEAR_HIGHLIGHT' }, { type: 'HIDE_CORRELATIONS' }],
+        effects: [],
       }
     }
 

@@ -12,6 +12,17 @@
       </div>
       <p class="cp-hint">Кликните на аттрактор второго уровня на графе, чтобы увидеть его корреляции</p>
     </div>
+    <div v-else-if="focusedAttractor && focusedAttractor.level !== 2" class="cp-content">
+      <div class="cp-node-header">
+        <span class="cp-node-name">{{ focusedName }}</span>
+        <div class="cp-header-right">
+          <button class="cp-reset-btn" @click="dispatch({ type: 'CLICK_EMPTY' })" title="Снять выделение" aria-label="Снять выделение">×</button>
+        </div>
+      </div>
+      <div class="cp-no-corr">
+        Корреляции доступны для аттракторов второго уровня. Выберите L2-узел на графе.
+      </div>
+    </div>
     <div v-else class="cp-content">
       <div class="cp-node-header">
         <span class="cp-node-name">{{ focusedName }}</span>
@@ -52,10 +63,13 @@ const { focusedNodeId, dispatch } = useStore()
 const { getAttractor } = useAttractorStore()
 const { getCorrEdgesForNode } = useCorrelationStore()
 
+const focusedAttractor = computed(() => {
+  if (!focusedNodeId.value) return null
+  return getAttractor(focusedNodeId.value)
+})
+
 const focusedName = computed(() => {
-  if (!focusedNodeId.value) return ''
-  const attr = getAttractor(focusedNodeId.value)
-  return flatLabel(attr?.label)
+  return flatLabel(focusedAttractor.value?.label)
 })
 
 interface CorrItem {
