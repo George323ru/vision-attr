@@ -1,19 +1,32 @@
 <template>
   <div class="graph-layout">
     <div class="graph-area">
-      <D3Graph />
-      <GraphLegend />
-      <div class="graph-mode-toggle">
+      <D3Graph :show-all-correlations="showAllCorrelationLayer" />
+      <GraphLegend :show-all-correlations="showAllCorrelationLayer && graphMode === 'correlations'" />
+      <div class="graph-controls">
+        <div class="graph-mode-toggle">
+          <button
+            class="gm-btn"
+            :class="{ active: graphMode === 'explore' }"
+            @click="dispatch({ type: 'SET_GRAPH_MODE', mode: 'explore' })"
+          >Обзор</button>
+          <button
+            class="gm-btn"
+            :class="{ active: graphMode === 'correlations' }"
+            @click="onCorrelationsClick"
+          >Корреляции</button>
+        </div>
         <button
-          class="gm-btn"
-          :class="{ active: graphMode === 'explore' }"
-          @click="dispatch({ type: 'SET_GRAPH_MODE', mode: 'explore' })"
-        >Обзор</button>
-        <button
-          class="gm-btn"
-          :class="{ active: graphMode === 'correlations' }"
-          @click="onCorrelationsClick"
-        >Корреляции</button>
+          class="corr-layer-btn"
+          type="button"
+          :class="{ active: showAllCorrelationLayer }"
+          :aria-pressed="showAllCorrelationLayer"
+          aria-label="Показать или скрыть все корреляционные связи"
+          title="Показать или скрыть все корреляционные связи"
+          @click="showAllCorrelationLayer = !showAllCorrelationLayer"
+        >
+          Связи
+        </button>
       </div>
 
       <!-- Контекстная подсказка: первый вход в режим корреляций -->
@@ -47,6 +60,7 @@ const graphMode = computed(() =>
 )
 
 const showCorrHint = ref(false)
+const showAllCorrelationLayer = ref(false)
 
 function onCorrelationsClick() {
   dispatch({ type: 'SET_GRAPH_MODE', mode: 'correlations' })
@@ -77,19 +91,24 @@ watch(graphMode, (mode) => {
   overflow-y: auto;
 }
 
-/* Переключатель режима графа */
-.graph-mode-toggle {
+/* Переключатели графа */
+.graph-controls {
   position: absolute;
   top: 14px;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 10;
+}
+.graph-mode-toggle {
   display: flex;
   gap: 2px;
   background: var(--legend-bg);
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 2px;
-  z-index: 10;
   box-shadow: var(--shadow-md);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -116,6 +135,35 @@ watch(graphMode, (mode) => {
   background: var(--accent);
   color: #fff;
   box-shadow: 0 1px 4px rgba(192,138,62,0.25);
+}
+.corr-layer-btn {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 15px;
+  border: 1px solid var(--border);
+  background: var(--legend-bg);
+  color: var(--text-muted);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  transition: background var(--duration-fast) var(--ease-out-expo),
+              color var(--duration-fast),
+              border-color var(--duration-fast);
+}
+.corr-layer-btn:hover {
+  background: var(--card-hover);
+  color: var(--text);
+}
+.corr-layer-btn.active {
+  border-color: rgba(192,138,62,0.48);
+  background: rgba(192,138,62,0.14);
+  color: var(--accent);
 }
 
 .ctx-hint-wrap {
@@ -147,8 +195,20 @@ watch(graphMode, (mode) => {
     border-top: 1px solid var(--border);
     max-height: 40vh;
   }
-  .graph-mode-toggle {
+  .graph-controls {
     top: 8px;
+    gap: 6px;
+  }
+  .corr-layer-btn {
+    width: 34px;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+  }
+  .corr-layer-btn::before {
+    content: '↔';
+    font-size: 14px;
+    line-height: 1;
   }
 }
 </style>

@@ -37,6 +37,14 @@
         @click="dispatch({ type: 'CLICK_EMPTY' })"
       />
 
+      <!-- Фоновый слой всех корреляций — лёгкий и некликабельный -->
+      <path
+        v-for="edge in backgroundCorrEdges"
+        :key="edge.id"
+        :d="edge.path"
+        class="edge-correlation-bg"
+      />
+
       <!-- Иерархические рёбра — curved, утончающиеся -->
       <path
         v-for="edge in visibleHierarchyEdges"
@@ -154,6 +162,10 @@ import { useGraphEffects } from '@/composables/useGraphEffects'
 import { domainColor, domainBorder, domainGradientCenter, domainFontColor } from '@/utils/colors'
 import { wrapLabel } from '@/utils/nodeStyles'
 import { useCorrelationStore } from '@/composables/useCorrelationStore'
+
+const props = defineProps<{
+  showAllCorrelations?: boolean
+}>()
 
 const { dispatch, viewState, focusedNodeId, activeAttractorIds, setEffectHandler, clearEffectHandler } = useStore()
 const { correlations } = useCorrelationStore()
@@ -346,6 +358,55 @@ interface CorrEdge {
   strength: number
 }
 
+interface BackgroundCorrEdge {
+  id: string
+  path: string
+}
+
+function curvedPath(from: { x: number; y: number }, to: { x: number; y: number }, offsetRatio: number): string {
+  const mx = (from.x + to.x) / 2
+  const my = (from.y + to.y) / 2
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  const len = Math.sqrt(dx * dx + dy * dy) || 1
+  const offset = len * offsetRatio
+  const cx = mx + (-dy / len) * offset
+  const cy = my + (dx / len) * offset
+
+  return `M ${from.x},${from.y} Q ${cx},${cy} ${to.x},${to.y}`
+}
+
+const backgroundCorrEdges = computed<BackgroundCorrEdge[]>(() => {
+  const vs = viewState.value
+  if (!props.showAllCorrelations) return []
+  if (vs.view !== 'graph' || vs.graphMode !== 'correlations') return []
+
+  const visibleL2Ids = new Set(
+    visibleNodes.value
+      .filter(node => node.level === 2)
+      .map(node => node.id)
+  )
+  if (visibleL2Ids.size === 0) return []
+
+  const positions = positionsMap.value
+  const edges: BackgroundCorrEdge[] = []
+
+  for (const corr of correlations.value) {
+    if (!visibleL2Ids.has(corr.from) || !visibleL2Ids.has(corr.to)) continue
+
+    const fromPos = positions.get(corr.from)
+    const toPos = positions.get(corr.to)
+    if (!fromPos || !toPos) continue
+
+    edges.push({
+      id: `corr-bg-${corr.id}`,
+      path: curvedPath(fromPos, toPos, 0.12),
+    })
+  }
+
+  return edges
+})
+
 const visibleCorrEdges = computed<CorrEdge[]>(() => {
   const vs = viewState.value
   if (vs.view !== 'graph') return []
@@ -364,19 +425,9 @@ const visibleCorrEdges = computed<CorrEdge[]>(() => {
     const toPos = positions.get(otherId)
     if (!fromPos || !toPos) continue
 
-    // Quadratic bezier с контрольной точкой, смещённой перпендикулярно
-    const mx = (fromPos.x + toPos.x) / 2
-    const my = (fromPos.y + toPos.y) / 2
-    const dx = toPos.x - fromPos.x
-    const dy = toPos.y - fromPos.y
-    const len = Math.sqrt(dx * dx + dy * dy)
-    const offset = len * 0.15
-    const cx = mx + (-dy / len) * offset
-    const cy = my + (dx / len) * offset
-
     edges.push({
       id: `corr-${corr.id}`,
-      path: `M ${fromPos.x},${fromPos.y} Q ${cx},${cy} ${toPos.x},${toPos.y}`,
+      path: curvedPath(fromPos, toPos, 0.15),
       type: corr.type,
       strength: corr.strength,
     })
@@ -429,6 +480,13 @@ watch(attractors, (list) => {
 }
 
 /* ── Рёбра корреляций — glow ── */
+.edge-correlation-bg {
+  fill: none;
+  stroke: rgba(83, 88, 96, 0.30);
+  stroke-width: 1.1;
+  stroke-linecap: round;
+  pointer-events: none;
+}
 .edge-correlation {
   fill: none;
   opacity: 0.80;

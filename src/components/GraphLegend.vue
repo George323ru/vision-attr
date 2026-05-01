@@ -13,6 +13,10 @@
       <span class="leg-dot-wrap"><span class="leg-dot" style="width:6px;height:6px;background:hsl(0,14%,86%)"></span></span>
       <span>Аттрактор 3 уровня</span>
     </div>
+    <div v-if="showAllCorrelations" class="leg-row">
+      <span class="leg-line" style="width:20px;background:rgba(83,88,96,0.45)"></span>
+      <span>все корреляции</span>
+    </div>
     <div class="leg-row">
       <span class="leg-line" style="width:20px;background:#0891b2"></span>
       <span>усиливающая корреляция</span>
@@ -25,6 +29,9 @@
 </template>
 
 <script setup lang="ts">
+defineProps<{
+  showAllCorrelations?: boolean
+}>()
 </script>
 
 <style scoped>
