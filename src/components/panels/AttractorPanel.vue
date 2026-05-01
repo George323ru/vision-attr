@@ -2,7 +2,19 @@
   <div v-if="attr">
     <PanelBreadcrumb :crumbs="breadcrumbs" />
 
-    <div v-if="attr.description" class="rp-description">{{ attr.description }}</div>
+    <template v-if="parsedDescription">
+      <div v-if="parsedDescription.body" class="rp-description">
+        <div class="rp-description-title">Описание</div>
+        <div class="rp-description-body">{{ parsedDescription.body }}</div>
+      </div>
+
+      <div v-if="parsedDescription.quotes.length" class="rp-quotes">
+        <div class="rp-quotes-title">{{ parsedDescription.quotesTitle }}</div>
+        <ul class="rp-quotes-list">
+          <li v-for="(quote, i) in parsedDescription.quotes" :key="i">{{ quote }}</li>
+        </ul>
+      </div>
+    </template>
 
     <!-- Инсайты — показываем всегда если есть -->
     <div v-if="attr.insights" class="insights-section">
@@ -82,6 +94,35 @@ function hasMarkup(sitId: string): boolean {
 }
 const { attr, domainColor } = useAttractorDisplay(toRef(props, 'nodeId'))
 
+type ParsedDescription = {
+  body: string
+  quotesTitle: string
+  quotes: string[]
+}
+
+function parseDescription(raw: string): ParsedDescription {
+  const marker = /\r?\n(?:Типовые цитаты|Цитаты):\r?\n/
+  const match = raw.match(marker)
+  if (!match || match.index === undefined) {
+    return { body: raw.trim(), quotesTitle: 'Типовые цитаты', quotes: [] }
+  }
+
+  const body = raw.slice(0, match.index).trim()
+  const quoteText = raw.slice(match.index + match[0].length)
+  const quotes = quoteText
+    .split(/\r?\n/)
+    .map(line => line.replace(/^\s*[-•]\s*/, '').trim())
+    .filter(Boolean)
+
+  return { body, quotesTitle: 'Типовые цитаты', quotes }
+}
+
+const parsedDescription = computed<ParsedDescription | null>(() => {
+  const raw = attr.value?.description
+  if (!raw) return null
+  return parseDescription(raw)
+})
+
 const breadcrumbs = computed<BreadcrumbItem[]>(() => {
   if (!attr.value) return []
   const domainName = domains.value[attr.value.domain]?.name ?? attr.value.domain
@@ -146,14 +187,50 @@ const relatedCorrelations = computed(() => {
 
 <style scoped>
 .rp-description {
-  font-size: 12px;
-  color: var(--text-muted);
-  line-height: 1.55;
   padding: 12px 14px;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-md, 8px);
   margin-bottom: 12px;
+}
+.rp-description-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.rp-description-body {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+.rp-quotes {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+.rp-quotes-title {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+.rp-quotes-list {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.55;
+  margin: 0;
+  padding-left: 18px;
+}
+.rp-quotes-list li + li {
+  margin-top: 4px;
 }
 .rp-empty {
   color: var(--text-muted);

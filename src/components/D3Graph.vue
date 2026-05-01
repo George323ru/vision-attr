@@ -133,7 +133,7 @@
         </text>
         <!-- L2/L3: лейбл под нодой -->
         <text
-          v-else
+          v-if="node.level !== 1"
           :font-size="node.fontSize"
           text-anchor="middle"
           :y="node.radius + node.fontSize * 0.4"
@@ -620,6 +620,5 @@ watch(isZooming, (zooming) => {
 }
 .level-3 .node-label {
   font-weight: 400;
-  opacity: 0.75;
 }
 </style>
