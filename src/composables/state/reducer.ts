@@ -61,6 +61,21 @@ export function reduce(state: AppState, action: Action): ReducerResult {
       }
     }
 
+    case 'GO_HOME': {
+      const effects: Effect[] = state.viewState.view === 'graph' && state.viewState.focus.type !== 'none'
+        ? [{ type: 'CLEAR_HIGHLIGHT' }, { type: 'HIDE_CORRELATIONS' }]
+        : []
+
+      return {
+        state: {
+          ...state,
+          viewState: { view: 'scenarios', focus: { type: 'grid' } },
+          navHistory: [],
+        },
+        effects,
+      }
+    }
+
     case 'GO_BACK': {
       const prev = popNav(state.navHistory)
       if (!prev) return { state, effects: [] }

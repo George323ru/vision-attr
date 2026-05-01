@@ -1,6 +1,13 @@
 <template>
   <header class="app-header">
-    <h1>LOGOS</h1>
+    <button
+      class="brand-button"
+      type="button"
+      aria-label="LOGOS: вернуться к сценариям"
+      @click="dispatch({ type: 'GO_HOME' })"
+    >
+      LOGOS
+    </button>
     <div class="mode-group" role="tablist" aria-label="Переключатель режима">
       <button
         class="mode-btn"
@@ -43,13 +50,34 @@ const { currentView, dispatch } = useStore()
   flex-shrink: 0;
   transition: background var(--duration-base) var(--ease-out-quad);
 }
-.app-header h1 {
+.brand-button {
   font-family: var(--font-display);
   font-size: var(--fs-brand);
   font-weight: 700;
   letter-spacing: 5px;
+  line-height: 1;
   text-transform: uppercase;
   color: var(--text);
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  margin: 0;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out-expo),
+              color var(--duration-fast),
+              transform var(--duration-fast);
+}
+.brand-button:hover {
+  background: var(--card-hover);
+  color: var(--accent);
+}
+.brand-button:active {
+  transform: translateY(1px);
+}
+.brand-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .header-right {

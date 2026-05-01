@@ -69,6 +69,7 @@ export type PanelRoute =
 export type Action =
   // Навигация между экранами
   | { readonly type: 'SWITCH_VIEW'; readonly view: 'scenarios' | 'graph' }
+  | { readonly type: 'GO_HOME' }
   | { readonly type: 'GO_BACK' }
 
   // Scenarios view
