@@ -76,7 +76,9 @@
             hovered: node.id === hoveredNodeId,
             faded: hasFocus && !node.relevant,
             'corr-target': corrTargetIds.has(node.id),
+            'proximity-target': node.proximityType !== null,
           },
+          node.proximityType ? `proximity-${node.proximityType}` : '',
         ]"
         tabindex="0"
         role="button"
@@ -111,8 +113,8 @@
           v-else
           :r="node.radius"
           :fill="node.color"
-          :stroke="node.borderColor"
-          :stroke-width="node.level === 2 ? 1.5 : 1"
+          :stroke="nodeStroke(node)"
+          :stroke-width="nodeStrokeWidth(node)"
         />
 
         <!-- L1: лейбл внутри круга -->
@@ -157,7 +159,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useStore } from '@/composables/state/useStore'
 import { useAttractorStore } from '@/composables/useAttractorStore'
-import { computeLayout, nodeRadius, nodeFontSize } from '@/composables/useGraphLayout'
+import { computeLayout, nodeRadius, nodeFontSize, type GraphLayoutMode, type NodePosition } from '@/composables/useGraphLayout'
 import { useD3Zoom } from '@/composables/useD3Zoom'
 import { useGraphEffects } from '@/composables/useGraphEffects'
 import { domainColor, domainBorder, domainGradientCenter, domainFontColor } from '@/utils/colors'
@@ -166,6 +168,7 @@ import { useCorrelationStore } from '@/composables/useCorrelationStore'
 
 const props = defineProps<{
   showAllCorrelations?: boolean
+  layoutMode?: GraphLayoutMode
 }>()
 
 const { dispatch, viewState, focusedNodeId, activeAttractorIds, setEffectHandler, clearEffectHandler } = useStore()
@@ -178,7 +181,78 @@ const expandedNodes = ref(new Set<string>())
 const hoveredNodeId = ref<string | null>(null)
 
 // Layout
-const positionsMap = computed(() => computeLayout(attractors.value))
+const proximityFocusNodeId = computed(() => {
+  if (props.layoutMode !== 'proximity') return null
+  const vs = viewState.value
+  if (vs.view !== 'graph') return null
+  if (vs.focus.type === 'node' && vs.focus.level === 2) return vs.focus.nodeId
+  if (vs.focus.type === 'correlations') return vs.focus.nodeId
+  return null
+})
+
+const targetPositionsMap = computed(() => computeLayout(attractors.value, {
+  mode: props.layoutMode ?? 'hierarchy',
+  correlations: correlations.value,
+  proximityFocusNodeId: proximityFocusNodeId.value,
+}))
+const positionsMap = ref(new Map<string, NodePosition>())
+let layoutAnimationId: number | null = null
+const LAYOUT_ANIMATION_MS = 650
+
+function easeOutCubic(t: number): number {
+  return 1 - Math.pow(1 - t, 3)
+}
+
+function copyPositions(positions: Map<string, NodePosition>): Map<string, NodePosition> {
+  const copy = new Map<string, NodePosition>()
+  for (const [id, pos] of positions) {
+    copy.set(id, { x: pos.x, y: pos.y })
+  }
+  return copy
+}
+
+function animatePositions(next: Map<string, NodePosition>): void {
+  if (layoutAnimationId !== null) {
+    window.cancelAnimationFrame(layoutAnimationId)
+    layoutAnimationId = null
+  }
+
+  if (positionsMap.value.size === 0 || typeof window === 'undefined') {
+    positionsMap.value = copyPositions(next)
+    return
+  }
+
+  const from = new Map<string, NodePosition>()
+  for (const [id, to] of next) {
+    const current = positionsMap.value.get(id)
+    from.set(id, current ? { x: current.x, y: current.y } : { x: to.x, y: to.y })
+  }
+
+  const startedAt = performance.now()
+  const tick = (now: number) => {
+    const t = Math.min(1, (now - startedAt) / LAYOUT_ANIMATION_MS)
+    const eased = easeOutCubic(t)
+    const frame = new Map<string, NodePosition>()
+
+    for (const [id, to] of next) {
+      const start = from.get(id) ?? to
+      frame.set(id, {
+        x: start.x + (to.x - start.x) * eased,
+        y: start.y + (to.y - start.y) * eased,
+      })
+    }
+
+    positionsMap.value = frame
+    if (t < 1) {
+      layoutAnimationId = window.requestAnimationFrame(tick)
+    } else {
+      positionsMap.value = copyPositions(next)
+      layoutAnimationId = null
+    }
+  }
+
+  layoutAnimationId = window.requestAnimationFrame(tick)
+}
 
 // Zoom
 const d3Zoom = useD3Zoom(svgRef, viewportRef)
@@ -193,6 +267,10 @@ onMounted(() => {
 })
 onBeforeUnmount(() => {
   clearEffectHandler()
+  if (layoutAnimationId !== null) {
+    window.cancelAnimationFrame(layoutAnimationId)
+    layoutAnimationId = null
+  }
 })
 
 // ── Computed: видимые ноды ──
@@ -212,6 +290,13 @@ interface VisibleNode {
   fontColor: string
   labelLines: string[]
   relevant: boolean
+  proximityType: 'reinforcing' | 'conflicting' | null
+  proximityStrength: number | null
+}
+
+interface ProximityTarget {
+  type: 'reinforcing' | 'conflicting'
+  strength: number
 }
 
 // L1 ноды для SVG defs (градиенты) — всегда все L1
@@ -237,9 +322,12 @@ const visibleNodes = computed<VisibleNode[]>(() => {
   const activeIds = activeAttractorIds.value
   const vs = viewState.value
   const isCorrelationFocus = vs.view === 'graph' && vs.focus.type === 'correlations'
+  const proximityTargets = proximityTargetMap.value
+  const hasProximityFocus = props.layoutMode === 'proximity' && proximityFocusNodeId.value !== null
 
-  // Semantic zoom: скрывать L3 при отдалении
-  const hideL3 = !d3Zoom.showL3.value
+  // Semantic zoom hides L3 when zoomed out; proximity mode also hides L3
+  // to keep the focused L2 correlation view readable without mutating expansion state.
+  const hideL3 = !d3Zoom.showL3.value || props.layoutMode === 'proximity'
 
   for (const a of attractors.value) {
     // Видимость: L1 всегда, L2 если parent expanded, L3 если parent expanded + zoom достаточный
@@ -255,7 +343,13 @@ const visibleNodes = computed<VisibleNode[]>(() => {
 
     // В режиме корреляций L1 — это контекстные домены, а не кандидаты
     // корреляций. Не затемняем их вместе с некоррелирующими L2.
-    const isRelevant = isCorrelationFocus
+    const isRelevant = hasProximityFocus
+      ? a.level === 1
+        || a.id === focused
+        || a.parent === focused
+        || proximityTargets.has(a.id)
+        || (a.parent ? proximityTargets.has(a.parent) : false)
+      : isCorrelationFocus
       ? a.level === 1
         || a.id === focused
         || a.parent === focused
@@ -266,6 +360,7 @@ const visibleNodes = computed<VisibleNode[]>(() => {
         || a.parent === focused
         || (a.level === 2 && activeIds.has(a.id))
         || corrTargetIds.value.has(a.id)
+    const proximity = proximityTargets.get(a.id) ?? null
 
     nodes.push({
       id: a.id,
@@ -282,6 +377,8 @@ const visibleNodes = computed<VisibleNode[]>(() => {
       fontColor: level === 1 ? '#2a2a3a' : level === 2 ? domainFontColor(doms, a.domain) : '#888',
       labelLines: label.split('\n'),
       relevant: isRelevant,
+      proximityType: proximity?.type ?? null,
+      proximityStrength: proximity?.strength ?? null,
     })
   }
 
@@ -304,6 +401,23 @@ const corrTargetIds = computed<Set<string>>(() => {
   }
 
   return ids
+})
+
+const proximityTargetMap = computed<Map<string, ProximityTarget>>(() => {
+  const focusId = proximityFocusNodeId.value
+  if (!focusId) return new Map()
+
+  const targets = new Map<string, ProximityTarget>()
+  for (const corr of correlations.value) {
+    if (corr.from !== focusId && corr.to !== focusId) continue
+    const otherId = corr.from === focusId ? corr.to : corr.from
+    targets.set(otherId, {
+      type: corr.type,
+      strength: corr.strength,
+    })
+  }
+
+  return targets
 })
 
 const hasFocus = computed(() => focusedNodeId.value !== null)
@@ -388,6 +502,7 @@ function curvedPath(from: { x: number; y: number }, to: { x: number; y: number }
 
 const backgroundCorrEdges = computed<BackgroundCorrEdge[]>(() => {
   if (!props.showAllCorrelations) return []
+  if (props.layoutMode === 'proximity') return []
 
   const visibleL2Ids = new Set(
     visibleNodes.value
@@ -416,6 +531,8 @@ const backgroundCorrEdges = computed<BackgroundCorrEdge[]>(() => {
 })
 
 const visibleCorrEdges = computed<CorrEdge[]>(() => {
+  if (props.layoutMode === 'proximity') return []
+
   const vs = viewState.value
   if (vs.view !== 'graph') return []
   if (vs.focus.type !== 'correlations') return []
@@ -459,6 +576,19 @@ function nodeAriaLabel(node: VisibleNode): string {
   return `Уровень ${node.level}: ${flat}`
 }
 
+function nodeStroke(node: VisibleNode): string {
+  if (node.proximityType === 'reinforcing') return '#0891b2'
+  if (node.proximityType === 'conflicting') return '#dc2626'
+  return node.borderColor
+}
+
+function nodeStrokeWidth(node: VisibleNode): number {
+  if (node.proximityStrength !== null) {
+    return 2 + node.proximityStrength * 5
+  }
+  return node.level === 2 ? 1.5 : 1
+}
+
 // Автоматически раскрыть L1/L2 при первом рендере, чтобы новые пользователи
 // сразу видели L3-детализацию.
 watch(attractors, (list) => {
@@ -474,6 +604,10 @@ watch(attractors, (list) => {
 watch(isZooming, (zooming) => {
   if (zooming) hoveredNodeId.value = null
 })
+
+watch(targetPositionsMap, (next) => {
+  animatePositions(next)
+}, { immediate: true })
 </script>
 
 <style scoped>

@@ -7,7 +7,7 @@
 ```
 D3Graph.vue (SVG + shapes + events)
    ├─ useD3Zoom(svgRef)           # d3-zoom behavior + fitAll + zoomTo
-   ├─ useGraphLayout.computeLayout # d3-force simulation (300 ticks, sync)
+   ├─ useGraphLayout.computeLayout # d3-force simulation: hierarchy/proximity modes
    └─ useGraphEffects(expandedNodes, hovered, d3Zoom, positionsMap)
                                    # транслирует Effect[] → императивные вызовы
 ```
@@ -35,6 +35,11 @@ UI click → dispatch(Action) → reducer → { state', effects[] }
 
 ## Лэйаут (useGraphLayout.ts)
 
+`computeLayout(attractors, { mode, correlations, proximityFocusNodeId })` поддерживает два режима:
+
+- `hierarchy` — базовый режим по иерархии.
+- `proximity` — режим **Близость**. Без выбранного L2 возвращает обычную иерархию. С выбранным L2 переносит только напрямую коррелирующие L2 вокруг выбранного узла: reinforcing-связи становятся ближе при росте `strength`, conflicting-связи уходят дальше и на противоположную сторону при росте `strength`.
+
 1. **Геометрический seed:**
    - L1 — по кругу радиусом `L1_RADIUS=2000` (зафиксированы `fx`/`fy`).
    - L2 — веером вокруг своего L1, радиус `L2_RADIUS=600`, сектор `2π/N_L1 × 0.75`.
@@ -44,7 +49,9 @@ UI click → dispatch(Action) → reducer → { state', effects[] }
    - `forceLink` — пружина parent↔child, distance `L2_RADIUS`/`L3_RADIUS`, strength 0.6.
    - `forceCollide` — радиусы L1=250, L2=120, L3=50 (учитывает лейблы).
    - `forceX`/`forceY` → 0, strength 0.01 — мягкая гравитация к центру.
-3. Результат — `Map<nodeId, { x, y }>`, кэшируется в `computed`.
+3. В `proximity` после базовой симуляции применяется deterministic radial placement: выбранный L2 остаётся на месте, reinforcing L2 размещаются во внутренней зоне, conflicting L2 — во внешней противоположной зоне, а L3-дети сдвигаются вместе с parent L2. В рендере режима **Близость** L3 скрываются.
+4. Результат — `Map<nodeId, { x, y }>`, кэшируется в `computed`.
+5. `D3Graph.vue` интерполирует позиции при смене layout примерно за 650ms, чтобы рёбра и узлы двигались синхронно.
 
 ## Зум (useD3Zoom.ts)
 
@@ -68,8 +75,8 @@ L3: если expandedNodes.has(parent) AND zoomScale >= 0.25 (semantic zoom).
 ## Рёбра
 
 - **Иерархические** (`visibleHierarchyEdges`): curved quad-bezier с перпендикулярным сдвигом `len × 0.06`. Stroke-width: L1→L2 = 3, L2→L3 = 1.5. При фокусе — fade 0.04 для нерелевантных.
-- **Фоновые корреляционные** (`backgroundCorrEdges`): только когда `D3Graph.showAllCorrelations=true` от quick control **Связи**. Лёгкий некликабельный слой всех видимых L2↔L2 связей.
-- **Фокусные корреляционные** (`visibleCorrEdges`): только при `focus.type === 'correlations'`. Quad-bezier сдвиг `len × 0.15`. Stroke-width `1.5 + strength × 3.5`, плюс цветная halo-подложка.
+- **Фоновые корреляционные** (`backgroundCorrEdges`): только когда `D3Graph.showAllCorrelations=true` от quick control **Связи** и layout не `proximity`. Лёгкий некликабельный слой всех видимых L2↔L2 связей.
+- **Фокусные корреляционные** (`visibleCorrEdges`): только при `focus.type === 'correlations'` и layout не `proximity`. Quad-bezier сдвиг `len × 0.15`. Stroke-width `1.5 + strength × 3.5`, плюс цветная halo-подложка.
 
 ## Цвета и шрифты
 
