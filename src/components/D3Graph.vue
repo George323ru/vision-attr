@@ -2,6 +2,7 @@
   <svg
     ref="svgRef"
     class="d3-graph"
+    :class="{ 'is-zooming': isZooming }"
     preserveAspectRatio="xMidYMid meet"
   >
     <defs>
@@ -15,21 +16,9 @@
         <stop offset="0%" :stop-color="node.gradientCenter" />
         <stop offset="100%" :stop-color="node.color" />
       </radialGradient>
-      <!-- Тень для L1 -->
-      <filter id="shadow-l1" x="-30%" y="-30%" width="160%" height="160%">
-        <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="rgba(0,0,0,0.10)" />
-        <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="rgba(0,0,0,0.06)" />
-      </filter>
-      <!-- Subtle glow для корреляционных рёбер -->
-      <filter id="glow-teal" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="rgba(8,145,178,0.35)" />
-      </filter>
-      <filter id="glow-red" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="rgba(220,38,38,0.30)" />
-      </filter>
     </defs>
 
-    <g :transform="zoomTransform">
+    <g ref="viewportRef" transform="translate(0,0) scale(1)">
       <!-- Фон для клика по пустому месту -->
       <rect
         x="-50000" y="-50000" width="100000" height="100000"
@@ -56,7 +45,15 @@
         fill="none"
       />
 
-      <!-- Корреляционные рёбра — с glow -->
+      <!-- Корреляционные рёбра — подложка + основной stroke без SVG-фильтров -->
+      <path
+        v-for="edge in visibleCorrEdges"
+        :key="'halo-' + edge.id"
+        :d="edge.path"
+        class="edge-correlation-halo"
+        :class="edge.type"
+        :stroke-width="4 + edge.strength * 5"
+      />
       <path
         v-for="edge in visibleCorrEdges"
         :key="edge.id"
@@ -64,7 +61,6 @@
         class="edge-correlation"
         :class="edge.type"
         :stroke-width="1.5 + edge.strength * 3.5"
-        :filter="edge.type === 'reinforcing' ? 'url(#glow-teal)' : 'url(#glow-red)'"
       />
 
       <!-- Ноды -->
@@ -91,19 +87,24 @@
         @keydown.enter.prevent="onNodeClick(node)"
         @keydown.space.prevent="onNodeClick(node)"
         @keydown.exact.alt.enter.prevent="dispatch({ type: 'DBLCLICK_NODE', nodeId: node.id })"
-        @focus="hoveredNodeId = node.id"
+        @focus="setHoveredNode(node.id)"
         @blur="hoveredNodeId = null"
-        @mouseenter="hoveredNodeId = node.id"
+        @mouseenter="setHoveredNode(node.id)"
         @mouseleave="hoveredNodeId = null"
       >
-        <!-- L1: gradient fill + shadow -->
+        <!-- L1: plain halo + gradient fill -->
+        <circle
+          v-if="node.level === 1"
+          class="l1-halo"
+          :r="node.radius + 18"
+          :fill="node.color"
+        />
         <circle
           v-if="node.level === 1"
           :r="node.radius"
           :fill="`url(#grad-${node.id})`"
           :stroke="node.borderColor"
           stroke-width="3"
-          filter="url(#shadow-l1)"
         />
         <!-- L2/L3: плоский круг с тонкой обводкой -->
         <circle
@@ -172,6 +173,7 @@ const { correlations } = useCorrelationStore()
 const { attractors, domains } = useAttractorStore()
 
 const svgRef = ref<SVGSVGElement | null>(null)
+const viewportRef = ref<SVGGElement | null>(null)
 const expandedNodes = ref(new Set<string>())
 const hoveredNodeId = ref<string | null>(null)
 
@@ -179,9 +181,8 @@ const hoveredNodeId = ref<string | null>(null)
 const positionsMap = computed(() => computeLayout(attractors.value))
 
 // Zoom
-const d3Zoom = useD3Zoom(svgRef)
-const zoomTransform = computed(() => d3Zoom.transformStr.value)
-const zoomScale = computed(() => d3Zoom.scale.value)
+const d3Zoom = useD3Zoom(svgRef, viewportRef)
+const isZooming = computed(() => d3Zoom.isZooming.value)
 
 // Effects
 const graphEffects = useGraphEffects(expandedNodes, hoveredNodeId, d3Zoom, positionsMap)
@@ -234,9 +235,11 @@ const visibleNodes = computed<VisibleNode[]>(() => {
   const doms = domains.value
   const focused = focusedNodeId.value
   const activeIds = activeAttractorIds.value
+  const vs = viewState.value
+  const isCorrelationFocus = vs.view === 'graph' && vs.focus.type === 'correlations'
 
   // Semantic zoom: скрывать L3 при отдалении
-  const hideL3 = zoomScale.value < 0.25
+  const hideL3 = !d3Zoom.showL3.value
 
   for (const a of attractors.value) {
     // Видимость: L1 всегда, L2 если parent expanded, L3 если parent expanded + zoom достаточный
@@ -250,12 +253,19 @@ const visibleNodes = computed<VisibleNode[]>(() => {
     const level = a.level as 1 | 2 | 3
     const label = level === 1 ? a.label : wrapLabel(a.label, level === 2 ? 2 : 3)
 
-    // Нода "relevant" если: она сама в фокусе, связана с фокусом, или один из selected attractors
-    const isRelevant = !focused
-      || a.id === focused
-      || a.parent === focused
-      || (a.level === 2 && activeIds.has(a.id))
-      || corrTargetIds.value.has(a.id)
+    // В режиме корреляций L1 — это контекстные домены, а не кандидаты
+    // корреляций. Не затемняем их вместе с некоррелирующими L2.
+    const isRelevant = isCorrelationFocus
+      ? a.level === 1
+        || a.id === focused
+        || a.parent === focused
+        || (a.level === 2 && activeIds.has(a.id))
+        || corrTargetIds.value.has(a.id)
+      : !focused
+        || a.id === focused
+        || a.parent === focused
+        || (a.level === 2 && activeIds.has(a.id))
+        || corrTargetIds.value.has(a.id)
 
     nodes.push({
       id: a.id,
@@ -442,6 +452,10 @@ function onNodeClick(node: VisibleNode) {
   dispatch({ type: 'CLICK_NODE', nodeId: node.id, level: node.level })
 }
 
+function setHoveredNode(nodeId: string) {
+  if (!d3Zoom.isZooming.value) hoveredNodeId.value = nodeId
+}
+
 function nodeAriaLabel(node: VisibleNode): string {
   const flat = node.labelLines.join(' ')
   return `Уровень ${node.level}: ${flat}`
@@ -455,6 +469,10 @@ watch(attractors, (list) => {
     expandedNodes.value = new Set(l1Ids)
   }
 }, { immediate: true })
+
+watch(isZooming, (zooming) => {
+  if (zooming) hoveredNodeId.value = null
+})
 </script>
 
 <style scoped>
@@ -479,11 +497,17 @@ watch(attractors, (list) => {
   opacity: 0.04;
 }
 
-/* ── Рёбра корреляций — glow ── */
+/* ── Рёбра корреляций — подложка без SVG-фильтров ── */
 .edge-correlation-bg {
   fill: none;
   stroke: rgba(83, 88, 96, 0.30);
   stroke-width: 1.1;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+.edge-correlation-halo {
+  fill: none;
+  opacity: 0.18;
   stroke-linecap: round;
   pointer-events: none;
 }
@@ -492,16 +516,17 @@ watch(attractors, (list) => {
   opacity: 0.80;
   stroke-linecap: round;
   transition: opacity var(--duration-base, 0.25s) var(--ease-out-expo, ease);
-  animation: edge-fade-in 0.5s var(--ease-out-expo, ease) both;
-}
-@keyframes edge-fade-in {
-  from { opacity: 0; }
-  to { opacity: 0.8; }
 }
 .edge-correlation.reinforcing {
   stroke: #0891b2;
 }
+.edge-correlation-halo.reinforcing {
+  stroke: #0891b2;
+}
 .edge-correlation.conflicting {
+  stroke: #dc2626;
+}
+.edge-correlation-halo.conflicting {
   stroke: #dc2626;
 }
 
@@ -509,7 +534,6 @@ watch(attractors, (list) => {
 .graph-node {
   cursor: pointer;
   transition: opacity var(--duration-slow, 0.4s) var(--ease-out-expo, ease);
-  animation: node-appear 0.4s var(--ease-out-expo, ease) both;
   outline: none;
 }
 .graph-node:focus-visible circle {
@@ -517,9 +541,9 @@ watch(attractors, (list) => {
   stroke-width: 4;
   filter: drop-shadow(0 0 6px rgba(var(--accent-rgb),0.46));
 }
-@keyframes node-appear {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.l1-halo {
+  opacity: 0.10;
+  pointer-events: none;
 }
 
 /* Hover — масштабирование + мягкая тень */
@@ -547,7 +571,6 @@ watch(attractors, (list) => {
 .graph-node.focused.level-2 circle {
   stroke: var(--accent, #8a6228) !important;
   stroke-width: 3.5 !important;
-  transform: scale(1.06);
 }
 .graph-node.focused.level-3 circle {
   stroke: var(--accent, #8a6228) !important;
@@ -565,6 +588,19 @@ watch(attractors, (list) => {
 }
 .graph-node.faded:hover {
   opacity: 0.5;
+}
+
+.d3-graph.is-zooming .edge-hierarchy,
+.d3-graph.is-zooming .edge-correlation,
+.d3-graph.is-zooming .graph-node,
+.d3-graph.is-zooming .graph-node circle {
+  transition: none !important;
+}
+.d3-graph.is-zooming .graph-node circle {
+  filter: none;
+}
+.d3-graph.is-zooming .graph-node.hovered circle {
+  transform: none;
 }
 
 /* ── Лейблы ── */

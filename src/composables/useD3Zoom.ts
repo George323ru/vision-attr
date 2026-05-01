@@ -3,17 +3,41 @@ import { zoom as d3Zoom, zoomIdentity, select, type ZoomBehavior, type D3ZoomEve
 import type { NodePosition } from './useGraphLayout'
 
 export interface D3ZoomApi {
-  readonly transformStr: Ref<string>
-  readonly scale: Ref<number>
+  readonly showL3: Ref<boolean>
+  readonly isZooming: Ref<boolean>
   zoomTo(positions: NodePosition[], padding?: number): void
   resetZoom(): void
 }
 
-export function useD3Zoom(svgRef: Ref<SVGSVGElement | null>): D3ZoomApi {
-  const transformStr = ref('translate(0,0) scale(1)')
-  const scale = ref(1)
+const L3_HIDE_SCALE = 0.22
+const L3_SHOW_SCALE = 0.28
+
+export function useD3Zoom(
+  svgRef: Ref<SVGSVGElement | null>,
+  viewportRef: Ref<SVGGElement | null>,
+): D3ZoomApi {
+  const showL3 = ref(true)
+  const isZooming = ref(false)
 
   let zoomBehavior: ZoomBehavior<SVGSVGElement, unknown> | null = null
+  let zoomIdleTimer: number | null = null
+
+  function markZooming(): void {
+    if (!isZooming.value) isZooming.value = true
+    if (zoomIdleTimer !== null) window.clearTimeout(zoomIdleTimer)
+    zoomIdleTimer = window.setTimeout(() => {
+      isZooming.value = false
+      zoomIdleTimer = null
+    }, 120)
+  }
+
+  function updateSemanticZoom(scale: number): void {
+    if (showL3.value && scale < L3_HIDE_SCALE) {
+      showL3.value = false
+    } else if (!showL3.value && scale > L3_SHOW_SCALE) {
+      showL3.value = true
+    }
+  }
 
   onMounted(() => {
     const svg = svgRef.value
@@ -23,8 +47,11 @@ export function useD3Zoom(svgRef: Ref<SVGSVGElement | null>): D3ZoomApi {
       .scaleExtent([0.02, 4])
       .on('zoom', (event: D3ZoomEvent<SVGSVGElement, unknown>) => {
         const t = event.transform
-        transformStr.value = `translate(${t.x},${t.y}) scale(${t.k})`
-        scale.value = t.k
+        markZooming()
+        if (viewportRef.value) {
+          select(viewportRef.value).attr('transform', t.toString())
+        }
+        updateSemanticZoom(t.k)
       })
 
     select(svg).call(zoomBehavior)
@@ -36,6 +63,7 @@ export function useD3Zoom(svgRef: Ref<SVGSVGElement | null>): D3ZoomApi {
   onBeforeUnmount(() => {
     const svg = svgRef.value
     if (svg) select(svg).on('.zoom', null)
+    if (zoomIdleTimer !== null) window.clearTimeout(zoomIdleTimer)
     zoomBehavior = null
   })
 
@@ -104,5 +132,5 @@ export function useD3Zoom(svgRef: Ref<SVGSVGElement | null>): D3ZoomApi {
     if (svg) fitAll(svg)
   }
 
-  return { transformStr, scale, zoomTo, resetZoom }
+  return { showL3, isZooming, zoomTo, resetZoom }
 }
