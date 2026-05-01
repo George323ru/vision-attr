@@ -2,21 +2,7 @@
   <div class="graph-layout">
     <div class="graph-area">
       <D3Graph :show-all-correlations="showAllCorrelationLayer" />
-      <GraphLegend :show-all-correlations="showAllCorrelationLayer && graphMode === 'correlations'" />
-      <div class="graph-controls">
-        <div class="graph-mode-toggle">
-          <button
-            class="gm-btn"
-            :class="{ active: graphMode === 'explore' }"
-            @click="dispatch({ type: 'SET_GRAPH_MODE', mode: 'explore' })"
-          >Обзор</button>
-          <button
-            class="gm-btn"
-            :class="{ active: graphMode === 'correlations' }"
-            @click="onCorrelationsClick"
-          >Корреляции</button>
-        </div>
-      </div>
+      <GraphLegend :show-all-correlations="showAllCorrelationLayer" />
 
       <div class="graph-quick-controls">
         <button
@@ -42,39 +28,22 @@
         </button>
       </div>
 
-      <!-- Контекстная подсказка: первый вход в режим корреляций -->
-      <div v-if="showCorrHint" class="ctx-hint-wrap">
-        <CoachMark
-          id="ctx-correlations-mode"
-          text="Кликните по любому L2-аттрактору на графе, чтобы увидеть его связи с другими"
-          position="bottom"
-          @dismissed="showCorrHint = false"
-        />
-      </div>
     </div>
     <GraphSidebar class="graph-sidebar" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import D3Graph from '@/components/D3Graph.vue'
 import GraphSidebar from '@/components/GraphSidebar.vue'
 import GraphLegend from '@/components/GraphLegend.vue'
-import CoachMark from '@/components/CoachMark.vue'
 import { useStore } from '@/composables/state/useStore'
-import { useCoachMarks } from '@/composables/useCoachMarks'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 
-const { viewState, dispatch } = useStore()
-const { isDismissed } = useCoachMarks()
+const { dispatch } = useStore()
 const { attractors } = useAttractorStore()
 
-const graphMode = computed(() =>
-  viewState.value.view === 'graph' ? viewState.value.graphMode : 'explore'
-)
-
-const showCorrHint = ref(false)
 const showAllCorrelationLayer = ref(true)
 
 const expandableNodeIds = computed(() =>
@@ -89,13 +58,6 @@ const l2NodeIds = computed(() =>
     .map(a => a.id)
 )
 
-function onCorrelationsClick() {
-  dispatch({ type: 'SET_GRAPH_MODE', mode: 'correlations' })
-  if (!isDismissed('ctx-correlations-mode')) {
-    showCorrHint.value = true
-  }
-}
-
 function toggleAllL3() {
   dispatch({
     type: 'TOGGLE_GRAPH_NODES',
@@ -103,10 +65,6 @@ function toggleAllL3() {
     collapseNodeIds: l2NodeIds.value,
   })
 }
-
-watch(graphMode, (mode) => {
-  if (mode !== 'correlations') showCorrHint.value = false
-})
 </script>
 
 <style scoped>
@@ -126,17 +84,6 @@ watch(graphMode, (mode) => {
   overflow-y: auto;
 }
 
-/* Переключатели графа */
-.graph-controls {
-  position: absolute;
-  top: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 10;
-}
 .graph-quick-controls {
   position: absolute;
   top: 14px;
@@ -145,40 +92,6 @@ watch(graphMode, (mode) => {
   align-items: center;
   gap: 8px;
   z-index: 10;
-}
-.graph-mode-toggle {
-  display: flex;
-  gap: 3px;
-  background: var(--legend-bg);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 3px;
-  box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-.gm-btn {
-  font-size: 11px;
-  font-weight: 500;
-  padding: 5px 14px;
-  border-radius: 999px;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  letter-spacing: 0.4px;
-  transition: background var(--duration-fast) var(--ease-out-expo),
-              color var(--duration-fast);
-  white-space: nowrap;
-}
-.gm-btn:hover {
-  background: var(--card-hover);
-  color: var(--text);
-}
-.gm-btn.active {
-  background: var(--control-active);
-  color: #fff;
-  box-shadow: 0 1px 4px rgba(var(--control-active-rgb),0.16);
 }
 .corr-layer-btn {
   height: 30px;
@@ -240,14 +153,6 @@ watch(graphMode, (mode) => {
   opacity: 0.45;
 }
 
-.ctx-hint-wrap {
-  position: absolute;
-  top: 60px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
-}
-
 @media (max-width: 1280px) {
   .graph-layout {
     --sidebar-width: 320px;
@@ -268,10 +173,6 @@ watch(graphMode, (mode) => {
     border-left: none;
     border-top: 1px solid var(--border);
     max-height: 40vh;
-  }
-  .graph-controls {
-    top: 8px;
-    gap: 6px;
   }
   .graph-quick-controls {
     top: 8px;

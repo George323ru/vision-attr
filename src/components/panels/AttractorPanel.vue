@@ -9,8 +9,17 @@
       </div>
 
       <div v-if="parsedDescription.quotes.length" class="rp-quotes">
-        <div class="rp-quotes-title">{{ parsedDescription.quotesTitle }}</div>
-        <ul class="rp-quotes-list">
+        <button
+          v-if="shouldCollapseQuotes"
+          class="rp-quotes-toggle"
+          type="button"
+          :aria-expanded="quotesExpanded"
+          @click="quotesExpanded = !quotesExpanded"
+        >
+          {{ quotesExpanded ? 'Свернуть типовые цитаты' : 'Развернуть типовые цитаты' }}
+        </button>
+        <div v-else class="rp-quotes-title">{{ parsedDescription.quotesTitle }}</div>
+        <ul v-if="showQuotes" class="rp-quotes-list">
           <li v-for="(quote, i) in parsedDescription.quotes" :key="i">{{ quote }}</li>
         </ul>
       </div>
@@ -25,6 +34,65 @@
       <div v-else class="insights-text">{{ attr.insights }}</div>
     </div>
 
+    <button
+      v-if="parentL2"
+      class="corr-focus-btn"
+      type="button"
+      @click="showNodeCorrelations(parentL2.id)"
+    >
+      Смотреть связи родительского L2
+    </button>
+
+    <div v-if="attr.level === 2 && relatedCorrelationGroups.length > 0" class="corr-section">
+      <div class="corr-section-header">
+        <div class="corr-section-title">Связи</div>
+        <button
+          class="corr-focus-btn compact"
+          :class="{ active: isShowingNodeCorrelations }"
+          type="button"
+          @click="showNodeCorrelations(nodeId)"
+        >
+          {{ isShowingNodeCorrelations ? 'Связи показаны на графе' : 'Показать связи на графе' }}
+        </button>
+      </div>
+
+      <section
+        v-for="group in relatedCorrelationGroups"
+        :key="group.type"
+        class="corr-group"
+        :class="group.type"
+      >
+        <div class="corr-group-header">
+          <span class="corr-group-title">{{ group.title }}</span>
+          <span class="corr-group-count">{{ group.count }}</span>
+        </div>
+
+        <div
+          v-for="c in group.items"
+          :key="c.id"
+          class="corr-item clickable"
+          @click="showNodeCorrelations(c.otherId)"
+        >
+          <span class="corr-dot" :class="c.type"></span>
+          <span class="corr-name">{{ c.otherLabel }}</span>
+          <span class="corr-bar-wrap">
+            <span class="corr-bar" :class="c.type" :style="{ width: barWidth(c.strength) }"></span>
+          </span>
+          <span class="corr-strength" :class="c.type">{{ (c.strength * 100).toFixed(0) }}%</span>
+        </div>
+
+        <button
+          v-if="group.hiddenCount > 0"
+          class="corr-expand-btn"
+          type="button"
+          :aria-expanded="group.expanded"
+          @click="toggleGroup(group.type)"
+        >
+          {{ group.expanded ? 'Свернуть' : `Показать ещё ${group.hiddenCount}` }}
+        </button>
+      </section>
+    </div>
+
     <!-- Ситуации показываем только для L2: L3 в графе не должен открывать сценарный список -->
     <template v-if="situations.length > 0">
       <SituationCard
@@ -37,28 +105,14 @@
       />
     </template>
 
-    <!-- Если нет ситуаций — корреляции + список детей -->
+    <!-- Если нет ситуаций — показываем список дочерних аттракторов -->
     <template v-else>
-      <div v-if="relatedCorrelations.length > 0" class="corr-section">
-        <div class="corr-section-title">Корреляции</div>
-        <div
-          v-for="c in relatedCorrelations"
-          :key="c.id"
-          class="corr-item clickable"
-          @click="dispatch({ type: 'CLICK_NODE', nodeId: c.otherId, level: 2 })"
-        >
-          <span class="corr-dot" :class="c.type"></span>
-          <span class="corr-name">{{ c.otherLabel }}</span>
-          <span class="corr-strength" :class="c.type">{{ (c.strength * 100).toFixed(0) }}%</span>
-        </div>
-      </div>
-
       <div v-if="childList.length" class="l3-section">
         <div class="l3-title">{{ attr.level === 1 ? 'Аттракторы 2 уровня:' : 'Аттракторы 3 уровня:' }}</div>
         <div v-for="child in childList" :key="child.id" class="l3-item clickable" @click="selectChild(child)">{{ child.label }}</div>
       </div>
 
-      <div v-if="!attr.description && !attr.insights && relatedCorrelations.length === 0 && childList.length === 0" class="rp-empty">
+      <div v-if="!attr.description && !attr.insights && relatedCorrelationGroups.length === 0 && childList.length === 0" class="rp-empty">
         Нет данных для этой категории
       </div>
     </template>
@@ -70,10 +124,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, toRef } from 'vue'
+import { computed, ref, toRef, watch } from 'vue'
 import { useCorrelationStore } from '@/composables/useCorrelationStore'
 import { useAttractorStore } from '@/composables/useAttractorStore'
-import { useAttractorDisplay } from '@/composables/useAttractorDisplay'
+import { flatLabel, useAttractorDisplay } from '@/composables/useAttractorDisplay'
 import { useStore } from '@/composables/state/useStore'
 import { useMarkupStore } from '@/composables/useMarkupStore'
 import { useSituationStore } from '@/composables/useSituationStore'
@@ -82,9 +136,10 @@ import PanelBreadcrumb from '@/components/PanelBreadcrumb.vue'
 import type { BreadcrumbItem } from '@/components/PanelBreadcrumb.vue'
 
 const props = defineProps<{ nodeId: string }>()
+const VISIBLE_PER_GROUP = 6
 
 const { attractors, domains, getAttractor } = useAttractorStore()
-const { canGoBack, dispatch } = useStore()
+const { canGoBack, dispatch, viewState } = useStore()
 const { getMarkupForSituation } = useMarkupStore()
 const { getSituationsByAttractor } = useSituationStore()
 const { getCorrEdgesForNode } = useCorrelationStore()
@@ -93,6 +148,11 @@ function hasMarkup(sitId: string): boolean {
   return getMarkupForSituation(sitId) !== null
 }
 const { attr, domainColor } = useAttractorDisplay(toRef(props, 'nodeId'))
+const quotesExpanded = ref(false)
+const expandedGroups = ref<Record<CorrType, boolean>>({
+  reinforcing: false,
+  conflicting: false,
+})
 
 type ParsedDescription = {
   body: string
@@ -122,6 +182,9 @@ const parsedDescription = computed<ParsedDescription | null>(() => {
   if (!raw) return null
   return parseDescription(raw)
 })
+
+const shouldCollapseQuotes = computed(() => attr.value?.level === 3)
+const showQuotes = computed(() => !shouldCollapseQuotes.value || quotesExpanded.value)
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => {
   if (!attr.value) return []
@@ -156,6 +219,12 @@ const childList = computed(() =>
     .map(a => ({ id: a.id, label: a.label, level: a.level }))
 )
 
+const parentL2 = computed(() => {
+  if (attr.value?.level !== 3 || !attr.value.parent) return null
+  const parent = getAttractor(attr.value.parent)
+  return parent?.level === 2 ? parent : null
+})
+
 const insightItems = computed<string[]>(() => {
   const raw = attr.value?.insights
   if (!raw) return []
@@ -166,22 +235,90 @@ const insightItems = computed<string[]>(() => {
     .filter(Boolean)
 })
 
-const relatedCorrelations = computed(() => {
+interface CorrItem {
+  id: string
+  otherId: string
+  otherLabel: string
+  type: 'reinforcing' | 'conflicting'
+  strength: number
+}
+
+type CorrType = CorrItem['type']
+
+interface CorrGroup {
+  type: CorrType
+  title: string
+  count: number
+  hiddenCount: number
+  expanded: boolean
+  items: CorrItem[]
+}
+
+const relatedCorrelations = computed<CorrItem[]>(() => {
   if (attr.value?.level !== 2) return []
   const id = props.nodeId
-  const result: { id: string; otherId: string; otherLabel: string; type: string; strength: number }[] = []
+  const result: CorrItem[] = []
   for (const corr of getCorrEdgesForNode(id)) {
     const otherId = corr.from === id ? corr.to : corr.from
     const other = getAttractor(otherId)
     result.push({
       id: corr.id,
       otherId,
-      otherLabel: other?.label ?? otherId,
+      otherLabel: other?.label ? flatLabel(other.label) : otherId,
       type: corr.type,
       strength: corr.strength,
     })
   }
-  return result.sort((a, b) => b.strength - a.strength).slice(0, 8)
+  return result.sort((a, b) => b.strength - a.strength)
+})
+
+const relatedCorrelationGroups = computed<CorrGroup[]>(() => {
+  const configs: Array<{ type: CorrType; title: string }> = [
+    { type: 'reinforcing', title: 'Усиливающие связи' },
+    { type: 'conflicting', title: 'Конфликтующие связи' },
+  ]
+
+  return configs
+    .map(({ type, title }) => {
+      const items = relatedCorrelations.value.filter(c => c.type === type)
+      const expanded = expandedGroups.value[type]
+      return {
+        type,
+        title,
+        count: items.length,
+        hiddenCount: Math.max(items.length - VISIBLE_PER_GROUP, 0),
+        expanded,
+        items: expanded ? items : items.slice(0, VISIBLE_PER_GROUP),
+      }
+    })
+    .filter(group => group.count > 0)
+})
+
+const isShowingNodeCorrelations = computed(() => {
+  const vs = viewState.value
+  return vs.view === 'graph'
+    && vs.focus.type === 'correlations'
+    && vs.focus.nodeId === props.nodeId
+})
+
+function showNodeCorrelations(nodeId: string) {
+  dispatch({ type: 'SHOW_NODE_CORRELATIONS', nodeId })
+}
+
+function toggleGroup(type: CorrType) {
+  expandedGroups.value[type] = !expandedGroups.value[type]
+}
+
+function barWidth(strength: number): string {
+  return Math.round(strength * 100) + '%'
+}
+
+watch(() => props.nodeId, () => {
+  quotesExpanded.value = false
+  expandedGroups.value = {
+    reinforcing: false,
+    conflicting: false,
+  }
 })
 </script>
 
@@ -221,6 +358,22 @@ const relatedCorrelations = computed(() => {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 4px;
+}
+.rp-quotes-toggle {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0;
+}
+.rp-quotes-toggle + .rp-quotes-list {
+  margin-top: 6px;
 }
 .rp-quotes-list {
   font-size: 12px;
@@ -268,13 +421,76 @@ const relatedCorrelations = computed(() => {
 .corr-section {
   margin-bottom: 12px;
 }
+.corr-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
 .corr-section-title {
   font-size: 11px;
   font-weight: 500;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  margin-bottom: 6px;
+}
+.corr-focus-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  transition: background var(--duration-fast), border-color var(--duration-fast), color var(--duration-fast);
+}
+.corr-focus-btn:hover {
+  background: var(--card-hover);
+  border-color: var(--accent);
+}
+.corr-focus-btn.compact {
+  flex-shrink: 0;
+  margin-bottom: 0;
+  padding: 6px 10px;
+  font-size: 10px;
+}
+.corr-focus-btn.active {
+  background: var(--control-active);
+  border-color: rgba(var(--control-active-rgb),0.22);
+  color: #fff;
+}
+.corr-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.corr-group + .corr-group {
+  border-top: 1px solid var(--border);
+  margin-top: 10px;
+  padding-top: 10px;
+}
+.corr-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+}
+.corr-group-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+}
+.corr-group-count {
+  font-size: 10px;
+  color: var(--text-muted);
 }
 .corr-item {
   display: flex;
@@ -306,6 +522,26 @@ const relatedCorrelations = computed(() => {
   flex: 1;
   font-size: 12px;
   color: var(--text);
+  min-width: 0;
+}
+.corr-bar-wrap {
+  width: 44px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.corr-bar {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+.corr-bar.reinforcing {
+  background: #0891b2;
+}
+.corr-bar.conflicting {
+  background: #dc2626;
 }
 .corr-strength {
   font-size: 11px;
@@ -317,6 +553,16 @@ const relatedCorrelations = computed(() => {
 }
 .corr-strength.conflicting {
   color: #dc2626;
+}
+.corr-expand-btn {
+  align-self: flex-start;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
 }
 .insights-section {
   background: var(--card-bg);

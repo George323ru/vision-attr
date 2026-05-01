@@ -34,7 +34,7 @@ src/composables/state/
 
 **ViewState** (discriminated union):
 - `{ view: 'scenarios', focus: { type: 'grid' } | { type: 'detail', sitId, attrId, strategyIdx } }`
-- `{ view: 'graph', graphMode: 'explore' | 'correlations', focus: { type: 'none' | 'node' | 'correlations' } }`
+- `{ view: 'graph', focus: { type: 'none' | 'node' | 'correlations' } }`
 
 **Effect handler** регистрируется `D3Graph.vue` при `onMounted` через `setEffectHandler`. До регистрации эффекты копятся в `pendingEffects` (чтобы кросс-навигация «сценарий → граф» не теряла анимации).
 
@@ -64,12 +64,12 @@ src/
 │   └── useAttractorDisplay.ts     # STATELESS: утилиты отображения (flatLabel)
 ├── views/
 │   ├── ScenarioView.vue           # ProfileSidebar + SituationGrid (карточки + detail overlay)
-│   └── GraphView.vue              # graph-area (D3Graph + GraphLegend + pill Обзор/Корреляции) + GraphSidebar
+│   └── GraphView.vue              # graph-area (D3Graph + GraphLegend + quick controls Связи/L3) + GraphSidebar
 ├── components/
 │   ├── AppHeader.vue              # LOGOS + pill Analyse/Graph + v3.0
 │   ├── D3Graph.vue                # SVG + zoom/pan + L1/L2/L3 + рёбра иерархии и корреляций
 │   ├── GraphLegend.vue            # левая нижняя легенда (L1/L2/L3 + цвета корреляций)
-│   ├── GraphSidebar.vue           # правая панель GraphView: детали аттрактора / корреляции
+│   ├── GraphSidebar.vue           # правая панель GraphView: EmptyPanel / AttractorPanel
 │   ├── ProfileSidebar.vue         # правая панель ScenarioView: Демография + Аттракторы
 │   ├── DemographicsPanel.vue      # DualRangeSlider + 3 select (пол/семья/дети)
 │   ├── DualRangeSlider.vue        # двойной слайдер с тиками и тултипом
@@ -83,8 +83,8 @@ src/
 │   ├── SituationDetail.vue        # раскрытая ситуация: breadcrumb + Prediction bars + CTA
 │   ├── StrategyBar.vue            # горизонтальная полоса стратегии с процентом
 │   └── panels/
-│       ├── AttractorPanel.vue     # аттрактор в graph-sidebar: breadcrumb + инсайт + дети/корреляции
-│       └── CorrelationPanel.vue   # режим Корреляции: слайдер возраста + список связей
+│       ├── AttractorPanel.vue     # аттрактор в graph-sidebar: breadcrumb + описание/инсайт + ситуации/дети + связи L2
+│       └── CorrelationPanel.vue   # legacy: не подключать в новый graph-sidebar без отдельного решения
 ├── data/
 │   ├── correlations.ts            # ~137 корреляций между L2 с возрастными диапазонами
 │   ├── strategies.ts              # стратегии с ageModifier: (age) => number
@@ -134,25 +134,23 @@ scripts/
 
 ## Экран 2: GraphView («Граф»)
 
-- Сверху канваса pill-переключатель **Обзор / Корреляции** (`graphMode: 'explore' | 'correlations'`).
-- Канвас — `D3Graph.vue`: SVG с зум/пан, L1-узлы c radial-gradient, L2/L3 — плоские круги. Иерархические рёбра curved, корреляционные — с glow-filter.
+- Канвас — `D3Graph.vue`: SVG с зум/пан, L1-узлы c radial-gradient, L2/L3 — плоские круги. Иерархические рёбра curved, корреляционные — фоновым слоем или фокусными цветными рёбрами.
+- Справа сверху quick controls: **Связи** (показать/скрыть фоновый слой всех корреляций, по умолчанию выключен) и **L3** (массовое раскрытие/сворачивание).
 - Легенда — слева внизу (`GraphLegend.vue`).
-- Правый сайдбар — `GraphSidebar`: только панель роутинга (EmptyPanel / AttractorPanel / CorrelationPanel), без демографии и выбора аттракторов.
+- Правый сайдбар — `GraphSidebar`: только панель роутинга (EmptyPanel / AttractorPanel), без демографии и выбора аттракторов.
 
-### Режим explore
+### Гибридная модель графа
 - Клик по узлу любого уровня → `CLICK_NODE` → focus: `{ type: 'node' }` → highlight + zoom-to-fit.
 - Двойной клик → `DBLCLICK_NODE` → effect `EXPAND_NODE` (toggle expand/collapse).
-- `AttractorPanel` показывает breadcrumb + описание + все инсайты + ситуации L2 или детей/корреляции.
-
-### Режим correlations
-- Клик по L2 → focus: `{ type: 'correlations', nodeId, age }` → рисуются рёбра до всех коррелирующих L2. Повторный клик — снимает.
-- Клик по L1/L3 в этом режиме — обычный node-focus.
-- `CorrelationPanel` показывает слайдер возраста + список связей с процентами силы.
+- `AttractorPanel` показывает breadcrumb + описание + инсайты + ситуации L2 или детей. Для L2 дополнительно показывает связи, сгруппированные как «Усиливающие связи» и «Конфликтующие связи».
+- `SHOW_NODE_CORRELATIONS` переводит L2 в focus `{ type: 'correlations', nodeId }`, подсвечивает цветные корреляционные рёбра и оставляет в сайдбаре тот же `AttractorPanel`.
+- Для L3 `AttractorPanel` показывает описание и сворачиваемые типовые цитаты; кнопка «Смотреть связи родительского L2» фокусирует корреляции родительского L2.
 
 ## Режимы видимости рёбер
 
 - Иерархические рёбра — всегда (fade при фокусе, если не relevant).
-- Корреляционные рёбра — только в `graphMode='correlations'` при focused L2.
+- Фоновые корреляционные рёбра — только когда включён quick control **Связи**.
+- Фокусные цветные корреляционные рёбра — только при `focus.type === 'correlations'` для L2.
 
 ## Composables — три типа
 

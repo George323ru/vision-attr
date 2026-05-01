@@ -5,7 +5,6 @@ export function derivePanelRoute(vs: ViewState): PanelRoute {
     case 'scenarios':
       return vs.focus.type === 'grid' ? 'situation-grid' : 'situation-detail'
     case 'graph':
-      if (vs.graphMode === 'correlations') return 'graph-correlations'
       return vs.focus.type === 'none' ? 'graph-empty' : 'graph-attractor'
   }
 }

@@ -14,7 +14,6 @@ function viewStateEquals(a: ViewState, b: ViewState): boolean {
     return true
   }
   if (a.view === 'graph' && b.view === 'graph') {
-    if (a.graphMode !== b.graphMode) return false
     if (a.focus.type !== b.focus.type) return false
     if (a.focus.type === 'node' && b.focus.type === 'node') {
       return a.focus.nodeId === b.focus.nodeId && a.focus.level === b.focus.level
@@ -51,7 +50,7 @@ export function reduce(state: AppState, action: Action): ReducerResult {
       if (action.view === state.viewState.view) return { state, effects: [] }
       const newView: ViewState = action.view === 'scenarios'
         ? { view: 'scenarios', focus: { type: 'grid' } }
-        : { view: 'graph', focus: { type: 'none' }, graphMode: 'correlations' }
+        : { view: 'graph', focus: { type: 'none' } }
       return {
         state: {
           ...state,
@@ -130,45 +129,53 @@ export function reduce(state: AppState, action: Action): ReducerResult {
         ...(action.level === 1 ? [] : [{ type: 'ZOOM_TO_FIT' as const, nodeIds: [action.nodeId] }]),
       ]
 
-      // В режиме корреляций клик по L2 переключает фокус корреляций
-      if (state.viewState.graphMode === 'correlations' && action.level === 2) {
-        const currentId = state.viewState.focus.type === 'correlations'
-          ? state.viewState.focus.nodeId : null
-
-        // Toggle: повторный клик снимает фокус
-        if (currentId === action.nodeId) {
-          return {
-            state: {
-              ...state,
-              viewState: { ...state.viewState, focus: { type: 'none' } },
-            },
-            effects: [{ type: 'CLEAR_HIGHLIGHT' }, { type: 'HIDE_CORRELATIONS' }],
-          }
-        }
-
-        return {
-          state: {
-            ...state,
-            viewState: {
-              ...state.viewState,
-              focus: { type: 'correlations', nodeId: action.nodeId },
-            },
-          },
-          effects: [
-            ...effects,
-            { type: 'ANIMATE_EXPAND', parentId: action.nodeId, childIds: [] },
-            { type: 'SHOW_CORRELATIONS', nodeId: action.nodeId },
-          ],
-        }
-      }
-
-      // Режим explore: фокус на любом уровне
       return {
         state: {
           ...state,
           viewState: {
             ...state.viewState,
             focus: { type: 'node', nodeId: action.nodeId, level: action.level },
+          },
+          navHistory: pushNav(state.navHistory, state.viewState),
+        },
+        effects,
+      }
+    }
+
+    case 'SHOW_NODE_CORRELATIONS': {
+      if (state.viewState.view !== 'graph') return { state, effects: [] }
+      if (
+        state.viewState.focus.type === 'correlations'
+        && state.viewState.focus.nodeId === action.nodeId
+      ) {
+        return {
+          state: {
+            ...state,
+            viewState: {
+              ...state.viewState,
+              focus: { type: 'node', nodeId: action.nodeId, level: 2 },
+            },
+          },
+          effects: [
+            { type: 'HIGHLIGHT_NODE', nodeId: action.nodeId },
+            { type: 'HIDE_CORRELATIONS' },
+          ],
+        }
+      }
+
+      const effects: Effect[] = [
+        { type: 'HIGHLIGHT_NODE', nodeId: action.nodeId },
+        { type: 'ZOOM_TO_FIT', nodeIds: [action.nodeId] },
+        { type: 'ANIMATE_EXPAND', parentId: action.nodeId, childIds: [] },
+        { type: 'SHOW_CORRELATIONS', nodeId: action.nodeId },
+      ]
+
+      return {
+        state: {
+          ...state,
+          viewState: {
+            ...state.viewState,
+            focus: { type: 'correlations', nodeId: action.nodeId },
           },
           navHistory: pushNav(state.navHistory, state.viewState),
         },
@@ -210,21 +217,6 @@ export function reduce(state: AppState, action: Action): ReducerResult {
       }
     }
 
-    case 'SET_GRAPH_MODE': {
-      if (state.viewState.view !== 'graph') return { state, effects: [] }
-      if (state.viewState.graphMode === action.mode) return { state, effects: [] }
-      return {
-        state: {
-          ...state,
-          viewState: {
-            ...state.viewState,
-            graphMode: action.mode,
-          },
-        },
-        effects: [],
-      }
-    }
-
     // ── Hover ──
 
     case 'HOVER_NODE': {
@@ -250,7 +242,6 @@ export function reduce(state: AppState, action: Action): ReducerResult {
           viewState: {
             view: 'graph',
             focus: { type: 'node', nodeId: action.nodeId, level: action.level },
-            graphMode: 'correlations',
           },
           navHistory: pushNav(state.navHistory, state.viewState),
         },

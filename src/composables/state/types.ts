@@ -7,7 +7,7 @@
 
 export type ViewState =
   | { readonly view: 'scenarios'; readonly focus: ScenarioFocus }
-  | { readonly view: 'graph'; readonly focus: GraphFocus; readonly graphMode: GraphMode }
+  | { readonly view: 'graph'; readonly focus: GraphFocus }
 
 export type ScenarioFocus =
   | { readonly type: 'grid' }
@@ -24,8 +24,6 @@ export type GraphFocus =
   // Возраст корреляций — midpoint ProfileState.demographics.ageMin/ageMax,
   // изменяется тем же SET_AGE_RANGE action.
   | { readonly type: 'correlations'; readonly nodeId: string }
-
-export type GraphMode = 'explore' | 'correlations'
 
 // ── Профиль (ортогонален экранам) ──
 
@@ -65,7 +63,6 @@ export type PanelRoute =
   | 'situation-detail'
   | 'graph-empty'
   | 'graph-attractor'
-  | 'graph-correlations'
 
 // ── Actions ──
 
@@ -81,6 +78,7 @@ export type Action =
 
   // Graph view
   | { readonly type: 'CLICK_NODE'; readonly nodeId: string; readonly level: 1 | 2 | 3 }
+  | { readonly type: 'SHOW_NODE_CORRELATIONS'; readonly nodeId: string }
   | { readonly type: 'DBLCLICK_NODE'; readonly nodeId: string }
   | {
       readonly type: 'TOGGLE_GRAPH_NODES'
@@ -88,7 +86,6 @@ export type Action =
       readonly collapseNodeIds: readonly string[]
     }
   | { readonly type: 'CLICK_EMPTY' }
-  | { readonly type: 'SET_GRAPH_MODE'; readonly mode: GraphMode }
 
   // Hover (визуальный, без навигации)
   | { readonly type: 'HOVER_NODE'; readonly nodeId: string | null }
