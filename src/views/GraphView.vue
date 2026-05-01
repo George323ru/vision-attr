@@ -29,6 +29,17 @@
         </button>
       </div>
 
+      <button
+        class="show-l3-btn"
+        type="button"
+        aria-label="Показать или скрыть все L3-узлы"
+        title="Показать или скрыть все L3-узлы"
+        :disabled="expandableNodeIds.length === 0"
+        @click="toggleAllL3"
+      >
+        L3
+      </button>
+
       <!-- Контекстная подсказка: первый вход в режим корреляций -->
       <div v-if="showCorrHint" class="ctx-hint-wrap">
         <CoachMark
@@ -51,9 +62,11 @@ import GraphLegend from '@/components/GraphLegend.vue'
 import CoachMark from '@/components/CoachMark.vue'
 import { useStore } from '@/composables/state/useStore'
 import { useCoachMarks } from '@/composables/useCoachMarks'
+import { useAttractorStore } from '@/composables/useAttractorStore'
 
 const { viewState, dispatch } = useStore()
 const { isDismissed } = useCoachMarks()
+const { attractors } = useAttractorStore()
 
 const graphMode = computed(() =>
   viewState.value.view === 'graph' ? viewState.value.graphMode : 'explore'
@@ -62,11 +75,31 @@ const graphMode = computed(() =>
 const showCorrHint = ref(false)
 const showAllCorrelationLayer = ref(false)
 
+const expandableNodeIds = computed(() =>
+  attractors.value
+    .filter(a => a.level === 1 || a.level === 2)
+    .map(a => a.id)
+)
+
+const l2NodeIds = computed(() =>
+  attractors.value
+    .filter(a => a.level === 2)
+    .map(a => a.id)
+)
+
 function onCorrelationsClick() {
   dispatch({ type: 'SET_GRAPH_MODE', mode: 'correlations' })
   if (!isDismissed('ctx-correlations-mode')) {
     showCorrHint.value = true
   }
+}
+
+function toggleAllL3() {
+  dispatch({
+    type: 'TOGGLE_GRAPH_NODES',
+    expandNodeIds: expandableNodeIds.value,
+    collapseNodeIds: l2NodeIds.value,
+  })
 }
 
 watch(graphMode, (mode) => {
@@ -104,20 +137,20 @@ watch(graphMode, (mode) => {
 }
 .graph-mode-toggle {
   display: flex;
-  gap: 2px;
+  gap: 3px;
   background: var(--legend-bg);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 2px;
-  box-shadow: var(--shadow-md);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  border-radius: 999px;
+  padding: 3px;
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 .gm-btn {
   font-size: 11px;
   font-weight: 500;
   padding: 5px 14px;
-  border-radius: 16px;
+  border-radius: 999px;
   border: none;
   background: transparent;
   color: var(--text-muted);
@@ -134,18 +167,18 @@ watch(graphMode, (mode) => {
 .gm-btn.active {
   background: var(--accent);
   color: #fff;
-  box-shadow: 0 1px 4px rgba(192,138,62,0.25);
+  box-shadow: 0 1px 4px rgba(var(--accent-rgb),0.24);
 }
 .corr-layer-btn {
   height: 30px;
   padding: 0 12px;
-  border-radius: 15px;
+  border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--legend-bg);
   color: var(--text-muted);
-  box-shadow: var(--shadow-md);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   cursor: pointer;
   font-size: 11px;
   font-weight: 600;
@@ -161,9 +194,42 @@ watch(graphMode, (mode) => {
   color: var(--text);
 }
 .corr-layer-btn.active {
-  border-color: rgba(192,138,62,0.48);
-  background: rgba(192,138,62,0.14);
+  border-color: rgba(var(--accent-rgb),0.42);
+  background: rgba(var(--accent-rgb),0.12);
   color: var(--accent);
+}
+
+.show-l3-btn {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--legend-bg);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  z-index: 10;
+  transition: background var(--duration-fast) var(--ease-out-expo),
+              color var(--duration-fast),
+              border-color var(--duration-fast);
+}
+.show-l3-btn:hover:not(:disabled) {
+  background: var(--card-hover);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.show-l3-btn:disabled {
+  cursor: default;
+  opacity: 0.45;
 }
 
 .ctx-hint-wrap {
@@ -209,6 +275,10 @@ watch(graphMode, (mode) => {
     content: '↔';
     font-size: 14px;
     line-height: 1;
+  }
+  .show-l3-btn {
+    top: 8px;
+    right: 10px;
   }
 }
 </style>

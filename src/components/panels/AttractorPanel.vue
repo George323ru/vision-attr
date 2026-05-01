@@ -148,7 +148,8 @@ const relatedCorrelations = computed(() => {
   line-height: 1.55;
   padding: 12px 14px;
   background: var(--card-bg);
-  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md, 8px);
   margin-bottom: 12px;
 }
 .rp-empty {
@@ -160,18 +161,19 @@ const relatedCorrelations = computed(() => {
 .l3-section { margin-top: 8px; }
 .l3-title {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   margin-bottom: 6px;
 }
 .l3-item {
   font-size: 11px;
   color: var(--text);
-  padding: 3px 8px;
-  border-left: 2px solid var(--card-border);
-  margin-bottom: 3px;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  margin-bottom: 2px;
   opacity: 0.8;
 }
 .l3-item.clickable {
@@ -181,16 +183,17 @@ const relatedCorrelations = computed(() => {
 .l3-item.clickable:hover {
   opacity: 1;
   border-color: var(--accent);
+  background: var(--card-hover);
 }
 .corr-section {
   margin-bottom: 12px;
 }
 .corr-section-title {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   margin-bottom: 6px;
 }
 .corr-item {
@@ -198,7 +201,7 @@ const relatedCorrelations = computed(() => {
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   transition: background 0.15s;
 }
 .corr-item.clickable {
@@ -226,7 +229,7 @@ const relatedCorrelations = computed(() => {
 }
 .corr-strength {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   flex-shrink: 0;
 }
 .corr-strength.reinforcing {
@@ -237,17 +240,18 @@ const relatedCorrelations = computed(() => {
 }
 .insights-section {
   background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-left: 3px solid var(--accent);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   padding: 8px 12px;
   margin-bottom: 12px;
 }
 .insights-label {
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--accent);
   text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.06em;
   margin-bottom: 4px;
 }
 .insights-text {
@@ -275,7 +279,7 @@ const relatedCorrelations = computed(() => {
   color: var(--accent);
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: var(--radius-sm, 6px);
+  border-radius: 999px;
   cursor: pointer;
   margin-top: 12px;
   letter-spacing: 0.02em;

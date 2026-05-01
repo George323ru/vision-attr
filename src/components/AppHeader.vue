@@ -37,8 +37,8 @@ const { currentView, dispatch } = useStore()
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 28px;
-  background: var(--bg-surface);
+  padding: 10px 28px;
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   transition: background var(--duration-base) var(--ease-out-quad);
@@ -47,9 +47,9 @@ const { currentView, dispatch } = useStore()
   font-family: var(--font-display);
   font-size: var(--fs-brand);
   font-weight: 700;
-  letter-spacing: 6px;
+  letter-spacing: 5px;
   text-transform: uppercase;
-  color: #111;
+  color: var(--text);
 }
 
 .header-right {
@@ -74,22 +74,22 @@ const { currentView, dispatch } = useStore()
   transform: translate(-50%, -50%);
   display: flex;
   gap: 4px;
-  background: var(--card-bg);
+  background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 4px;
+  padding: 3px;
   box-shadow: var(--shadow-sm);
 }
 .mode-btn {
   font-size: 13px;
-  font-weight: 600;
-  padding: 9px 26px;
+  font-weight: 500;
+  padding: 8px 24px;
   border-radius: 999px;
   border: none;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  letter-spacing: 0.4px;
+  letter-spacing: 0;
   transition: background var(--duration-fast) var(--ease-out-expo),
               color var(--duration-fast),
               box-shadow var(--duration-fast);
@@ -107,7 +107,7 @@ const { currentView, dispatch } = useStore()
 .mode-btn.active {
   background: var(--accent);
   color: #fff;
-  box-shadow: 0 2px 6px rgba(192,138,62,0.30);
+  box-shadow: 0 1px 4px rgba(var(--accent-rgb),0.28);
 }
 
 @media (max-width: 1024px) {

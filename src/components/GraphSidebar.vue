@@ -49,12 +49,12 @@ const { panelRoute, focusedNodeId } = useStore()
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 14px 18px;
+  padding: 12px 16px;
   border-left: 1px solid var(--border);
   overflow-y: auto;
   background: var(--right-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .sidebar-panel {
@@ -80,7 +80,7 @@ const { panelRoute, focusedNodeId } = useStore()
 }
 .empty-title {
   font-size: var(--fs-md);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
   margin-bottom: 8px;
 }

@@ -149,7 +149,7 @@ function onChildren(value: string | null) {
   font-size: 10px;
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   font-weight: 500;
 }
 .demo-label b {

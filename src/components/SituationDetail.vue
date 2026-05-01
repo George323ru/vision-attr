@@ -172,7 +172,7 @@ const helpTooltip = 'Прогноз рассчитан по данным инт�
 function barColor(probability: number, maxProb: number): string {
   const ratio = maxProb > 0 ? probability / maxProb : 0
   const opacity = 0.35 + 0.65 * ratio
-  return `rgba(192,138,62,${opacity.toFixed(2)})`
+  return `rgba(138,98,40,${opacity.toFixed(2)})`
 }
 </script>
 
@@ -187,7 +187,8 @@ function barColor(probability: number, maxProb: number): string {
   margin-bottom: 16px;
   padding: 12px 14px;
   background: var(--card-bg);
-  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md, 8px);
 }
 
 .section-header {
@@ -203,7 +204,7 @@ function barColor(probability: number, maxProb: number): string {
 }
 .section-title {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
 }
 .section-meta {
@@ -238,7 +239,7 @@ function barColor(probability: number, maxProb: number): string {
   color: var(--accent);
   border-color: var(--accent);
   outline: none;
-  box-shadow: 0 0 0 2px var(--accent-subtle, rgba(192,138,62,0.18));
+  box-shadow: 0 0 0 2px var(--accent-subtle, rgba(138,98,40,0.18));
 }
 .help-icon:hover::after,
 .help-icon:focus-visible::after {
@@ -252,9 +253,10 @@ function barColor(probability: number, maxProb: number): string {
   font-weight: 400;
   line-height: 1.5;
   color: var(--text);
+  text-align: left;
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md, 10px);
+  border-radius: var(--radius-md, 8px);
   box-shadow: var(--shadow-lg);
   z-index: 100;
   white-space: normal;
@@ -273,8 +275,8 @@ function barColor(probability: number, maxProb: number): string {
   color: #b45309;
   background: rgba(180,83,9,0.06);
   padding: 8px 12px;
-  border-radius: var(--radius-sm, 6px);
-  letter-spacing: 0.01em;
+  border-radius: var(--radius-md, 8px);
+  letter-spacing: 0;
 }
 
 .strategies-container {
@@ -315,7 +317,7 @@ function barColor(probability: number, maxProb: number): string {
   padding: 7px 14px;
   font-size: 11px;
   font-weight: 500;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: 999px;
   cursor: pointer;
   letter-spacing: 0.02em;
   transition: background var(--duration-fast) var(--ease-out-quad),
@@ -337,11 +339,11 @@ function barColor(probability: number, maxProb: number): string {
   border: 1px solid var(--accent);
   color: #fff;
   font-weight: 600;
-  box-shadow: 0 1px 4px rgba(192,138,62,0.25);
+  box-shadow: 0 1px 4px rgba(var(--accent-rgb),0.24);
 }
 .btn-graph:hover {
   filter: brightness(1.05);
-  box-shadow: 0 2px 8px rgba(192,138,62,0.35);
+  box-shadow: 0 2px 8px rgba(var(--accent-rgb),0.30);
   transform: translateY(-1px);
 }
 .btn-graph:active {

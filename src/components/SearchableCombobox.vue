@@ -288,26 +288,27 @@ watch(() => query.value, () => {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 6px 10px;
+  padding: 6px 11px;
   font-size: 12px;
   font-family: inherit;
   text-align: left;
   color: var(--text);
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-md, 8px);
   cursor: pointer;
   transition: border-color var(--duration-fast, 0.15s) var(--ease-out-quad),
               box-shadow var(--duration-fast, 0.15s);
   min-height: 30px;
 }
 .sc-trigger:hover {
-  border-color: var(--accent);
+  background: var(--card-hover);
+  border-color: var(--border);
 }
 .sc-trigger.open,
 .sc-trigger:focus-visible {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-subtle, rgba(192,138,62,0.18));
+  box-shadow: 0 0 0 2px var(--accent-subtle, rgba(138,98,40,0.18));
   outline: none;
 }
 .sc-selected {
@@ -336,16 +337,16 @@ watch(() => query.value, () => {
 <style>
 /* Dropdown teleported to body — unscoped */
 .sc-dropdown {
-  background: var(--bg, #fafafa);
+  background: var(--bg, #ffffff);
   border: 1px solid var(--border, rgba(0,0,0,0.07));
-  border-radius: var(--radius-md, 10px);
-  box-shadow: var(--shadow-lg, 0 2px 4px rgba(0,0,0,0.03), 0 8px 20px rgba(0,0,0,0.06), 0 20px 48px rgba(0,0,0,0.04));
+  border-radius: var(--radius-lg, 10px);
+  box-shadow: var(--shadow-lg, 0 8px 24px rgba(39,37,30,0.08));
   display: flex;
   flex-direction: column;
   max-height: 280px;
   overflow: hidden;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 .sc-search-wrap {
   padding: 8px 8px 6px;
@@ -360,13 +361,13 @@ watch(() => query.value, () => {
   color: var(--text, #1a1a2e);
   background: var(--card-bg, rgba(0,0,0,0.025));
   border: 1px solid var(--border, rgba(0,0,0,0.07));
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-md, 8px);
   outline: none;
   transition: border-color var(--duration-fast, 0.15s), box-shadow var(--duration-fast, 0.15s);
 }
 .sc-search:focus {
-  border-color: var(--accent, #c08a3e);
-  box-shadow: 0 0 0 2px var(--accent-subtle, rgba(192,138,62,0.08));
+  border-color: var(--accent, #8a6228);
+  box-shadow: 0 0 0 2px var(--accent-subtle, rgba(138,98,40,0.08));
 }
 .sc-list {
   flex: 1;
@@ -378,10 +379,10 @@ watch(() => query.value, () => {
 }
 .sc-group-label {
   font-size: 9px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-dim, rgba(0,0,0,0.35));
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   padding: 8px 12px 3px;
 }
 .sc-item {
@@ -396,8 +397,8 @@ watch(() => query.value, () => {
   background: var(--card-hover, rgba(0,0,0,0.05));
 }
 .sc-item.selected {
-  color: var(--accent, #c08a3e);
-  font-weight: 600;
+  color: var(--accent, #8a6228);
+  font-weight: 500;
 }
 .sc-item.disabled {
   color: var(--text-dim, rgba(0,0,0,0.35));
@@ -424,13 +425,13 @@ watch(() => query.value, () => {
   color: var(--text-dim, rgba(0,0,0,0.35));
   background: none;
   border: 1px dashed var(--border, rgba(0,0,0,0.07));
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-md, 8px);
   cursor: pointer;
   transition: color var(--duration-fast, 0.15s) var(--ease-out-quad),
               border-color var(--duration-fast, 0.15s);
 }
 .sc-clear:hover {
-  color: var(--accent, #c08a3e);
-  border-color: var(--accent, #c08a3e);
+  color: var(--accent, #8a6228);
+  border-color: var(--accent, #8a6228);
 }
 </style>

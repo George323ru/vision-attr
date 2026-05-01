@@ -82,6 +82,11 @@ export type Action =
   // Graph view
   | { readonly type: 'CLICK_NODE'; readonly nodeId: string; readonly level: 1 | 2 | 3 }
   | { readonly type: 'DBLCLICK_NODE'; readonly nodeId: string }
+  | {
+      readonly type: 'TOGGLE_GRAPH_NODES'
+      readonly expandNodeIds: readonly string[]
+      readonly collapseNodeIds: readonly string[]
+    }
   | { readonly type: 'CLICK_EMPTY' }
   | { readonly type: 'SET_GRAPH_MODE'; readonly mode: GraphMode }
 
@@ -113,6 +118,11 @@ export type Action =
 
 export type Effect =
   | { readonly type: 'EXPAND_NODE'; readonly nodeId: string }
+  | {
+      readonly type: 'TOGGLE_NODES'
+      readonly expandNodeIds: readonly string[]
+      readonly collapseNodeIds: readonly string[]
+    }
   | { readonly type: 'COLLAPSE_NODE'; readonly nodeId: string }
   | { readonly type: 'HIGHLIGHT_NODE'; readonly nodeId: string }
   | { readonly type: 'CLEAR_HIGHLIGHT' }

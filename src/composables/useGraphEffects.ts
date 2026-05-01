@@ -29,6 +29,25 @@ export function useGraphEffects(
           break
         }
 
+        case 'TOGGLE_NODES': {
+          const next = new Set(expandedNodes.value)
+          const shouldCollapse = effect.collapseNodeIds.length > 0
+            && effect.collapseNodeIds.every(nodeId => next.has(nodeId))
+
+          if (shouldCollapse) {
+            for (const nodeId of effect.collapseNodeIds) {
+              next.delete(nodeId)
+            }
+          } else {
+            for (const nodeId of effect.expandNodeIds) {
+              next.add(nodeId)
+            }
+          }
+
+          expandedNodes.value = next
+          break
+        }
+
         case 'COLLAPSE_NODE': {
           const next = new Set(expandedNodes.value)
           next.delete(effect.nodeId)

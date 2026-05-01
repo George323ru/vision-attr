@@ -462,7 +462,7 @@ watch(attractors, (list) => {
   width: 100%;
   height: 100%;
   cursor: grab;
-  background: var(--bg, #fafafa);
+  background: var(--bg, #ffffff);
   overflow: hidden;
 }
 .d3-graph:active {
@@ -471,7 +471,7 @@ watch(attractors, (list) => {
 
 /* ── Рёбра иерархии — curved, утончённые ── */
 .edge-hierarchy {
-  stroke: rgba(0,0,0,0.10);
+  stroke: rgba(39,37,30,0.12);
   stroke-linecap: round;
   transition: opacity var(--duration-slow, 0.4s) var(--ease-out-expo, ease);
 }
@@ -513,9 +513,9 @@ watch(attractors, (list) => {
   outline: none;
 }
 .graph-node:focus-visible circle {
-  stroke: var(--accent, #c08a3e);
+  stroke: var(--accent, #8a6228);
   stroke-width: 4;
-  filter: drop-shadow(0 0 6px rgba(192,138,62,0.55));
+  filter: drop-shadow(0 0 6px rgba(var(--accent-rgb),0.46));
 }
 @keyframes node-appear {
   from { opacity: 0; }
@@ -541,16 +541,16 @@ watch(attractors, (list) => {
 
 /* Focus — accent ring */
 .graph-node.focused.level-1 circle {
-  stroke: var(--accent, #c08a3e) !important;
+  stroke: var(--accent, #8a6228) !important;
   stroke-width: 5 !important;
 }
 .graph-node.focused.level-2 circle {
-  stroke: var(--accent, #c08a3e) !important;
+  stroke: var(--accent, #8a6228) !important;
   stroke-width: 3.5 !important;
   transform: scale(1.06);
 }
 .graph-node.focused.level-3 circle {
-  stroke: var(--accent, #c08a3e) !important;
+  stroke: var(--accent, #8a6228) !important;
   stroke-width: 2.5 !important;
 }
 
@@ -572,12 +572,12 @@ watch(attractors, (list) => {
   pointer-events: none;
   user-select: none;
   font-family: var(--font-display, 'Inter Tight', sans-serif);
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-weight: 500;
+  letter-spacing: 0;
 }
 .level-1 .node-label {
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 .level-2 .node-label {
   font-weight: 500;

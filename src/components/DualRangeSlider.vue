@@ -129,7 +129,7 @@ function onMaxInput(e: Event) {
   height: 100%;
   background: var(--accent);
   border-radius: 3px;
-  opacity: 0.75;
+  opacity: 0.82;
 }
 .drs-input {
   -webkit-appearance: none;
@@ -179,10 +179,10 @@ function onMaxInput(e: Event) {
   background: var(--accent);
   color: #fff;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 500;
   font-feature-settings: 'tnum' 1;
   padding: 2px 7px;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: 999px;
   white-space: nowrap;
   pointer-events: none;
   z-index: 2;

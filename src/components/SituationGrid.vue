@@ -90,11 +90,11 @@ const groupedSituations = computed(() => {
 .situation-grid {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 32px;
+  padding: 24px 30px;
 }
 
 .grid-header {
-  margin-bottom: 28px;
+  margin-bottom: 24px;
   position: relative;
 }
 .grid-title {
@@ -102,7 +102,7 @@ const groupedSituations = computed(() => {
   font-size: var(--fs-xl);
   font-weight: 600;
   color: var(--text);
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   margin-bottom: 4px;
 }
 .grid-subtitle {
@@ -111,28 +111,28 @@ const groupedSituations = computed(() => {
 }
 
 .category-group {
-  margin-bottom: 28px;
+  margin-bottom: 26px;
 }
 .category-header {
   margin-bottom: 12px;
 }
 .category-title {
   font-size: var(--fs-md);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
-  letter-spacing: -0.005em;
+  letter-spacing: 0;
   margin-bottom: 2px;
 }
 .category-desc {
   font-size: var(--fs-xs);
   color: var(--text-muted);
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
 }
 
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 /* Transition */

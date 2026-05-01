@@ -89,18 +89,18 @@ function onSkip() {
 }
 
 .wm-card {
-  background: #ffffff;
+  background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   padding: 40px 44px;
   max-width: 440px;
   width: calc(100% - 32px);
-  box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+  box-shadow: var(--shadow-lg);
   animation: card-in var(--duration-base) var(--ease-out-expo);
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
+  text-align: left;
 }
 
 @keyframes card-in {
@@ -122,9 +122,9 @@ function onSkip() {
 .wm-title {
   font-family: var(--font-display);
   font-size: var(--fs-xl);
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   margin-bottom: 6px;
 }
 
@@ -147,9 +147,9 @@ function onSkip() {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  background: #f7f7f9;
+  background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 14px 16px;
   text-align: left;
 }
@@ -161,14 +161,14 @@ function onSkip() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-subtle, rgba(192,138,62,0.1));
-  border-radius: 8px;
+  background: var(--accent-subtle, rgba(138,98,40,0.1));
+  border-radius: var(--radius-md);
   color: var(--accent);
 }
 
 .wm-mode-name {
   font-size: var(--fs-sm);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
   margin-bottom: 4px;
 }
@@ -192,22 +192,22 @@ function onSkip() {
   background: var(--accent);
   color: #fff;
   border: none;
-  border-radius: 10px;
+  border-radius: 999px;
   font-size: var(--fs-sm);
-  font-weight: 600;
+  font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
   transition: filter var(--duration-fast) var(--ease-out-quad),
               box-shadow var(--duration-fast),
               transform var(--duration-fast);
-  box-shadow: 0 2px 8px rgba(192,138,62,0.28);
+  box-shadow: 0 2px 8px rgba(var(--accent-rgb),0.26);
 }
 
 .wm-btn-primary:hover {
   filter: brightness(1.07);
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(192,138,62,0.38);
+  box-shadow: 0 4px 14px rgba(var(--accent-rgb),0.32);
 }
 
 .wm-btn-primary:active {
@@ -220,7 +220,7 @@ function onSkip() {
   background: transparent;
   color: var(--text-muted);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 999px;
   font-size: var(--fs-sm);
   font-weight: 500;
   font-family: inherit;

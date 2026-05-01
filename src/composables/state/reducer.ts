@@ -186,6 +186,18 @@ export function reduce(state: AppState, action: Action): ReducerResult {
       }
     }
 
+    case 'TOGGLE_GRAPH_NODES': {
+      if (state.viewState.view !== 'graph') return { state, effects: [] }
+      return {
+        state,
+        effects: [{
+          type: 'TOGGLE_NODES',
+          expandNodeIds: action.expandNodeIds,
+          collapseNodeIds: action.collapseNodeIds,
+        }],
+      }
+    }
+
     case 'CLICK_EMPTY': {
       if (state.viewState.view !== 'graph') return { state, effects: [] }
       if (state.viewState.focus.type === 'none') return { state, effects: [] }

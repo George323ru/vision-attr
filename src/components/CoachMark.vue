@@ -41,6 +41,7 @@ function onDismiss() {
 .cm-body {
   background: var(--accent);
   color: #fff;
+  text-align: left;
   border-radius: var(--radius-md, 10px);
   padding: 12px 16px;
   max-width: 240px;

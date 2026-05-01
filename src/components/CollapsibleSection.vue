@@ -62,7 +62,7 @@ function onToggle() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 11px 16px;
+  padding: 10px 14px;
   background: none;
   border: none;
   cursor: pointer;
@@ -78,10 +78,10 @@ function onToggle() {
 }
 .cs-title {
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
 }
 .cs-chevron {
   font-size: 8px;
@@ -90,6 +90,6 @@ function onToggle() {
   opacity: 0.6;
 }
 .cs-body {
-  padding: 0 16px 14px;
+  padding: 0 14px 14px;
 }
 </style>

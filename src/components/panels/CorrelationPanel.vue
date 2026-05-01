@@ -136,7 +136,7 @@ function barWidth(strength: number): string {
 .cp-reset-btn {
   background: none;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 999px;
   color: var(--text-muted);
   font-size: 14px;
   line-height: 1;
@@ -155,7 +155,7 @@ function barWidth(strength: number): string {
 }
 .cp-node-name {
   font-size: var(--fs-sm);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--accent);
   min-width: 0;
   line-height: 1.3;
@@ -190,7 +190,7 @@ function barWidth(strength: number): string {
   grid-template-columns: 10px 1fr auto auto;
   align-items: center;
   gap: 6px;
-  padding: 5px 0;
+  padding: 6px 0;
   border-bottom: 1px solid var(--border);
 }
 .cp-item:last-child {
@@ -238,7 +238,7 @@ function barWidth(strength: number): string {
 }
 .cp-pct {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   width: 30px;
   text-align: right;

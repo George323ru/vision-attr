@@ -3,41 +3,43 @@
 /* ── THEME VARIABLES ── */
 /* Light/warm theme as default */
 :root {
-  --bg:           #fafafa;
-  --bg-surface:   rgba(0,0,0,0.03);
-  --bg-surface2:  rgba(0,0,0,0.015);
-  --border:       rgba(0,0,0,0.07);
-  --border2:      rgba(0,0,0,0.04);
-  --text:         #1a1a2e;
-  --text-muted:   rgba(0,0,0,0.50);
-  --text-muted-soft: rgba(0,0,0,0.30);
-  --text-dim:     rgba(0,0,0,0.35);
-  --accent:       #c08a3e;
-  --accent-subtle:rgba(192,138,62,0.08);
-  --panel-bg:     rgba(255,255,255,0.94);
-  --panel-border: rgba(192,138,62,0.30);
-  --panel-text:   #c08a3e;
-  --legend-bg:    rgba(255,255,255,0.88);
-  --legend-border:rgba(0,0,0,0.08);
-  --legend-text:  rgba(0,0,0,0.50);
-  --legend-title: rgba(0,0,0,0.28);
-  --fname-color:  #1a1a2e;
-  --hint-strong:  rgba(0,0,0,0.6);
-  --card-bg:      rgba(0,0,0,0.025);
-  --card-hover:   rgba(0,0,0,0.05);
-  --card-border:  rgba(0,0,0,0.06);
-  --bar-high:     #c08a3e;
-  --bar-mid:      rgba(192,138,62,0.6);
-  --bar-low:      rgba(192,138,62,0.35);
-  --bar-bg:       rgba(0,0,0,0.05);
-  --slider-track: rgba(0,0,0,0.08);
-  --slider-thumb: #c08a3e;
-  --right-bg:     rgba(255,255,255,0.72);
-  --right-border: rgba(0,0,0,0.06);
-  --breadcrumb:   rgba(0,0,0,0.45);
+  --bg:           #ffffff;
+  --bg-surface:   #faf8f5;
+  --bg-surface2:  rgba(39,37,30,0.026);
+  --border:       rgba(39,37,30,0.105);
+  --border2:      rgba(39,37,30,0.06);
+  --text:         #171512;
+  --text-muted:   #5f5c56;
+  --text-muted-soft: #92918b;
+  --text-dim:     #72706b;
+  --accent:       #8a6228;
+  --accent-rgb:   138,98,40;
+  --accent-subtle:rgba(var(--accent-rgb),0.10);
+  --panel-bg:     rgba(255,255,255,0.97);
+  --panel-border: rgba(var(--accent-rgb),0.22);
+  --panel-text:   var(--accent);
+  --legend-bg:    rgba(250,248,245,0.94);
+  --legend-border:rgba(39,37,30,0.12);
+  --legend-text:  #5f5c56;
+  --legend-title: #72706b;
+  --fname-color:  var(--text);
+  --hint-strong:  #4f4b45;
+  --card-bg:      #faf8f5;
+  --card-hover:   rgba(39,37,30,0.052);
+  --card-border:  rgba(39,37,30,0.095);
+  --bar-high:     var(--accent);
+  --bar-mid:      rgba(var(--accent-rgb),0.64);
+  --bar-low:      rgba(var(--accent-rgb),0.36);
+  --bar-bg:       rgba(39,37,30,0.065);
+  --slider-track: rgba(39,37,30,0.10);
+  --slider-thumb: var(--accent);
+  --right-bg:     rgba(255,255,255,0.92);
+  --right-border: rgba(39,37,30,0.08);
+  --breadcrumb:   #72706b;
 
   /* Panel width (responsive) */
   --right-panel-width: 456px;
+  --sidebar-width: var(--right-panel-width);
 
   /* Typography */
   --font-display: 'Inter Tight', 'Inter', system-ui, sans-serif;
@@ -59,14 +61,14 @@
 
   /* Radii */
   --radius-sm:   6px;
-  --radius-md:   10px;
-  --radius-lg:   14px;
+  --radius-md:   8px;
+  --radius-lg:   10px;
   --radius-pill:  20px;
 
-  /* Shadows — layered for depth */
-  --shadow-sm:  0 1px 2px rgba(0,0,0,0.04), 0 2px 6px rgba(0,0,0,0.03);
-  --shadow-md:  0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.05), 0 12px 24px rgba(0,0,0,0.03);
-  --shadow-lg:  0 2px 4px rgba(0,0,0,0.03), 0 8px 20px rgba(0,0,0,0.06), 0 20px 48px rgba(0,0,0,0.04);
+  /* Shadows stay quiet; hierarchy mostly comes from tone and borders. */
+  --shadow-sm:  0 1px 2px rgba(39,37,30,0.035);
+  --shadow-md:  0 2px 8px rgba(39,37,30,0.055);
+  --shadow-lg:  0 8px 24px rgba(39,37,30,0.08);
 }
 
 /* ── Dark theme — commented out, not used ──

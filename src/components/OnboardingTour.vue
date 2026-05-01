@@ -331,6 +331,7 @@ function onSkip() {
   position: fixed;
   pointer-events: auto;
   width: 300px;
+  text-align: left;
   background: #ffffff;
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -399,10 +400,10 @@ function onSkip() {
 
 .tc-title {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text);
   margin-bottom: 6px;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   line-height: 1.3;
 }
 
@@ -444,22 +445,22 @@ function onSkip() {
 
 .tc-btn-next {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   color: #fff;
   background: var(--accent);
   border: none;
-  border-radius: 8px;
+  border-radius: 999px;
   padding: 7px 16px;
   cursor: pointer;
   font-family: inherit;
   margin-left: auto;
   transition: filter 0.15s, box-shadow 0.15s;
-  box-shadow: 0 1px 6px rgba(192,138,62,0.28);
+  box-shadow: 0 1px 6px rgba(var(--accent-rgb),0.28);
 }
 
 .tc-btn-next:hover {
   filter: brightness(1.08);
-  box-shadow: 0 2px 10px rgba(192,138,62,0.38);
+  box-shadow: 0 2px 10px rgba(var(--accent-rgb),0.34);
 }
 
 @media (max-width: 480px) {

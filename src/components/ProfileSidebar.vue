@@ -20,11 +20,11 @@ import AttractorPicker from '@/components/AttractorPicker.vue'
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 16px 18px;
+  padding: 12px 16px;
   border-left: 1px solid var(--border);
   overflow-y: auto;
   background: var(--right-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 </style>

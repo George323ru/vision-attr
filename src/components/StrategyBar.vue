@@ -31,7 +31,7 @@ defineEmits<{ select: [] }>()
 <style scoped>
 .strategy-item {
   margin-bottom: 6px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 8px 10px;
   cursor: pointer;
   transition: background var(--duration-fast) var(--ease-out-quad);
@@ -53,22 +53,22 @@ defineEmits<{ select: [] }>()
   align-items: baseline;
 }
 .sl-pct {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--accent);
   font-size: 11px;
   font-feature-settings: 'tnum' 1;
   letter-spacing: 0.02em;
 }
 .strategy-bar-track {
-  height: 20px;
+  height: 18px;
   background: var(--bar-bg);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
   position: relative;
 }
 .strategy-bar-fill {
   height: 100%;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: width var(--duration-slow) var(--ease-out-expo), background var(--duration-base);
   min-width: 2px;
 }

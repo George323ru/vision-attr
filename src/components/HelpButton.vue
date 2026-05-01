@@ -122,7 +122,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 .help-btn[aria-expanded="true"] {
   color: var(--accent);
   border-color: var(--accent);
-  background: var(--accent-subtle, rgba(192,138,62,0.08));
+  background: var(--accent-subtle, rgba(138,98,40,0.08));
 }
 
 .help-backdrop {

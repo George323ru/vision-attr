@@ -13,38 +13,19 @@
       <span v-else class="card-badge-muted" aria-hidden="true">в обработке</span>
     </div>
     <p class="card-desc">{{ situation.description }}</p>
-    <div class="card-meta">
-      <span v-if="domainLabel" class="card-domain" :style="{ color: domainColorValue }">{{ domainLabel }}</span>
-    </div>
   </button>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import type { Situation } from '@/types/situation'
-import { useAttractorStore } from '@/composables/useAttractorStore'
-import { domainColor } from '@/utils/colors'
 
-const props = defineProps<{
+defineProps<{
   situation: Situation
   hasMarkup: boolean
   relevant: boolean
 }>()
 
 defineEmits<{ open: [] }>()
-
-const { getAttractor, domains } = useAttractorStore()
-
-const attr = computed(() => getAttractor(props.situation.attractorL2))
-const domainLabel = computed(() => {
-  if (!attr.value) return ''
-  const d = domains.value[attr.value.domain]
-  return d?.name ?? attr.value.domain
-})
-const domainColorValue = computed(() => {
-  if (!attr.value) return 'var(--text-muted)'
-  return domainColor(domains.value, attr.value.domain, 2)
-})
 </script>
 
 <style scoped>
@@ -52,15 +33,14 @@ const domainColorValue = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 16px 18px;
+  padding: 14px 16px;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: background var(--duration-fast) var(--ease-out-expo),
               border-color var(--duration-fast),
-              box-shadow var(--duration-base) var(--ease-out-expo),
-              transform var(--duration-base) var(--ease-out-expo);
+              box-shadow var(--duration-base) var(--ease-out-expo);
   text-align: left;
   font-family: inherit;
   color: inherit;
@@ -68,16 +48,14 @@ const domainColorValue = computed(() => {
 .situation-card:hover {
   background: var(--card-hover);
   border-color: var(--border);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 .situation-card:active {
-  transform: translateY(0);
   box-shadow: var(--shadow-sm);
 }
 .situation-card.relevant {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent), var(--shadow-sm);
+  box-shadow: 0 0 0 1px rgba(var(--accent-rgb),0.36), var(--shadow-sm);
 }
 .situation-card.has-data {
   background: var(--bg-surface2);
@@ -90,10 +68,8 @@ const domainColorValue = computed(() => {
   background: var(--card-bg);
   border-color: var(--card-border);
   box-shadow: none;
-  transform: none;
 }
 .situation-card.no-data:active {
-  transform: none;
   box-shadow: none;
 }
 
@@ -105,17 +81,17 @@ const domainColorValue = computed(() => {
 }
 .card-title {
   font-size: var(--fs-sm);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
   line-height: 1.4;
 }
 .card-badge {
   flex-shrink: 0;
   font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 1.2px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
   padding: 3px 7px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--accent-subtle);
   color: var(--accent);
 }
@@ -125,7 +101,7 @@ const domainColorValue = computed(() => {
   font-weight: 500;
   letter-spacing: 0.6px;
   padding: 3px 7px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   color: var(--text-dim);
   font-style: italic;
 }
@@ -135,18 +111,5 @@ const domainColorValue = computed(() => {
   color: var(--text-muted);
   line-height: 1.5;
   margin: 0;
-}
-
-.card-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 2px;
-}
-.card-domain {
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
 }
 </style>

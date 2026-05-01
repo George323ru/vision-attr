@@ -41,20 +41,20 @@ defineProps<{
   left: 20px;
   background: var(--legend-bg);
   border: 1px solid var(--legend-border);
-  border-radius: 12px;
-  padding: 14px 18px;
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
   font-size: 11px;
   color: var(--legend-text);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 10;
   transition: background var(--duration-base), color var(--duration-base);
   box-shadow: var(--shadow-sm);
 }
 .leg-title {
   font-size: 9px;
-  letter-spacing: 2px;
-  font-weight: 600;
+  letter-spacing: 0.12em;
+  font-weight: 500;
   text-transform: uppercase;
   color: var(--legend-title);
   margin-bottom: 10px;
