@@ -12,9 +12,11 @@
   --text-muted:   #5f5c56;
   --text-muted-soft: #92918b;
   --text-dim:     #72706b;
-  --accent:       #8a6228;
-  --accent-rgb:   138,98,40;
+  --accent:       #a97832;
+  --accent-rgb:   169,120,50;
   --accent-subtle:rgba(var(--accent-rgb),0.10);
+  --control-active: #27251e;
+  --control-active-rgb: 39,37,30;
   --panel-bg:     rgba(255,255,255,0.97);
   --panel-border: rgba(var(--accent-rgb),0.22);
   --panel-text:   var(--accent);

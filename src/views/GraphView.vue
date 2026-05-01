@@ -165,9 +165,9 @@ watch(graphMode, (mode) => {
   color: var(--text);
 }
 .gm-btn.active {
-  background: var(--accent);
+  background: var(--control-active);
   color: #fff;
-  box-shadow: 0 1px 4px rgba(var(--accent-rgb),0.24);
+  box-shadow: 0 1px 4px rgba(var(--control-active-rgb),0.16);
 }
 .corr-layer-btn {
   height: 30px;

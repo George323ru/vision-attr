@@ -105,9 +105,9 @@ const { currentView, dispatch } = useStore()
   outline-offset: 2px;
 }
 .mode-btn.active {
-  background: var(--accent);
+  background: var(--control-active);
   color: #fff;
-  box-shadow: 0 1px 4px rgba(var(--accent-rgb),0.28);
+  box-shadow: 0 1px 4px rgba(var(--control-active-rgb),0.18);
 }
 
 @media (max-width: 1024px) {
