@@ -34,34 +34,67 @@
       <div v-if="correlationList.length === 0" class="cp-no-corr">
         Нет корреляций для этого аттрактора
       </div>
-      <div v-else class="cp-list">
-        <div v-for="item in correlationList" :key="item.id" class="cp-item">
-          <span
-            class="cp-dot"
-            :class="item.type"
-            :title="item.type === 'reinforcing' ? 'Усиление' : 'Конфликт'"
-          ></span>
-          <span class="cp-name">{{ item.otherName }}</span>
-          <div class="cp-bar-wrap">
-            <div class="cp-bar" :class="item.type" :style="{ width: barWidth(item.strength) }"></div>
+      <div v-else class="cp-groups">
+        <section
+          v-for="group in correlationGroups"
+          :key="group.type"
+          class="cp-section"
+          :class="group.type"
+        >
+          <div class="cp-section-header">
+            <div class="cp-section-title-wrap">
+              <span class="cp-section-title">{{ group.title }}</span>
+            </div>
+            <span class="cp-section-count">{{ group.count }}</span>
           </div>
-          <span class="cp-pct">{{ Math.round(item.strength * 100) }}%</span>
-        </div>
+
+          <div class="cp-list">
+            <div v-for="item in group.items" :key="item.id" class="cp-item">
+              <span
+                class="cp-dot"
+                :class="item.type"
+                :title="item.type === 'reinforcing' ? 'Усиление' : 'Конфликт'"
+              ></span>
+              <span class="cp-name">{{ item.otherName }}</span>
+              <div class="cp-bar-wrap">
+                <div class="cp-bar" :class="item.type" :style="{ width: barWidth(item.strength) }"></div>
+              </div>
+              <span class="cp-pct">{{ Math.round(item.strength * 100) }}%</span>
+            </div>
+          </div>
+
+          <button
+            v-if="group.hiddenCount > 0"
+            class="cp-expand-btn"
+            :class="group.type"
+            type="button"
+            :aria-expanded="group.expanded"
+            @click="toggleGroup(group.type)"
+          >
+            {{ group.expanded ? 'Свернуть' : `Показать ещё ${group.hiddenCount}` }}
+          </button>
+        </section>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useStore } from '@/composables/state/useStore'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 import { useCorrelationStore } from '@/composables/useCorrelationStore'
 import { flatLabel } from '@/composables/useAttractorDisplay'
 
+const VISIBLE_PER_GROUP = 6
+
 const { focusedNodeId, dispatch } = useStore()
 const { getAttractor } = useAttractorStore()
 const { getCorrEdgesForNode } = useCorrelationStore()
+const expandedGroups = ref<Record<CorrType, boolean>>({
+  reinforcing: false,
+  conflicting: false,
+})
 
 const focusedAttractor = computed(() => {
   if (!focusedNodeId.value) return null
@@ -78,6 +111,17 @@ interface CorrItem {
   otherName: string
   type: 'reinforcing' | 'conflicting'
   strength: number
+}
+
+type CorrType = CorrItem['type']
+
+interface CorrGroup {
+  type: CorrType
+  title: string
+  count: number
+  hiddenCount: number
+  expanded: boolean
+  items: CorrItem[]
 }
 
 const correlationList = computed((): CorrItem[] => {
@@ -97,6 +141,40 @@ const correlationList = computed((): CorrItem[] => {
     })
     .sort((a, b) => b.strength - a.strength)
 })
+
+const correlationGroups = computed((): CorrGroup[] => {
+  const groupConfigs: Array<{ type: CorrType; title: string }> = [
+    { type: 'reinforcing', title: 'Усиливающие связи' },
+    { type: 'conflicting', title: 'Конфликтующие связи' },
+  ]
+
+  return groupConfigs
+    .map(({ type, title }) => {
+      const groupItems = correlationList.value.filter(item => item.type === type)
+      const expanded = expandedGroups.value[type]
+
+      return {
+        type,
+        title,
+        count: groupItems.length,
+        hiddenCount: Math.max(groupItems.length - VISIBLE_PER_GROUP, 0),
+        expanded,
+        items: expanded ? groupItems : groupItems.slice(0, VISIBLE_PER_GROUP),
+      }
+    })
+    .filter(group => group.count > 0)
+})
+
+watch(focusedNodeId, () => {
+  expandedGroups.value = {
+    reinforcing: false,
+    conflicting: false,
+  }
+})
+
+function toggleGroup(type: CorrType) {
+  expandedGroups.value[type] = !expandedGroups.value[type]
+}
 
 function barWidth(strength: number): string {
   return Math.round(strength * 100) + '%'
@@ -193,6 +271,50 @@ function barWidth(strength: number): string {
   color: var(--text-muted);
 }
 
+/* Группы корреляций */
+.cp-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.cp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cp-section + .cp-section {
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.cp-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0 2px;
+}
+.cp-section-title-wrap {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.cp-section-title {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cp-section-count {
+  font-size: var(--fs-xs);
+  color: var(--text-muted-soft);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* Список корреляций */
 .cp-list {
   display: flex;
@@ -257,5 +379,25 @@ function barWidth(strength: number): string {
   width: 30px;
   text-align: right;
   flex-shrink: 0;
+}
+.cp-expand-btn {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  padding: 5px 0 2px;
+  transition: color 0.15s;
+}
+.cp-expand-btn:hover {
+  color: var(--accent);
+}
+.cp-expand-btn.reinforcing:hover {
+  color: #0891b2;
+}
+.cp-expand-btn.conflicting:hover {
+  color: #dc2626;
 }
 </style>
