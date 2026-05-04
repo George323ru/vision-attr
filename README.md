@@ -43,6 +43,9 @@ npm run build      # сборка → dist/
 npx vue-tsc --noEmit  # проверка типов
 ```
 
+Продовый Docker-образ закрыт серверной формой входа через Nginx `auth_request`.
+Настройка env и проверка описаны в `docs/PRODUCTION_FORM_LOGIN_AUTH.md`.
+
 Данные загружаются из `public/data/attractors.json` при старте. Исходник — `.data/attractor_dataset.csv` (2944 строки). Для пересборки JSON:
 
 ```bash
