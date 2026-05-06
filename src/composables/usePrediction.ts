@@ -9,6 +9,8 @@ interface DemoFilter {
   gender: 'male' | 'female' | 'any'
   maritalStatus: string
   childrenCount: string
+  education: string
+  livingWith: string
 }
 
 const AGE_GROUP_RANGES: Record<string, [number, number]> = {
@@ -29,6 +31,8 @@ function matchesFilter(r: RespondentRecord, f: DemoFilter): boolean {
   if (r.ageGroup && !ageGroupOverlaps(r.ageGroup, f.ageMin, f.ageMax)) return false
   if (f.gender !== 'any' && r.gender !== f.gender) return false
   if (f.maritalStatus !== 'any' && r.maritalStatus !== f.maritalStatus) return false
+  if (f.education !== 'any' && r.education !== f.education) return false
+  if (f.livingWith !== 'any' && !(r.livingWith ?? []).includes(f.livingWith)) return false
   if (f.childrenCount !== 'any') {
     if (f.childrenCount === 'has_children') {
       if (r.childrenCount <= 0) return false

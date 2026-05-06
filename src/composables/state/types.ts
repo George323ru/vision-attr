@@ -39,6 +39,8 @@ export interface DemographicsState {
   readonly gender: 'male' | 'female' | 'any'
   readonly maritalStatus: 'married' | 'not_married' | 'divorced' | 'widowed' | 'civil_union' | 'any'
   readonly childrenCount: string
+  readonly education: string
+  readonly livingWith: string
 }
 
 // ── UI Chrome ──
@@ -104,6 +106,8 @@ export type Action =
   | { readonly type: 'SET_GENDER'; readonly value: DemographicsState['gender'] }
   | { readonly type: 'SET_MARITAL'; readonly value: DemographicsState['maritalStatus'] }
   | { readonly type: 'SET_CHILDREN'; readonly value: string }
+  | { readonly type: 'SET_EDUCATION'; readonly value: string }
+  | { readonly type: 'SET_LIVING_WITH'; readonly value: string }
   | { readonly type: 'SET_ATTRACTOR_SLOT'; readonly slot: number; readonly id: string | null }
   | { readonly type: 'ADD_ATTRACTOR'; readonly id: string }
   | { readonly type: 'TOGGLE_HIGHLIGHT'; readonly idx: number }

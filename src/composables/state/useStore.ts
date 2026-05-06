@@ -16,6 +16,8 @@ const INITIAL_STATE: AppState = {
       gender: 'any',
       maritalStatus: 'any',
       childrenCount: 'any',
+      education: 'any',
+      livingWith: 'any',
     },
     selectedAttractors: [null, null, null],
     highlightedIdx: null,

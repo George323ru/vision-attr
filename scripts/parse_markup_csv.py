@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 import csv
+import ast
 import json
 import os
 import sys
@@ -35,6 +36,8 @@ class Demographics:
     marital_status: str = ''
     has_children: bool = False
     children_count: int = 0
+    education: str = ''
+    living_with: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -107,8 +110,69 @@ def load_demographics(csv_path: str) -> dict[str, Demographics]:
                 marital_status=row.get('Семейное_положение', '').strip(),
                 has_children=children_str == 'да',
                 children_count=children_count,
+                education=normalize_education(row.get('Уровень_образования', '')),
+                living_with=parse_living_with(row.get('Проживание_Совместно_С', '')),
             )
 
+    return result
+
+
+def normalize_education(value: str) -> str:
+    """Приводит свободный текст образования к стабильным категориям фильтра."""
+    raw = value.strip().lower()
+    if not raw:
+        return ''
+    if 'переподготов' in raw:
+        if 'магистр' in raw:
+            return 'master'
+        return 'specialist'
+    mapping = {
+        'среднее': 'secondary',
+        'среднее профессиональное': 'vocational',
+        'неоконченное высшее': 'incomplete_higher',
+        'бакалавр': 'bachelor',
+        'специалист': 'specialist',
+        'магистр': 'master',
+        'аспирантура': 'postgraduate',
+        'кандидат наук': 'phd',
+    }
+    return mapping.get(raw, raw)
+
+
+def parse_living_with(value: str) -> list[str]:
+    """Разбирает список совместного проживания из CSV в стабильный массив."""
+    raw = value.strip()
+    if not raw:
+        return []
+
+    items: list[str]
+    if raw.startswith('['):
+        try:
+            parsed = ast.literal_eval(raw)
+            items = [str(item) for item in parsed] if isinstance(parsed, list) else [raw]
+        except (SyntaxError, ValueError):
+            items = [raw]
+    else:
+        normalized = raw.replace(';', ',')
+        items = [part for part in normalized.split(',')]
+
+    result: list[str] = []
+    aliases = {
+        'с партнёром': 'partner',
+        'с партнером': 'partner',
+        'с детьми': 'children',
+        'с родителями': 'parents',
+        'с родственниками': 'relatives',
+        'с друзьями': 'friends',
+        'с соседями': 'neighbors',
+        'общежитие': 'dorm',
+        'в одиночку': 'alone',
+    }
+    for item in items:
+        key = item.strip().strip('"').strip("'").lower()
+        mapped = aliases.get(key)
+        if mapped and mapped not in result:
+            result.append(mapped)
     return result
 
 
@@ -429,6 +493,8 @@ def build_respondents(
             'ageGroup': age_group,
             'maritalStatus': marital,
             'childrenCount': demo.children_count,
+            'education': demo.education,
+            'livingWith': demo.living_with,
             'attractors': attractors,
             'strategies': strats,
         })

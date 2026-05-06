@@ -63,6 +63,8 @@ export interface RespondentRecord {
   ageGroup: string
   maritalStatus: string
   childrenCount: number
+  education?: string
+  livingWith?: string[]
   attractors: Record<string, number>
   strategies: Record<string, number[]>
 }

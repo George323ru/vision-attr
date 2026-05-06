@@ -59,6 +59,34 @@
         @update:model-value="onChildren"
       />
     </div>
+
+    <!-- Education -->
+    <div class="demo-section">
+      <div class="demo-label">Образование</div>
+      <SearchableCombobox
+        :model-value="education"
+        :groups="educationGroups"
+        :searchable="false"
+        :clearable="false"
+        aria-label="Образование"
+        placeholder="Любое"
+        @update:model-value="onEducation"
+      />
+    </div>
+
+    <!-- Living with -->
+    <div class="demo-section">
+      <div class="demo-label">Проживание</div>
+      <SearchableCombobox
+        :model-value="livingWith"
+        :groups="livingWithGroups"
+        :searchable="false"
+        :clearable="false"
+        aria-label="Проживание совместно с"
+        placeholder="Не важно"
+        @update:model-value="onLivingWith"
+      />
+    </div>
   </div>
 </template>
 
@@ -76,6 +104,8 @@ const ageMax = computed(() => profile.value.demographics.ageMax)
 const gender = computed(() => profile.value.demographics.gender)
 const childrenCount = computed(() => profile.value.demographics.childrenCount)
 const maritalStatus = computed(() => profile.value.demographics.maritalStatus)
+const education = computed(() => profile.value.demographics.education)
+const livingWith = computed(() => profile.value.demographics.livingWith)
 
 const genderGroups: ComboboxGroup[] = [{
   id: 'gender',
@@ -115,6 +145,38 @@ const childrenGroups: ComboboxGroup[] = [{
   ],
 }]
 
+const educationGroups: ComboboxGroup[] = [{
+  id: 'education',
+  name: '',
+  items: [
+    { id: 'any', label: 'Любое' },
+    { id: 'secondary', label: 'Среднее' },
+    { id: 'vocational', label: 'Среднее профессиональное' },
+    { id: 'incomplete_higher', label: 'Неоконченное высшее' },
+    { id: 'bachelor', label: 'Бакалавр' },
+    { id: 'specialist', label: 'Специалист' },
+    { id: 'master', label: 'Магистр' },
+    { id: 'postgraduate', label: 'Аспирантура' },
+    { id: 'phd', label: 'Кандидат наук' },
+  ],
+}]
+
+const livingWithGroups: ComboboxGroup[] = [{
+  id: 'living-with',
+  name: '',
+  items: [
+    { id: 'any', label: 'Не важно' },
+    { id: 'alone', label: 'В одиночку' },
+    { id: 'partner', label: 'С партнёром' },
+    { id: 'children', label: 'С детьми' },
+    { id: 'parents', label: 'С родителями' },
+    { id: 'relatives', label: 'С родственниками' },
+    { id: 'friends', label: 'С друзьями' },
+    { id: 'neighbors', label: 'С соседями' },
+    { id: 'dorm', label: 'Общежитие' },
+  ],
+}]
+
 function onGender(value: string | null) {
   if (value === null) return
   dispatch({ type: 'SET_GENDER', value: value as 'male' | 'female' | 'any' })
@@ -129,6 +191,14 @@ function onMarital(value: string | null) {
 function onChildren(value: string | null) {
   if (value === null) return
   dispatch({ type: 'SET_CHILDREN', value })
+}
+function onEducation(value: string | null) {
+  if (value === null) return
+  dispatch({ type: 'SET_EDUCATION', value })
+}
+function onLivingWith(value: string | null) {
+  if (value === null) return
+  dispatch({ type: 'SET_LIVING_WITH', value })
 }
 </script>
 

@@ -131,6 +131,8 @@ const predictions = computed(() => {
     gender: d.gender,
     maritalStatus: d.maritalStatus,
     childrenCount: d.childrenCount,
+    education: d.education,
+    livingWith: d.livingWith,
   }, [...profile.value.selectedAttractors])
 })
 
