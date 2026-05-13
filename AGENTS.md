@@ -9,8 +9,9 @@ npx vue-tsc --noEmit      # type-check без сборки
 
 # Data pipeline (registry-driven)
 npm run data:validate     # sanity-check public/data/situations_registry.json
+npm run data:profiles     # .data/respondent_profiles.csv → demographics.csv + attractor_scores.csv
 npm run data:markup       # .data/markup_dataset.csv → public/data/markup.json
-npm run data:rebuild      # data:validate + data:markup (основная команда)
+npm run data:rebuild      # data:profiles + data:validate + data:markup (основная команда)
 npm run data:attractors   # .data/attractor_dataset.csv → data/attractors.json
 npm run data:correlations # ~/Downloads/correlations_p005.csv → public/data/correlations.json
 python3 scripts/merge_all.py  # 3 CSV → .data/merged_respondents.csv (ABT для аналитики)
@@ -107,8 +108,9 @@ public/data/                       # фронт грузит через fetch('.
 └── correlations.json              # пересчитанные корреляции
 
 .data/                             # ⚠️ .gitignore
-├── demographics.csv               # ~690 респондентов
-├── attractor_scores.csv           # ~690 × 58 L2-оценок
+├── respondent_profiles.csv        # общий источник: полный соцдем + 58 L2-оценок
+├── demographics.csv               # полный соцдем, генерируется из respondent_profiles.csv
+├── attractor_scores.csv           # 58 L2-оценок, генерируется из respondent_profiles.csv
 ├── markup_dataset.csv             # ~694 × 156 стратегий (23 ситуации)
 ├── markup_dataset.legacy.csv      # бэкап старого CSV (8 ситуаций × 46 стратегий)
 ├── attractor_dataset.csv
@@ -118,6 +120,7 @@ scripts/
 ├── lib/
 │   └── registry.py                # загрузчик/валидатор situations_registry.json
 ├── parse_csv.py                   # → data/attractors.json
+├── split_profile_csv.py           # → .data/demographics.csv + .data/attractor_scores.csv
 ├── parse_markup_csv.py            # → public/data/markup.json (через registry)
 ├── parse_correlations.py          # → public/data/correlations.json
 └── merge_all.py                   # → .data/merged_respondents.csv
@@ -221,8 +224,12 @@ getSituationsByAttractor(l2)          // массив
 loadMarkupData()                      // fetch('./data/markup.json')
 getMarkupForSituation(situationId)    // напрямую по id (s##)
 getMarkupForAttractor(attractorL2)    // все ситуации для L2
-getRespondents()                      // 670 анонимизированных записей
+getRespondents()                      // анонимизированные записи P###: стратегии, L2-оценки и полный соцдем
 ```
+
+`RespondentRecord` хранит полный соцдем из `.data/respondent_profiles.csv`: точный
+`age`, `city`, `region`, `settlementType`, профессии/занятость, семейный фон,
+сиблинги, разводы и спорт. ID остаются анонимизированными (`P001`, `P002`, …).
 
 ## Как добавить новую ситуацию (рабочий процесс)
 

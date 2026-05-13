@@ -60,11 +60,25 @@ export interface MarkupSituation {
 export interface RespondentRecord {
   id: string
   gender: 'male' | 'female'
+  age?: number | null
   ageGroup: string
   maritalStatus: string
+  hasChildren?: boolean
   childrenCount: number
   education?: string
   livingWith?: string[]
+  city?: string
+  region?: string
+  settlementType?: string
+  professionEducation?: string
+  professionWork?: string
+  employmentType?: string
+  grewInCompleteFamily?: string
+  hasSiblings?: string
+  siblingsCount?: number | null
+  hadDivorces?: string
+  doesSports?: string
+  siblingPosition?: string
   attractors: Record<string, number>
   strategies: Record<string, number[]>
 }

@@ -10,11 +10,12 @@
     "test": "node --test scripts/*.test.mjs",
     "auth:hash": "node scripts/auth-hash.mjs",
     "data:validate": "python3 scripts/lib/registry.py",
+    "data:profiles": "python3 scripts/split_profile_csv.py",
     "data:markup": "python3 scripts/parse_markup_csv.py",
     "data:attractors": "python3 scripts/parse_csv.py && python3 scripts/enrich_attractor_insights.py",
     "data:insights": "python3 scripts/enrich_attractor_insights.py",
     "data:correlations": "python3 scripts/parse_correlations.py",
-    "data:rebuild": "npm run data:validate && npm run data:markup"
+    "data:rebuild": "npm run data:profiles && npm run data:validate && npm run data:markup"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

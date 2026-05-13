@@ -12,8 +12,7 @@
 иначе парсер падает с понятной ошибкой.
 
 ⚠️  Исходные CSV содержат индивидуальные данные. Выходной JSON содержит
-    только агрегаты и анонимизированные записи — точный возраст заменяется
-    на возрастную группу, ID обезличены (P001, P002, …).
+    агрегаты и анонимизированные записи — ID обезличены (P001, P002, …).
 """
 
 from __future__ import annotations
@@ -38,6 +37,18 @@ class Demographics:
     children_count: int = 0
     education: str = ''
     living_with: list[str] = field(default_factory=list)
+    city: str = ''
+    region: str = ''
+    settlement_type: str = ''
+    profession_education: str = ''
+    profession_work: str = ''
+    employment_type: str = ''
+    grew_in_complete_family: str = ''
+    has_siblings: str = ''
+    siblings_count: int | None = None
+    had_divorces: str = ''
+    does_sports: str = ''
+    sibling_position: str = ''
 
 
 @dataclass
@@ -104,6 +115,14 @@ def load_demographics(csv_path: str) -> dict[str, Demographics]:
                 except ValueError:
                     pass
 
+            siblings_count_str = row.get('Сиблинги_Количество', '').strip()
+            siblings_count: int | None = None
+            if siblings_count_str:
+                try:
+                    siblings_count = int(float(siblings_count_str))
+                except ValueError:
+                    pass
+
             result[resp_id] = Demographics(
                 gender=row.get('Пол', '').strip(),
                 age=age,
@@ -112,6 +131,18 @@ def load_demographics(csv_path: str) -> dict[str, Demographics]:
                 children_count=children_count,
                 education=normalize_education(row.get('Уровень_образования', '')),
                 living_with=parse_living_with(row.get('Проживание_Совместно_С', '')),
+                city=row.get('Проживание_Город', '').strip(),
+                region=row.get('Проживание_Регион', '').strip(),
+                settlement_type=row.get('Проживание_Тип_НП', '').strip(),
+                profession_education=row.get('Профессия_образование', '').strip(),
+                profession_work=row.get('Профессия_Работа', '').strip(),
+                employment_type=row.get('Тип занятости', '').strip(),
+                grew_in_complete_family=row.get('Рос_в_полной_семье', '').strip(),
+                has_siblings=row.get('Сиблинги_Наличие', '').strip(),
+                siblings_count=siblings_count,
+                had_divorces=row.get('Разводы_Были_Ли', '').strip(),
+                does_sports=row.get('Спорт_Занимается_ли', '').strip(),
+                sibling_position=row.get('Относительное_Положение_Сиблингов', '').strip(),
             )
 
     return result
@@ -490,11 +521,25 @@ def build_respondents(
         result.append({
             'id': f'P{seq:03d}',
             'gender': gender,
+            'age': demo.age,
             'ageGroup': age_group,
             'maritalStatus': marital,
+            'hasChildren': demo.has_children,
             'childrenCount': demo.children_count,
             'education': demo.education,
             'livingWith': demo.living_with,
+            'city': demo.city,
+            'region': demo.region,
+            'settlementType': demo.settlement_type,
+            'professionEducation': demo.profession_education,
+            'professionWork': demo.profession_work,
+            'employmentType': demo.employment_type,
+            'grewInCompleteFamily': demo.grew_in_complete_family,
+            'hasSiblings': demo.has_siblings,
+            'siblingsCount': demo.siblings_count,
+            'hadDivorces': demo.had_divorces,
+            'doesSports': demo.does_sports,
+            'siblingPosition': demo.sibling_position,
             'attractors': attractors,
             'strategies': strats,
         })

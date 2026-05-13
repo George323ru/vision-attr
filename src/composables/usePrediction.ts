@@ -3,7 +3,7 @@ import { useMarkupStore } from './useMarkupStore'
 
 const markupStore = useMarkupStore()
 
-interface DemoFilter {
+export interface DemoFilter {
   ageMin: number
   ageMax: number
   gender: 'male' | 'female' | 'any'
@@ -11,6 +11,12 @@ interface DemoFilter {
   childrenCount: string
   education: string
   livingWith: string
+  settlementType?: string
+  employmentType?: string
+  grewInCompleteFamily?: string
+  hasSiblings?: string
+  hadDivorces?: string
+  doesSports?: string
 }
 
 const AGE_GROUP_RANGES: Record<string, [number, number]> = {
@@ -27,12 +33,27 @@ function ageGroupOverlaps(group: string, min: number, max: number): boolean {
   return range[0] <= max && range[1] >= min
 }
 
-function matchesFilter(r: RespondentRecord, f: DemoFilter): boolean {
-  if (r.ageGroup && !ageGroupOverlaps(r.ageGroup, f.ageMin, f.ageMax)) return false
+function matchesTextFilter(value: string | undefined | null, filter: string | undefined): boolean {
+  if (!filter || filter === 'any') return true
+  return (value ?? '') === filter
+}
+
+export function matchesRespondentDemographics(r: RespondentRecord, f: DemoFilter): boolean {
+  if (typeof r.age === 'number') {
+    if (r.age < f.ageMin || r.age > f.ageMax) return false
+  } else if (r.ageGroup && !ageGroupOverlaps(r.ageGroup, f.ageMin, f.ageMax)) {
+    return false
+  }
   if (f.gender !== 'any' && r.gender !== f.gender) return false
   if (f.maritalStatus !== 'any' && r.maritalStatus !== f.maritalStatus) return false
   if (f.education !== 'any' && r.education !== f.education) return false
   if (f.livingWith !== 'any' && !(r.livingWith ?? []).includes(f.livingWith)) return false
+  if (!matchesTextFilter(r.settlementType, f.settlementType)) return false
+  if (!matchesTextFilter(r.employmentType, f.employmentType)) return false
+  if (!matchesTextFilter(r.grewInCompleteFamily, f.grewInCompleteFamily)) return false
+  if (!matchesTextFilter(r.hasSiblings, f.hasSiblings)) return false
+  if (!matchesTextFilter(r.hadDivorces, f.hadDivorces)) return false
+  if (!matchesTextFilter(r.doesSports, f.doesSports)) return false
   if (f.childrenCount !== 'any') {
     if (f.childrenCount === 'has_children') {
       if (r.childrenCount <= 0) return false
@@ -80,7 +101,7 @@ export function predictBehavior(
   for (const r of allRespondents) {
     const answers = r.strategies[markupId]
     if (!answers) continue
-    if (!matchesFilter(r, filters)) continue
+    if (!matchesRespondentDemographics(r, filters)) continue
 
     filteredCount++
     const w = attractorWeight(r, selectedAttractors)

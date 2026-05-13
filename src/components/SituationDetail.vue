@@ -133,6 +133,12 @@ const predictions = computed(() => {
     childrenCount: d.childrenCount,
     education: d.education,
     livingWith: d.livingWith,
+    settlementType: d.settlementType,
+    employmentType: d.employmentType,
+    grewInCompleteFamily: d.grewInCompleteFamily,
+    hasSiblings: d.hasSiblings,
+    hadDivorces: d.hadDivorces,
+    doesSports: d.doesSports,
   }, [...profile.value.selectedAttractors])
 })
 

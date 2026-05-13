@@ -136,7 +136,7 @@ const uid = useId()
 const triggerId = `sc-trigger-${uid}`
 const listboxId = `sc-listbox-${uid}`
 function optionId(id: string) {
-  return `sc-opt-${uid}-${id}`
+  return `sc-opt-${uid}-${encodeURIComponent(id).replace(/%/g, '_')}`
 }
 
 const selectedLabel = computed(() => {

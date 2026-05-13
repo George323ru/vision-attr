@@ -320,6 +320,15 @@ export function reduce(state: AppState, action: Action): ReducerResult {
       }
     }
 
+    case 'SET_EXTENDED_DEMOGRAPHIC': {
+      return {
+        state: updateProfile(state, {
+          demographics: { ...state.profile.demographics, [action.key]: action.value },
+        }),
+        effects: [],
+      }
+    }
+
     case 'SET_ATTRACTOR_SLOT': {
       const slots = [...state.profile.selectedAttractors] as [string | null, string | null, string | null]
       slots[action.slot] = action.id

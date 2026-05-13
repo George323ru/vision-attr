@@ -41,6 +41,12 @@ export interface DemographicsState {
   readonly childrenCount: string
   readonly education: string
   readonly livingWith: string
+  readonly settlementType: string
+  readonly employmentType: string
+  readonly grewInCompleteFamily: string
+  readonly hasSiblings: string
+  readonly hadDivorces: string
+  readonly doesSports: string
 }
 
 // ── UI Chrome ──
@@ -108,6 +114,17 @@ export type Action =
   | { readonly type: 'SET_CHILDREN'; readonly value: string }
   | { readonly type: 'SET_EDUCATION'; readonly value: string }
   | { readonly type: 'SET_LIVING_WITH'; readonly value: string }
+  | {
+      readonly type: 'SET_EXTENDED_DEMOGRAPHIC'
+      readonly key:
+        | 'settlementType'
+        | 'employmentType'
+        | 'grewInCompleteFamily'
+        | 'hasSiblings'
+        | 'hadDivorces'
+        | 'doesSports'
+      readonly value: string
+    }
   | { readonly type: 'SET_ATTRACTOR_SLOT'; readonly slot: number; readonly id: string | null }
   | { readonly type: 'ADD_ATTRACTOR'; readonly id: string }
   | { readonly type: 'TOGGLE_HIGHLIGHT'; readonly idx: number }
