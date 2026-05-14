@@ -14,23 +14,29 @@
       <span>Аттрактор 3 уровня</span>
     </div>
     <div v-if="showAllCorrelations" class="leg-row">
-      <span class="leg-line" style="width:20px;background:rgba(83,88,96,0.45)"></span>
-      <span>все корреляции</span>
+      <span
+        class="leg-line"
+        :style="{ width: '20px', background: correlationFilter === 'conflicting' ? 'rgba(220,38,38,0.45)' : 'rgba(83,88,96,0.45)' }"
+      ></span>
+      <span>{{ correlationFilter === 'conflicting' ? 'только напряжения' : 'все корреляции' }}</span>
     </div>
-    <div class="leg-row">
+    <div v-if="correlationFilter !== 'conflicting'" class="leg-row">
       <span class="leg-line" style="width:20px;background:#0891b2"></span>
       <span>усиливающая корреляция</span>
     </div>
     <div class="leg-row">
       <span class="leg-line" style="width:20px;background:#dc2626"></span>
-      <span>конфликтующая корреляция</span>
+      <span>{{ correlationFilter === 'conflicting' ? 'видимая конфликтующая связь' : 'конфликтующая корреляция' }}</span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import type { CorrelationVisualFilter } from '@/types/correlation'
+
 defineProps<{
   showAllCorrelations?: boolean
+  correlationFilter?: CorrelationVisualFilter
 }>()
 </script>
 

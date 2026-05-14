@@ -8,5 +8,13 @@ dist/
 .data/
 data/
 public/data/
+outputs/
+*.csv
+*.tsv
+*.xlsx
+*.xls
+*.parquet
+*.db
+*.sqlite
 *.zip
 __pycache__/

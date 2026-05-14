@@ -4,8 +4,12 @@
       <D3Graph
         :show-all-correlations="effectiveShowAllCorrelationLayer"
         :layout-mode="layoutMode"
+        :correlation-filter="correlationFilter"
       />
-      <GraphLegend :show-all-correlations="effectiveShowAllCorrelationLayer" />
+      <GraphLegend
+        :show-all-correlations="effectiveShowAllCorrelationLayer"
+        :correlation-filter="correlationFilter"
+      />
 
       <div class="graph-quick-controls">
         <button
@@ -42,6 +46,17 @@
           Близость
         </button>
         <button
+          class="tension-filter-btn"
+          type="button"
+          :class="{ active: isTensionFilter }"
+          :aria-pressed="isTensionFilter"
+          aria-label="Показать только конфликтующие корреляционные связи"
+          :title="isProximityLayout ? 'В режиме близости линии скрыты, фильтр применится после выхода из режима' : 'Показать только конфликтующие корреляционные связи'"
+          @click="toggleTensionFilter"
+        >
+          Напряжения
+        </button>
+        <button
           class="show-l3-btn"
           type="button"
           aria-label="Показать или скрыть все L3-узлы"
@@ -66,13 +81,16 @@ import GraphLegend from '@/components/GraphLegend.vue'
 import { useStore } from '@/composables/state/useStore'
 import { useAttractorStore } from '@/composables/useAttractorStore'
 import type { GraphLayoutMode } from '@/composables/useGraphLayout'
+import type { CorrelationVisualFilter } from '@/types/correlation'
 
 const { dispatch, viewState } = useStore()
 const { attractors } = useAttractorStore()
 
 const showAllCorrelationLayer = ref(true)
 const layoutMode = ref<GraphLayoutMode>('hierarchy')
+const correlationFilter = ref<CorrelationVisualFilter>('all')
 const isProximityLayout = computed(() => layoutMode.value === 'proximity')
+const isTensionFilter = computed(() => correlationFilter.value === 'conflicting')
 const effectiveShowAllCorrelationLayer = computed(() =>
   showAllCorrelationLayer.value && !isProximityLayout.value
 )
@@ -104,6 +122,10 @@ function toggleAllL3() {
 function toggleProximityLayout() {
   layoutMode.value = isProximityLayout.value ? 'hierarchy' : 'proximity'
 }
+
+function toggleTensionFilter() {
+  correlationFilter.value = isTensionFilter.value ? 'all' : 'conflicting'
+}
 </script>
 
 <style scoped>
@@ -134,7 +156,8 @@ function toggleProximityLayout() {
 }
 .deselect-btn,
 .corr-layer-btn,
-.layout-mode-btn {
+.layout-mode-btn,
+.tension-filter-btn {
   height: 30px;
   padding: 0 12px;
   border-radius: 999px;
@@ -159,12 +182,14 @@ function toggleProximityLayout() {
 }
 .deselect-btn:hover,
 .corr-layer-btn:hover:not(:disabled),
-.layout-mode-btn:hover {
+.layout-mode-btn:hover,
+.tension-filter-btn:hover {
   background: var(--card-hover);
   color: var(--text);
 }
 .corr-layer-btn.active,
-.layout-mode-btn.active {
+.layout-mode-btn.active,
+.tension-filter-btn.active {
   border-color: rgba(var(--control-active-rgb),0.22);
   background: var(--control-active);
   color: #fff;
@@ -231,7 +256,8 @@ function toggleProximityLayout() {
     gap: 6px;
   }
   .corr-layer-btn,
-  .layout-mode-btn {
+  .layout-mode-btn,
+  .tension-filter-btn {
     width: 34px;
     padding: 0;
     overflow: hidden;
@@ -256,6 +282,11 @@ function toggleProximityLayout() {
   .layout-mode-btn::before {
     content: '◎';
     font-size: 15px;
+    line-height: 1;
+  }
+  .tension-filter-btn::before {
+    content: '!';
+    font-size: 14px;
     line-height: 1;
   }
 }

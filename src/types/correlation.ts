@@ -1,4 +1,5 @@
 export type CorrelationType = 'reinforcing' | 'conflicting'
+export type CorrelationVisualFilter = 'all' | 'conflicting'
 
 export interface Correlation {
   id: string

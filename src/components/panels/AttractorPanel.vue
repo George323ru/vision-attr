@@ -34,6 +34,44 @@
       <div v-else class="insights-text">{{ insightItems[0] ?? attr.insights }}</div>
     </div>
 
+    <section v-if="attr.level === 2 && graphAnalytics" class="graph-role-section">
+      <div class="graph-role-header">
+        <div>
+          <div class="graph-role-title">Связанность аттрактора</div>
+          <div class="graph-role-hint">{{ roleSummary }}</div>
+        </div>
+        <span class="graph-role-pill" :class="graphAnalytics.roleLevel">{{ roleLabel }}</span>
+      </div>
+
+      <div class="graph-stat-grid">
+        <div class="graph-stat">
+          <span class="graph-stat-label">Связей</span>
+          <strong>{{ graphAnalytics.totalConnections }}</strong>
+        </div>
+        <div class="graph-stat">
+          <span class="graph-stat-label">Сила связей</span>
+          <strong>{{ graphAnalytics.weightedDegree.toFixed(2) }}</strong>
+        </div>
+        <div class="graph-stat reinforcing">
+          <span class="graph-stat-label">Усиливающих</span>
+          <strong>{{ graphAnalytics.reinforcingCount }}</strong>
+        </div>
+        <div class="graph-stat conflicting">
+          <span class="graph-stat-label">Конфликтующих</span>
+          <strong>{{ graphAnalytics.conflictingCount }}</strong>
+        </div>
+      </div>
+
+      <div class="graph-role-note">
+        Сила связей — сумма всех корреляций этого L2. По этому числу аттрактор сравнивается с другими L2.
+      </div>
+
+      <div v-if="neighborDomainLabels.length" class="neighbor-domains">
+        <span class="neighbor-domains-label">Связан с доменами</span>
+        <span class="neighbor-domains-text">{{ neighborDomainLabels.join(', ') }}</span>
+      </div>
+    </section>
+
     <button
       v-if="parentL2"
       class="corr-focus-btn"
@@ -45,7 +83,10 @@
 
     <div v-if="attr.level === 2 && relatedCorrelationGroups.length > 0" class="corr-section">
       <div class="corr-section-header">
-        <div class="corr-section-title">Связи</div>
+        <div>
+          <div class="corr-section-title">Ближайшее окружение</div>
+          <div class="corr-section-subtitle">Сильные связи выбранного L2</div>
+        </div>
         <button
           class="corr-focus-btn compact"
           :class="{ active: isShowingNodeCorrelations }"
@@ -93,6 +134,41 @@
       </section>
     </div>
 
+    <section v-if="attr.level === 2" class="situations-section">
+      <div class="situations-header">
+        <div>
+          <div class="situations-title">Ситуации</div>
+          <div class="situations-subtitle">
+            {{ graphAnalytics?.linkedSituationCount ?? linkedSituations.length }} связано с этим L2,
+            {{ graphAnalytics?.markedSituationCount ?? markedSituations.length }} с поведенческими данными
+          </div>
+        </div>
+      </div>
+
+      <div v-if="linkedSituations.length" class="situation-list">
+        <button
+          v-for="situation in linkedSituations"
+          :key="situation.id"
+          class="situation-link"
+          type="button"
+          @click="openSituation(situation.id)"
+        >
+          <span class="situation-link-title">{{ situation.title }}</span>
+          <span
+            class="situation-link-badge"
+            :class="{ muted: !markedSituationIds.has(situation.id) }"
+          >
+            {{ markedSituationIds.has(situation.id) ? 'Данные есть' : 'Без разметки' }}
+          </span>
+        </button>
+      </div>
+
+      <div v-else class="situations-empty">Ситуации для этого L2 пока не заведены.</div>
+      <div v-if="linkedSituations.length && markedSituations.length === 0" class="situations-note">
+        Ситуации есть, но поведенческие данные пока не размечены.
+      </div>
+    </section>
+
     <div v-if="childList.length" class="l3-section">
       <div class="l3-title">{{ attr.level === 1 ? 'Аттракторы 2 уровня:' : 'Аттракторы 3 уровня:' }}</div>
       <div v-for="child in childList" :key="child.id" class="l3-item clickable" @click="selectChild(child)">{{ child.label }}</div>
@@ -112,15 +188,21 @@
 import { computed, ref, toRef, watch } from 'vue'
 import { useCorrelationStore } from '@/composables/useCorrelationStore'
 import { useAttractorStore } from '@/composables/useAttractorStore'
+import { useSituationStore } from '@/composables/useSituationStore'
+import { useMarkupStore } from '@/composables/useMarkupStore'
+import { useGraphAnalytics, type GraphRoleLevel } from '@/composables/useGraphAnalytics'
 import { flatLabel, useAttractorDisplay } from '@/composables/useAttractorDisplay'
 import { useStore } from '@/composables/state/useStore'
 import PanelBreadcrumb from '@/components/PanelBreadcrumb.vue'
 import type { BreadcrumbItem } from '@/components/PanelBreadcrumb.vue'
 
 const props = defineProps<{ nodeId: string }>()
-const VISIBLE_PER_GROUP = 6
+const VISIBLE_PER_GROUP = 5
 
 const { attractors, domains, getAttractor } = useAttractorStore()
+const { getSituationsByAttractor } = useSituationStore()
+const { getMarkupForAttractor } = useMarkupStore()
+const { getGraphNodeAnalytics } = useGraphAnalytics()
 const { canGoBack, dispatch, viewState } = useStore()
 const { getCorrEdgesForNode } = useCorrelationStore()
 
@@ -206,6 +288,41 @@ const insightItems = computed<string[]>(() => {
     .map(s => s.replace(/^\s*[•-]\s+/, '').trim())
     .filter(Boolean)
 })
+
+const graphAnalytics = computed(() => getGraphNodeAnalytics(props.nodeId))
+
+const roleLabels: Record<GraphRoleLevel, string> = {
+  high: 'Высокая',
+  medium: 'Средняя',
+  low: 'Низкая',
+  none: 'Нет связей',
+}
+
+const roleSummaries: Record<GraphRoleLevel, string> = {
+  high: 'У этого L2 много сильных связей с другими аттракторами.',
+  medium: 'У этого L2 средний уровень связей по сравнению с другими L2.',
+  low: 'У этого L2 сравнительно мало сильных связей с другими L2.',
+  none: 'Для этого L2 в текущем наборе нет корреляционных связей.',
+}
+
+const roleLabel = computed(() => roleLabels[graphAnalytics.value?.roleLevel ?? 'none'])
+const roleSummary = computed(() => roleSummaries[graphAnalytics.value?.roleLevel ?? 'none'])
+
+const neighborDomainLabels = computed(() => {
+  const analytics = graphAnalytics.value
+  if (!analytics) return []
+  return analytics.neighborDomains
+    .map(domainId => domains.value[domainId]?.name ?? domainId)
+    .filter(Boolean)
+})
+
+const linkedSituations = computed(() => getSituationsByAttractor(props.nodeId))
+const markedSituations = computed(() => getMarkupForAttractor(props.nodeId))
+const markedSituationIds = computed(() => new Set(markedSituations.value.map(s => s.id)))
+
+function openSituation(sitId: string) {
+  dispatch({ type: 'OPEN_SITUATION', sitId, attrId: props.nodeId })
+}
 
 interface CorrItem {
   id: string
@@ -393,6 +510,119 @@ watch(() => props.nodeId, () => {
 .corr-section {
   margin-bottom: 12px;
 }
+.graph-role-section,
+.situations-section {
+  padding: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  margin-bottom: 12px;
+}
+.graph-role-header,
+.situations-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.graph-role-title,
+.situations-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.graph-role-hint,
+.situations-subtitle,
+.corr-section-subtitle {
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+.graph-role-pill {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 5px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+  background: var(--card-hover);
+  border: 1px solid var(--border);
+}
+.graph-role-pill.high {
+  color: #fff;
+  background: var(--control-active);
+  border-color: rgba(var(--control-active-rgb), 0.22);
+}
+.graph-role-pill.medium {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+.graph-role-pill.low,
+.graph-role-pill.none {
+  color: var(--text-muted);
+}
+.graph-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.graph-stat {
+  min-width: 0;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  background: var(--right-bg);
+  border: 1px solid var(--border);
+}
+.graph-stat-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.graph-stat strong {
+  font-size: 15px;
+  color: var(--text);
+}
+.graph-stat.reinforcing strong {
+  color: #0891b2;
+}
+.graph-stat.conflicting strong {
+  color: #dc2626;
+}
+.graph-role-note {
+  margin-top: 9px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+.neighbor-domains {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.neighbor-domains-label {
+  display: block;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 3px;
+}
+.neighbor-domains-text {
+  color: var(--text);
+}
 .corr-section-header {
   display: flex;
   align-items: center;
@@ -406,6 +636,62 @@ watch(() => props.nodeId, () => {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+}
+.situations-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.situation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.situation-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--right-bg);
+  color: var(--text);
+  cursor: pointer;
+  padding: 7px 8px;
+  text-align: left;
+  transition: background var(--duration-fast), border-color var(--duration-fast);
+}
+.situation-link:hover {
+  background: var(--card-hover);
+  border-color: var(--accent);
+}
+.situation-link-title {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.situation-link-badge {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 4px 7px;
+  background: rgba(8, 145, 178, 0.12);
+  color: #0891b2;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+.situation-link-badge.muted {
+  background: var(--card-hover);
+  color: var(--text-muted);
+}
+.situations-empty,
+.situations-note {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
 }
 .corr-focus-btn {
   display: inline-flex;

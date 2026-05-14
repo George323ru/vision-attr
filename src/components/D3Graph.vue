@@ -32,6 +32,7 @@
         :key="edge.id"
         :d="edge.path"
         class="edge-correlation-bg"
+        :class="[edge.type, { 'tension-only': correlationFilter === 'conflicting' }]"
       />
 
       <!-- Иерархические рёбра — curved, утончающиеся -->
@@ -165,10 +166,12 @@ import { useGraphEffects } from '@/composables/useGraphEffects'
 import { domainColor, domainBorder, domainGradientCenter, domainFontColor } from '@/utils/colors'
 import { wrapLabel } from '@/utils/nodeStyles'
 import { useCorrelationStore } from '@/composables/useCorrelationStore'
+import type { Correlation, CorrelationVisualFilter } from '@/types/correlation'
 
 const props = defineProps<{
   showAllCorrelations?: boolean
   layoutMode?: GraphLayoutMode
+  correlationFilter?: CorrelationVisualFilter
 }>()
 
 const { dispatch, viewState, focusedNodeId, activeAttractorIds, setEffectHandler, clearEffectHandler } = useStore()
@@ -485,6 +488,13 @@ interface CorrEdge {
 interface BackgroundCorrEdge {
   id: string
   path: string
+  type: 'reinforcing' | 'conflicting'
+}
+
+const correlationFilter = computed(() => props.correlationFilter ?? 'all')
+
+function shouldShowCorrelation(corr: Correlation): boolean {
+  return correlationFilter.value === 'all' || corr.type === 'conflicting'
 }
 
 function curvedPath(from: { x: number; y: number }, to: { x: number; y: number }, offsetRatio: number): string {
@@ -515,6 +525,7 @@ const backgroundCorrEdges = computed<BackgroundCorrEdge[]>(() => {
   const edges: BackgroundCorrEdge[] = []
 
   for (const corr of correlations.value) {
+    if (!shouldShowCorrelation(corr)) continue
     if (!visibleL2Ids.has(corr.from) || !visibleL2Ids.has(corr.to)) continue
 
     const fromPos = positions.get(corr.from)
@@ -524,6 +535,7 @@ const backgroundCorrEdges = computed<BackgroundCorrEdge[]>(() => {
     edges.push({
       id: `corr-bg-${corr.id}`,
       path: curvedPath(fromPos, toPos, 0.12),
+      type: corr.type,
     })
   }
 
@@ -542,6 +554,7 @@ const visibleCorrEdges = computed<CorrEdge[]>(() => {
   const edges: CorrEdge[] = []
 
   for (const corr of correlations.value) {
+    if (!shouldShowCorrelation(corr)) continue
     if (corr.from !== nodeId && corr.to !== nodeId) continue
 
     const otherId = corr.from === nodeId ? corr.to : corr.from
@@ -635,10 +648,15 @@ watch(targetPositionsMap, (next) => {
 /* ── Рёбра корреляций — подложка без SVG-фильтров ── */
 .edge-correlation-bg {
   fill: none;
-  stroke: rgba(83, 88, 96, 0.30);
-  stroke-width: 1.1;
+  stroke: rgba(83, 88, 96, 0.06);
+  stroke-width: 0.65;
   stroke-linecap: round;
   pointer-events: none;
+  vector-effect: non-scaling-stroke;
+}
+.edge-correlation-bg.tension-only.conflicting {
+  stroke: rgba(220, 38, 38, 0.10);
+  stroke-width: 0.7;
 }
 .edge-correlation-halo {
   fill: none;
